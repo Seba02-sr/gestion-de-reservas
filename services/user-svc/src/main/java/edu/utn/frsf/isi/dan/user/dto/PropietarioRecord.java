@@ -1,12 +1,11 @@
 package edu.utn.frsf.isi.dan.user.dto;
 
-import edu.utn.frsf.isi.dan.user.model.Propietario;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-
 import org.hibernate.validator.constraints.Length;
 
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
+import edu.utn.frsf.isi.dan.user.model.Propietario;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 public record PropietarioRecord(
     @NotBlank(message = "El nombre no puede estar vacío") 
