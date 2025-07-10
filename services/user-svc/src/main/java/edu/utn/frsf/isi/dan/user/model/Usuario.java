@@ -26,5 +26,6 @@ public abstract class Usuario {
     protected String nombre;
     protected String email;
     protected String telefono;
+    protected String dni;
     
 }
