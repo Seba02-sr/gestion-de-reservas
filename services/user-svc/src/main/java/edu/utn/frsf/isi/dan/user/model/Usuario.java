@@ -1,9 +1,16 @@
 package edu.utn.frsf.isi.dan.user.model;
 
-import java.time.LocalDate;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import jakarta.persistence.*;
 
 @Entity
 @Table(name = "usuarios")
@@ -19,5 +26,6 @@ public abstract class Usuario {
     protected String nombre;
     protected String email;
     protected String telefono;
+    protected String dni;
     
 }

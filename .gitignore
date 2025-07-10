@@ -9,6 +9,7 @@ buildNumber.properties
 .mvn/timing.properties
 # https://github.com/takari/maven-wrapper#usage-without-binary-jar
 .mvn/wrapper/maven-wrapper.jar
+.log
 
 # Eclipse m2e generated files
 # Eclipse Core
@@ -16,3 +17,24 @@ buildNumber.properties
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 .DS_Store
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+*.vscode/
+
+# Archivos de configuración de entorno
+*.env
+
+# Archivos de base de datos temporales
+*.h2.db
+*.mv.db
+
+# Otros
+*.class
