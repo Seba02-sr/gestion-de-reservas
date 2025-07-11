@@ -1,23 +1,23 @@
 package edu.utn.frsf.isi.dan.user.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.utn.frsf.isi.dan.user.dto.CuentaBancariaRecord;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
-import edu.utn.frsf.isi.dan.user.service.UserService;
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import edu.utn.frsf.isi.dan.user.dto.CuentaBancariaRecord;
+import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
+import edu.utn.frsf.isi.dan.user.service.UserService;
 
 @WebMvcTest(UserController.class)
 public class UserControllerTest {
@@ -43,6 +43,7 @@ public class UserControllerTest {
             "Jane", 
             "jane.smith@example.com", 
             "9876543210", 
+            "123456789",
             LocalDate.of(1990, 5, 15), 
             "1234567890123456", 
             "martin",

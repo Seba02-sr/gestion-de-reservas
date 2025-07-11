@@ -1,5 +1,11 @@
 package edu.utn.frsf.isi.dan.user.service;
 
+import java.util.ArrayList;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
 import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
 import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
@@ -11,12 +17,6 @@ import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
 import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.Optional;
 
 @Service
 public class UserService {

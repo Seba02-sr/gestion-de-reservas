@@ -12,6 +12,7 @@ public record HuespedRecord(
     String nombre,
     String email,
     String telefono,
+    String dni,
     LocalDate fechaNacimiento,
     String numeroCC,
     String nombreTitular,
@@ -26,9 +27,11 @@ public record HuespedRecord(
         huesped.setNombre(this.nombre);
         huesped.setEmail(this.email);
         huesped.setTelefono(this.telefono);
+        huesped.setDni(this.dni);
         huesped.setFechaNacimiento(this.fechaNacimiento);
-        huesped.setTarjetaCredito(new ArrayList<>(List.of(
-            TarjetaCredito.builder()
+        
+        // Crear la tarjeta de crédito
+        TarjetaCredito tarjeta = TarjetaCredito.builder()
             .numero(this.numeroCC)
             .nombreTitular(this.nombreTitular)
             .fechaVencimiento(this.fechaVencimientoCC)
@@ -36,8 +39,13 @@ public record HuespedRecord(
             .esPrincipal(this.esPrincipalCC)
             .banco(Banco.builder()
                 .id(this.idBanco)
-                .build()).build()
-        )));
+                .build())
+            .huesped(huesped)
+            .build();
+        
+        // Asignar la lista de tarjetas al huésped
+        huesped.setTarjetaCredito(new ArrayList<>(List.of(tarjeta)));
+        
         return huesped;
     }
 
@@ -50,5 +58,4 @@ public record HuespedRecord(
             .esPrincipal(this.esPrincipalCC)
             .build();
     }
-
 }
