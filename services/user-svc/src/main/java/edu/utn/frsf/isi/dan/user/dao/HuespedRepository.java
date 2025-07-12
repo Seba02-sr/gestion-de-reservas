@@ -14,4 +14,6 @@ public interface HuespedRepository extends JpaRepository<Huesped, Long> {
     List<Huesped> findByNombreContainingIgnoreCase(String nombre);
 
     Optional<Huesped> findByDni(String dni);
+
+    List<Huesped> findByDniStartingWith(String dni);
 }

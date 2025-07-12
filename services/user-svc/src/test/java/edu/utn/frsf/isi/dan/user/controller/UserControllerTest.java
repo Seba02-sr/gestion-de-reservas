@@ -65,7 +65,7 @@ public class UserControllerTest {
         // Arrange
         // Assuming CuentaBancariaRecord is a required field for PropietarioRecord
         CuentaBancariaRecord cuentaBancariaRecord = new CuentaBancariaRecord("123456789", "BankName", "BranchName",1);
-        PropietarioRecord propietarioRecord = new PropietarioRecord("John", "Doe", "john.doe@example.com", 1234567890L, cuentaBancariaRecord);
+        PropietarioRecord propietarioRecord = new PropietarioRecord("John", "Doe", "john.doe@example.com", "12345678",  1234567890L, cuentaBancariaRecord);
 
         // Act & Assert
         mockMvc.perform(post("/users/propietario")

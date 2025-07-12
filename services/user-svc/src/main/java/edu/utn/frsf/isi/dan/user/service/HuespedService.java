@@ -46,7 +46,7 @@ public class HuespedService {
     return huespedRepository.findByNombreContainingIgnoreCase(nombre);
     }
 
-    public Optional<Huesped> buscarPorDni(String dni) {
-        return huespedRepository.findByDni(dni);
+    public List<Huesped> buscarPorDniParcial(String dni) {
+        return huespedRepository.findByDniStartingWith(dni);
     }
 }

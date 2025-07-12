@@ -55,10 +55,8 @@ public class HuespedController {
         return ResponseEntity.ok(huespedService.buscarPorNombre(nombre));
     }
 
-    @GetMapping("/dni/{dni}")
-    public ResponseEntity<Huesped> buscarPorDni(@PathVariable String dni) {
-        return huespedService.buscarPorDni(dni)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/dni")
+    public ResponseEntity<List<Huesped>> buscarPorDniParcial(@RequestParam String dni) {
+        return ResponseEntity.ok(huespedService.buscarPorDniParcial(dni));
     }
 }
