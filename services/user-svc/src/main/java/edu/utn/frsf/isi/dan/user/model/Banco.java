@@ -10,10 +10,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// anotaciones de jpa
 @Entity
 @Table(name = "bancos")
-// anotaciones de lombok
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

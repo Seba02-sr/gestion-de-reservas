@@ -4,8 +4,8 @@ import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
 import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
 import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
 import edu.utn.frsf.isi.dan.user.dao.UsuarioRepository;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
+import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
@@ -33,7 +33,7 @@ public class UserService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    public Huesped crearUsuarioHuesped(HuespedRecord huespedRecord) {
+    public Huesped crearUsuarioHuesped(HuespedRequest huespedRecord) {
         // Buscar el banco por ID
         Optional<Banco> bancoOptional = bancoRepository.findById(huespedRecord.idBanco());
         if (bancoOptional.isEmpty()) {
@@ -58,7 +58,7 @@ public class UserService {
         return usuario;
     }
 
-    public void crearUsuarioPropietario(PropietarioRecord propietarioRecord) {
+    public void crearUsuarioPropietario(PropietarioRequest propietarioRecord) {
         // Buscar el banco por ID
         Optional<Banco> bancoOptional = bancoRepository.findById(propietarioRecord.cuentaBancaria().idBanco());
         if (bancoOptional.isEmpty()) {

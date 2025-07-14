@@ -8,7 +8,7 @@ import edu.utn.frsf.isi.dan.user.model.Banco;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
 
-public record HuespedRecord(
+public record HuespedRequest(
     String nombre,
     String email,
     String telefono,
