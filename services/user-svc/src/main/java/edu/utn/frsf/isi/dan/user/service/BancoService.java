@@ -1,13 +1,13 @@
 package edu.utn.frsf.isi.dan.user.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
 import edu.utn.frsf.isi.dan.user.dto.BancoResponse;
+import edu.utn.frsf.isi.dan.user.mapper.BancoMapper;
 import edu.utn.frsf.isi.dan.user.dto.BancoRequest;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,11 +18,14 @@ public class BancoService {
     @Autowired
     private BancoRepository bancoRepository;
 
+    @Autowired
+    private BancoMapper bancoMapper;
+
     public List<BancoResponse> getAllBancos() {
         // Devuelve una lista de bancosDTO para no devolver entidades del modelo directamente al frontend
         return bancoRepository.findAll()
             .stream()
-            .map(BancoResponse::fromBanco)
+            .map(bancoMapper::toResponse)
             .toList();
     }
 
@@ -31,36 +34,31 @@ public class BancoService {
             throw new IllegalArgumentException("El ID del banco no puede ser nulo");
         }
         // Buscar el banco por ID
-        Optional<Banco> bancoOptional = bancoRepository.findById(id);
-        if (bancoOptional.isEmpty()) {
-            throw new EntityNotFoundException("Banco no encontrado con ID: " + id);
-        }
-
-        return BancoResponse.fromBanco(bancoOptional.get());
+        Banco banco = getBancoEntityById(id);
+        return bancoMapper.toResponse(banco);
     }
 
-    public BancoResponse createBanco(BancoRequest bancoDTO) {
-        if(bancoDTO == null) {
+    public BancoResponse createBanco(BancoRequest bancoRequest) {
+        if(bancoRequest == null) {
             throw new IllegalArgumentException("El banco no puede ser nulo");
         }
         // Convertir el DTO a entidad
-        Banco banco = bancoDTO.toBanco();
+        Banco banco = bancoMapper.toEntity(bancoRequest);
         Banco bancoGuardado = bancoRepository.save(banco);
-        return BancoResponse.fromBanco(bancoGuardado);
+        return bancoMapper.toResponse(bancoGuardado);
     }
 
-    public BancoResponse updateBanco(Integer id, BancoRequest bancoDTO) {
-        if(id == null || bancoDTO == null) {
+    public BancoResponse updateBanco(Integer id, BancoRequest bancoRequest) {
+        if(id == null || bancoRequest == null) {
             throw new IllegalArgumentException("El ID del banco y el DTO no pueden ser nulos");
         }
         // Buscar el banco por ID
-        BancoResponse bancoGetDTO = getBancoById(id);
+        Banco bancoExistente = getBancoEntityById(id);
         // Actualizar los campos del banco
-        Banco banco = bancoGetDTO.toBanco();    
-        banco.setNombre(bancoDTO.nombre());
+        bancoMapper.updateEntityFromRequest(bancoRequest, bancoExistente);
+        Banco bancoActualizado = bancoRepository.save(bancoExistente);
 
-        Banco bancoActualizado = bancoRepository.save(banco);
-        return BancoResponse.fromBanco(bancoActualizado);
+        return bancoMapper.toResponse(bancoActualizado);
     }
 
     public void deleteBanco(Integer id) {
@@ -68,20 +66,25 @@ public class BancoService {
             throw new IllegalArgumentException("El ID del banco no puede ser nulo");
         }
         // Buscar el banco por ID
-        BancoResponse bancoGetDTO = getBancoById(id);
+        Banco banco = getBancoEntityById(id);
         // Eliminar el banco
-        bancoRepository.delete(bancoGetDTO.toBanco());
+        bancoRepository.delete(banco);
     }
 
     public List<BancoResponse> getBancosByNombre(String nombre) {
-        if(nombre == null || nombre.isEmpty()) {
+        if(nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre del banco no puede ser nulo o vacío");
         }
         
         // Filtra los bancos por nombre (ignorando mayúsculas y minúsculas)
         return bancoRepository.findByNombreContainingIgnoreCase(nombre)
             .stream()
-            .map(BancoResponse::fromBanco)
+            .map(bancoMapper::toResponse)
             .toList();
+    }
+
+    private Banco getBancoEntityById(Integer id) {
+        return bancoRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Banco no encontrado con ID: " + id));
     }
 }
