@@ -22,4 +22,11 @@ public class Huesped extends Usuario {
     @OneToMany(mappedBy = "huesped", cascade= CascadeType.ALL, orphanRemoval = true)
     private List<TarjetaCredito> tarjetaCredito;
 
+    public boolean tieneSoloUnaTarjetaPrincipal() {
+        if (tarjetaCredito == null || tarjetaCredito.isEmpty()) {
+            return false;
+        }
+        return tarjetaCredito.stream().filter(TarjetaCredito::isPrincipal).count() == 1;
+    }
+
 }

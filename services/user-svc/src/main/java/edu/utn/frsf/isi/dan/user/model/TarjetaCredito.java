@@ -48,4 +48,7 @@ public class TarjetaCredito {
     @JsonIgnore
     private Huesped huesped;
 
+    public boolean isPrincipal() {
+        return esPrincipal != null && esPrincipal;
+    }
 }
