@@ -1,9 +1,9 @@
 package edu.utn.frsf.isi.dan.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.utn.frsf.isi.dan.user.dto.CuentaBancariaRecord;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
+import edu.utn.frsf.isi.dan.user.dto.CuentaRequest;
+import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
 import edu.utn.frsf.isi.dan.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ public class UserControllerTest {
     @Test
     public void testCrearUsuarioHuesped() throws Exception {
         // Arrange
-        HuespedRecord huespedRecord = new HuespedRecord(
+        HuespedRequest huespedRecord = new HuespedRequest(
             "Jane", 
             "jane.smith@example.com", 
             "9876543210", 
@@ -63,8 +63,8 @@ public class UserControllerTest {
     public void testCrearUsuarioPropietario() throws Exception {
         // Arrange
         // Assuming CuentaBancariaRecord is a required field for PropietarioRecord
-        CuentaBancariaRecord cuentaBancariaRecord = new CuentaBancariaRecord("123456789", "BankName", "BranchName",1);
-        PropietarioRecord propietarioRecord = new PropietarioRecord("John", "Doe", "john.doe@example.com", 1234567890L, cuentaBancariaRecord);
+        CuentaRequest cuentaBancariaRecord = new CuentaRequest("123456789", "BankName", "BranchName",1);
+        PropietarioRequest propietarioRecord = new PropietarioRequest("John", "Doe", "john.doe@example.com", 1234567890L, cuentaBancariaRecord);
 
         // Act & Assert
         mockMvc.perform(post("/users/propietario")

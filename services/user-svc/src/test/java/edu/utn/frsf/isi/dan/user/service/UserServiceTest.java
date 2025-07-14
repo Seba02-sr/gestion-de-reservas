@@ -4,9 +4,9 @@ import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
 import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
 import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
 import edu.utn.frsf.isi.dan.user.dao.UsuarioRepository;
-import edu.utn.frsf.isi.dan.user.dto.CuentaBancariaRecord;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
+import edu.utn.frsf.isi.dan.user.dto.CuentaRequest;
+import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
@@ -48,7 +48,7 @@ public class UserServiceTest {
     @Test
     public void testCrearUsuarioHuesped() {
         // Arrange
-        HuespedRecord huespedRecord = mock(HuespedRecord.class);
+        HuespedRequest huespedRecord = mock(HuespedRequest.class);
         Banco banco = mock(Banco.class);
         TarjetaCredito tarjetaCredito = mock(TarjetaCredito.class);
         Huesped huesped = mock(Huesped.class);
@@ -72,8 +72,8 @@ public class UserServiceTest {
     @Test
     public void testCrearUsuarioPropietario() {
         // Arrange
-        PropietarioRecord propietarioRecord = mock(PropietarioRecord.class);
-        CuentaBancariaRecord cuentaRecord = mock(CuentaBancariaRecord.class);
+        PropietarioRequest propietarioRecord = mock(PropietarioRequest.class);
+        CuentaRequest cuentaRecord = mock(CuentaRequest.class);
         Banco banco = mock(Banco.class);
         Propietario propietario = mock(Propietario.class);
         CuentaBancaria cuentaBancaria = mock(CuentaBancaria.class);
