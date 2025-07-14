@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +22,10 @@ import edu.utn.frsf.isi.dan.user.service.BancoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
+@Validated
 @Tag(name = "Banco Controller", description = "Operaciones para la gestión de bancos")
 @RestController
 @RequestMapping("/bancos")
@@ -63,7 +67,7 @@ public class BancoController {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
                 )
     @GetMapping("/{id}")
-    public ResponseEntity<BancoResponse> getBancoById(@PathVariable Integer id) {
+    public ResponseEntity<BancoResponse> getBancoById(@PathVariable @Positive Integer id) {
         BancoResponse banco = bancoService.getBancoById(id);
         return ResponseEntity.ok(banco);
     }
@@ -77,7 +81,7 @@ public class BancoController {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
                 )
     @PutMapping("/{id}")
-    public ResponseEntity<BancoResponse> updateBanco(@PathVariable Integer id, @Valid @RequestBody BancoRequest bancoRecord) {
+    public ResponseEntity<BancoResponse> updateBanco(@PathVariable @Positive Integer id, @Valid @RequestBody BancoRequest bancoRecord) {
         BancoResponse bancoActualizado = bancoService.updateBanco(id, bancoRecord);
         return ResponseEntity.ok(bancoActualizado);
     }
@@ -90,7 +94,7 @@ public class BancoController {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
                 )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBanco(@PathVariable Integer id) {
+    public ResponseEntity<Void> deleteBanco(@PathVariable @Positive Integer id) {
         bancoService.deleteBanco(id);
         return ResponseEntity.noContent().build();
     }
@@ -103,7 +107,7 @@ public class BancoController {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
                 )
     @GetMapping("/buscar")
-    public ResponseEntity<List<BancoResponse>> getBancosByNombre(@RequestParam String nombre) {
+    public ResponseEntity<List<BancoResponse>> getBancosByNombre(@RequestParam @NotBlank String nombre) {
         List<BancoResponse> bancos = bancoService.getBancosByNombre(nombre);
         return ResponseEntity.ok(bancos);
     }
