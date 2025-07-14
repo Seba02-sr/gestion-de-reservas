@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
-import edu.utn.frsf.isi.dan.user.dto.BancoGetRecord;
-import edu.utn.frsf.isi.dan.user.dto.BancoRecord;
+import edu.utn.frsf.isi.dan.user.dto.BancoResponse;
+import edu.utn.frsf.isi.dan.user.dto.BancoRequest;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -18,15 +18,15 @@ public class BancoService {
     @Autowired
     private BancoRepository bancoRepository;
 
-    public List<BancoGetRecord> getAllBancos() {
+    public List<BancoResponse> getAllBancos() {
         // Devuelve una lista de bancosDTO para no devolver entidades del modelo directamente al frontend
         return bancoRepository.findAll()
             .stream()
-            .map(banco -> new BancoGetRecord(banco.getId(), banco.getNombre()))
+            .map(BancoResponse::fromBanco)
             .toList();
     }
 
-    public BancoGetRecord getBancoById(Integer id) {
+    public BancoResponse getBancoById(Integer id) {
         if(id == null) {
             throw new IllegalArgumentException("El ID del banco no puede ser nulo");
         }
@@ -36,31 +36,31 @@ public class BancoService {
             throw new EntityNotFoundException("Banco no encontrado con ID: " + id);
         }
 
-        return new BancoGetRecord(
-            bancoOptional.get().getId(),
-            bancoOptional.get().getNombre()
-        );
+        return BancoResponse.fromBanco(bancoOptional.get());
     }
 
-    public Banco createBanco(BancoRecord bancoDTO) {
+    public BancoResponse createBanco(BancoRequest bancoDTO) {
         if(bancoDTO == null) {
             throw new IllegalArgumentException("El banco no puede ser nulo");
         }
         // Convertir el DTO a entidad
         Banco banco = bancoDTO.toBanco();
-        return bancoRepository.save(banco);
+        Banco bancoGuardado = bancoRepository.save(banco);
+        return BancoResponse.fromBanco(bancoGuardado);
     }
 
-    public Banco updateBanco(Integer id, BancoRecord bancoDTO) {
+    public BancoResponse updateBanco(Integer id, BancoRequest bancoDTO) {
         if(id == null || bancoDTO == null) {
             throw new IllegalArgumentException("El ID del banco y el DTO no pueden ser nulos");
         }
         // Buscar el banco por ID
-        BancoGetRecord bancoGetDTO = getBancoById(id);
+        BancoResponse bancoGetDTO = getBancoById(id);
         // Actualizar los campos del banco
-        Banco banco = bancoGetDTO.toBanco();
+        Banco banco = bancoGetDTO.toBanco();    
         banco.setNombre(bancoDTO.nombre());
-        return bancoRepository.save(banco);
+
+        Banco bancoActualizado = bancoRepository.save(banco);
+        return BancoResponse.fromBanco(bancoActualizado);
     }
 
     public void deleteBanco(Integer id) {
@@ -68,12 +68,12 @@ public class BancoService {
             throw new IllegalArgumentException("El ID del banco no puede ser nulo");
         }
         // Buscar el banco por ID
-        BancoGetRecord bancoGetDTO = getBancoById(id);
+        BancoResponse bancoGetDTO = getBancoById(id);
         // Eliminar el banco
         bancoRepository.delete(bancoGetDTO.toBanco());
     }
 
-    public List<BancoGetRecord> getBancosByNombre(String nombre) {
+    public List<BancoResponse> getBancosByNombre(String nombre) {
         if(nombre == null || nombre.isEmpty()) {
             throw new IllegalArgumentException("El nombre del banco no puede ser nulo o vacío");
         }
@@ -81,7 +81,7 @@ public class BancoService {
         // Filtra los bancos por nombre (ignorando mayúsculas y minúsculas)
         return bancoRepository.findByNombreContainingIgnoreCase(nombre)
             .stream()
-            .map(banco -> new BancoGetRecord(banco.getId(), banco.getNombre()))
+            .map(BancoResponse::fromBanco)
             .toList();
     }
 }

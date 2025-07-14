@@ -5,7 +5,7 @@ import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record CuentaBancariaRecord(
+public record CuentaRequest(
     @NotBlank(message = "El número de cuenta no puede estar vacío")
     String numeroCuenta,
     @NotBlank(message = "El número de cuenta no puede estar vacío")
