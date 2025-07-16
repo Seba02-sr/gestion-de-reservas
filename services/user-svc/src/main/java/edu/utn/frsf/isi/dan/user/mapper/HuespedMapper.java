@@ -22,6 +22,11 @@ public interface HuespedMapper {
     @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
     Huesped toEntity(HuespedRequest request);
 
+    /**
+     * Convierte Huesped Entity a HuespedResponse
+     * @param huesped
+     * @return
+     */
     HuespedResponse toResponse(Huesped huesped);
 
     /**
