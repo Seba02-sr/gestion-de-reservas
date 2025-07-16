@@ -13,7 +13,7 @@ public interface BancoMapper {
 
     /**
      * Convierte BancoRequest a Banco Entity
-     * El ID se setea como null automaticamente apra neuvas entidades
+     * El ID se setea como null automaticamente para nuevas entidades
      * @param request
      * @return
      */

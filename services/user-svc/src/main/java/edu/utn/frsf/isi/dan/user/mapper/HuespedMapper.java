@@ -1,32 +1,36 @@
-// package edu.utn.frsf.isi.dan.user.mapper;
+package edu.utn.frsf.isi.dan.user.mapper;
 
-// import org.mapstruct.Mapper;
-// import org.mapstruct.factory.Mappers;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 
-// import edu.utn.frsf.isi.dan.user.model.Huesped;
-// import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
+import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
+import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.model.Huesped;
 
-// @Mapper
-// public class HuespedMapper {
-//     HuespedMapper INSTANCE = Mappers.getMapper(HuespedMapper.class);
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses= {TarjetaCreditoMapper.class})
+public interface HuespedMapper {
 
-//     @Mapping(target = "tarjetaCredito", source = "record")
-//     Huesped toHuesped(HuespedRecord record);
+    /**
+     * Convierte HuespedRequest a Huesped Entity
+     * El ID se setea como null automaticamente para nuevas entidades
+     * 
+     * @param request
+     * @return
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
+    Huesped toEntity(HuespedRequest request);
 
-//     default List<TarjetaCredito> mapTarjetas(HuespedRecord record) {
-//         if(record.numeroCC() == null) {
-//             return List.of();
-//         }
+    HuespedResponse toResponse(Huesped huesped);
 
-//         TarjetaCredito tarjeta = TarjetaCredito.builder()
-//             .numero(record.numeroCC())
-//             .nombreTitular(record.nombreTitular())
-//             .fechaVencimiento(record.fechaVencimientoCC())
-//             .cvc(record.cvcCC())
-//             .esPrincipal(record.esPrincipalCC())
-//             .banco(Banco.builder().id(record.idBanco()).build())
-//             .build();
-
-//         return List.of(tarjeta);
-//     }
-// }
+    /**
+     * Actualiza untidad existente con datos del request.
+     * Utilizado para operaciones de UPDATE
+     * @param request
+     * @param huesped
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
+    void updateEntityFromRequest(HuespedRequest request, @org.mapstruct.MappingTarget Huesped huesped);
+}
