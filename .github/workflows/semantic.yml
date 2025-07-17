@@ -1,0 +1,26 @@
+name: Semantic Pull Request Check
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  check-commit-message:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        with:
+          subjectPattern: '^[a-z]+\\(\\d+\\): .+'
+          types: |
+            feat
+            fix
+            chore
+            docs
+            style
+            refactor
+            perf
+            test
+          titlePattern: '^\\d{4}-(t|rfe|qa|extra)-i\\d+-[a-z0-9-]+$'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
