@@ -83,7 +83,7 @@ public class BancoService {
             .toList();
     }
 
-    private Banco getBancoEntityById(Integer id) {
+    public Banco getBancoEntityById(Integer id) {
         return bancoRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Banco no encontrado con ID: " + id));
     }
