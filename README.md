@@ -10,7 +10,10 @@ El sistema incluye autenticación de usuarios, gestión de datos persistentes co
 
 - Arrua Alejandro   
 - Nicle Santiago
-- Ramella Sebastian 
+- Ramella Sebastian
+
+## Diagrama de datos
+[Diagrama de modelo de datos](services/user-svc/modelo.mmd)
 
 ---
 
