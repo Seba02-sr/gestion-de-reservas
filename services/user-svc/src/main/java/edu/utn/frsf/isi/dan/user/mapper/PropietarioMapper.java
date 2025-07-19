@@ -20,7 +20,9 @@ public interface PropietarioMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cuentaBancaria", source = "cuentaBancaria")
-    @Mapping(target = "idHotel", source = "idHotel")
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
+    @Mapping(target = "fechaEliminado", ignore = true)
     Propietario toEntity(PropietarioRequest request);
 
     /**
@@ -29,7 +31,6 @@ public interface PropietarioMapper {
      * @return
      */
     @Mapping(target = "cuentaBancaria", source = "cuentaBancaria")
-    @Mapping(target = "idHotel", source = "idHotel")
     PropietarioResponse toResponse(Propietario propietario);
 
     /**
@@ -40,6 +41,8 @@ public interface PropietarioMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cuentaBancaria", source = "cuentaBancaria")
-    @Mapping(target = "idHotel", source = "idHotel")
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
+    @Mapping(target = "fechaEliminado", ignore = true)
     void updateEntityFromRequest(PropietarioRequest request, @MappingTarget Propietario propietario);
 }

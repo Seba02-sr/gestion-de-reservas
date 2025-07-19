@@ -1,5 +1,8 @@
 package edu.utn.frsf.isi.dan.user.model;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.Entity;
@@ -28,4 +31,13 @@ public abstract class Usuario {
     protected String telefono;
     protected String dni;
     
+    protected String username;
+    protected String password;
+    protected Boolean activo;
+    
+    @Column(name = "fecha_registro")
+    protected LocalDateTime fechaRegistro;
+
+    @Column(name = "fecha_eliminado")
+    protected LocalDateTime fechaEliminado;
 }
