@@ -39,7 +39,8 @@ public class TarjetaCredito {
     @Column(name = "codigo_seguridad")    
     private String cvc;
     @Column(name = "es_principal")    
-    private Boolean esPrincipal;
+    @Builder.Default
+    private Boolean esPrincipal = false;
 
     @ManyToOne
     @JoinColumn(name = "banco_id")
