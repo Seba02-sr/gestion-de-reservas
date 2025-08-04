@@ -2,10 +2,19 @@ package edu.utn.frsf.isi.dan.user.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import lombok.Builder;
+
+@Builder
 public record BancoResponse(
     Integer id,
     String nombre,
     Boolean activo,
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
     LocalDateTime fechaRegistro,
-    LocalDateTime fechaEliminado
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
+    LocalDateTime fechaEliminado,
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
+    LocalDateTime fechaModificado
 ) {}
