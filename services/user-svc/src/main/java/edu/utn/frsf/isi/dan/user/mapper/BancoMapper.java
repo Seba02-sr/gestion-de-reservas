@@ -3,12 +3,13 @@ package edu.utn.frsf.isi.dan.user.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
+import org.mapstruct.ReportingPolicy;
 
 import edu.utn.frsf.isi.dan.user.dto.BancoRequest;
 import edu.utn.frsf.isi.dan.user.dto.BancoResponse;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BancoMapper {
 
     /**
@@ -18,9 +19,6 @@ public interface BancoMapper {
      * @return
      */
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "fechaEliminado", ignore = true)
-    @Mapping(target = "fechaRegistro", ignore = true)
     Banco toEntity(BancoRequest request);
 
     /**
@@ -37,9 +35,6 @@ public interface BancoMapper {
      * @param banco
      */
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "fechaEliminado", ignore = true)
-    @Mapping(target = "fechaRegistro", ignore = true)
     void updateEntityFromRequest(BancoRequest request, @org.mapstruct.MappingTarget Banco banco);
 
 }

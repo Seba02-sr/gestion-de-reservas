@@ -4,12 +4,13 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import edu.utn.frsf.isi.dan.user.dto.CuentaRequest;
 import edu.utn.frsf.isi.dan.user.dto.CuentaResponse;
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CuentaMapper {
 
     /**
@@ -22,7 +23,6 @@ public interface CuentaMapper {
     @Mapping(target = "banco.id", source = "idBanco")
     @Mapping(target = "banco.nombre", ignore = true)
     @Mapping(target = "propietario", ignore = true)
-    @Mapping(target = "fechaRegistro", ignore = true)
     CuentaBancaria toEntity(CuentaRequest request);
 
     /**
@@ -43,6 +43,5 @@ public interface CuentaMapper {
     @Mapping(target = "banco.id", source = "idBanco")
     @Mapping(target = "banco.nombre", ignore = true)
     @Mapping(target = "propietario", ignore = true)
-    @Mapping(target = "fechaRegistro", ignore = true)
     void updateEntityFromRequest(CuentaRequest request, @MappingTarget CuentaBancaria cuentaBancaria);
 }

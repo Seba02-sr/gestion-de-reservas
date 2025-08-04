@@ -3,12 +3,13 @@ package edu.utn.frsf.isi.dan.user.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
+import org.mapstruct.ReportingPolicy;
 
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses= {TarjetaCreditoMapper.class})
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses= {TarjetaCreditoMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface HuespedMapper {
 
     /**
@@ -20,9 +21,6 @@ public interface HuespedMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
-    @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "fechaRegistro", ignore = true)
-    @Mapping(target = "fechaEliminado", ignore = true)
     Huesped toEntity(HuespedRequest request);
 
     /**
@@ -40,8 +38,5 @@ public interface HuespedMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
-    @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "fechaRegistro", ignore = true)
-    @Mapping(target = "fechaEliminado", ignore = true)
     void updateEntityFromRequest(HuespedRequest request, @org.mapstruct.MappingTarget Huesped huesped);
 }

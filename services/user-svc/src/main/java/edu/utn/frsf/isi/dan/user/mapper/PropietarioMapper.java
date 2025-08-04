@@ -4,12 +4,13 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioResponse;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses = CuentaMapper.class)
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses = CuentaMapper.class, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PropietarioMapper {
 
     /**
@@ -20,9 +21,6 @@ public interface PropietarioMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cuentaBancaria", source = "cuentaBancaria")
-    @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "fechaRegistro", ignore = true)
-    @Mapping(target = "fechaEliminado", ignore = true)
     Propietario toEntity(PropietarioRequest request);
 
     /**
@@ -41,8 +39,5 @@ public interface PropietarioMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "cuentaBancaria", source = "cuentaBancaria")
-    @Mapping(target = "activo", ignore = true)
-    @Mapping(target = "fechaRegistro", ignore = true)
-    @Mapping(target = "fechaEliminado", ignore = true)
     void updateEntityFromRequest(PropietarioRequest request, @MappingTarget Propietario propietario);
 }
