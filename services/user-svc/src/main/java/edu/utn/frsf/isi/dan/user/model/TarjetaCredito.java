@@ -1,7 +1,5 @@
 package edu.utn.frsf.isi.dan.user.model;
 
-import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import edu.utn.frsf.isi.dan.user.util.AuditableEntity;

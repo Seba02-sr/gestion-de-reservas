@@ -1,9 +1,6 @@
 package edu.utn.frsf.isi.dan.user.model;
 
-import java.time.LocalDateTime;
-
 import edu.utn.frsf.isi.dan.user.util.AuditableEntity;
-import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.Entity;
