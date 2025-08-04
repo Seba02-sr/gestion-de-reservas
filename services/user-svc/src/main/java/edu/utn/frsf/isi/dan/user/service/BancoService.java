@@ -23,7 +23,7 @@ public class BancoService {
 
     public List<BancoResponse> getAllBancos() {
         // Devuelve una lista de bancosDTO para no devolver entidades del modelo directamente al frontend
-        return bancoRepository.findAll()
+        return bancoRepository.findByActivoTrue()
             .stream()
             .map(bancoMapper::toResponse)
             .toList();
@@ -54,6 +54,7 @@ public class BancoService {
         }
         // Buscar el banco por ID
         Banco bancoExistente = getBancoEntityById(id);
+        bancoExistente.marcarComoModificado();
         // Actualizar los campos del banco
         bancoMapper.updateEntityFromRequest(bancoRequest, bancoExistente);
         Banco bancoActualizado = bancoRepository.save(bancoExistente);
@@ -61,14 +62,17 @@ public class BancoService {
         return bancoMapper.toResponse(bancoActualizado);
     }
 
-    public void deleteBanco(Integer id) {
+    public BancoResponse deleteBanco(Integer id) {
         if(id == null) {
             throw new IllegalArgumentException("El ID del banco no puede ser nulo");
         }
         // Buscar el banco por ID
         Banco banco = getBancoEntityById(id);
+        banco.marcarComoEliminado();
         // Eliminar el banco
-        bancoRepository.delete(banco);
+        Banco bancoSaved = bancoRepository.save(banco);
+
+        return bancoMapper.toResponse(bancoSaved);
     }
 
     public List<BancoResponse> getBancosByNombre(String nombre) {
@@ -77,14 +81,14 @@ public class BancoService {
         }
         
         // Filtra los bancos por nombre (ignorando mayúsculas y minúsculas)
-        return bancoRepository.findByNombreContainingIgnoreCase(nombre)
+        return bancoRepository.findByActivoTrueAndNombreContainingIgnoreCase(nombre)
             .stream()
             .map(bancoMapper::toResponse)
             .toList();
     }
 
     public Banco getBancoEntityById(Integer id) {
-        return bancoRepository.findById(id)
+        return bancoRepository.findByIdAndActivoTrue(id)
         .orElseThrow(() -> new EntityNotFoundException("Banco no encontrado con ID: " + id));
     }
 }
