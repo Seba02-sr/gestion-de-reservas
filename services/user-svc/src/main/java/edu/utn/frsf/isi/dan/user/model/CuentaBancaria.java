@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.user.model;
 
 import java.time.LocalDateTime;
 
+import edu.utn.frsf.isi.dan.user.util.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,13 +13,15 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "cuentas_bancarias")
 @Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class CuentaBancaria {
+public class CuentaBancaria extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +39,4 @@ public class CuentaBancaria {
     @OneToOne(mappedBy = "cuentaBancaria")
     private Propietario propietario;
 
-    @Column(name = "fecha_registro")
-    private LocalDateTime fechaRegistro;
 }

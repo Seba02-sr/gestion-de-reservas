@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.user.model;
 
 import java.time.LocalDateTime;
 
+import edu.utn.frsf.isi.dan.user.util.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;
@@ -13,6 +14,7 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -20,8 +22,9 @@ import lombok.NoArgsConstructor;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo", discriminatorType = DiscriminatorType.STRING)
 @Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public abstract class Usuario {
+public abstract class Usuario extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected Integer id;
@@ -33,11 +36,4 @@ public abstract class Usuario {
     
     protected String username;
     protected String password;
-    protected Boolean activo;
-    
-    @Column(name = "fecha_registro")
-    protected LocalDateTime fechaRegistro;
-
-    @Column(name = "fecha_eliminado")
-    protected LocalDateTime fechaEliminado;
 }
