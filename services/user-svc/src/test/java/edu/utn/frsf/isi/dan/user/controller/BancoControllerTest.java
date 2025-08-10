@@ -42,170 +42,288 @@ import jakarta.persistence.EntityNotFoundException;
 @DisplayName("Tests del COntrolador de Bancos")
 public class BancoControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean
-    private BancoService bancoService;
+        @MockitoBean
+        private BancoService bancoService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    private BancoRequest bancoRequest;
-    private BancoResponse bancoResponse;
-    private List<BancoResponse> bancosResponse;
+        private BancoRequest bancoRequest;
+        private BancoResponse bancoResponse;
+        private List<BancoResponse> bancosResponse;
 
-    @BeforeEach
-    void setUp() {
-        // Inicializar los objetos necesarios para los tests
-        bancoRequest = new BancoRequest("Banco de Prueba");
-        bancoResponse = BancoResponse.builder()
-                .id(1)
-                .nombre("Banco de Prueba")
-                .activo(true)
-                .fechaRegistro(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS))
-                .fechaEliminado(null)
-                .fechaModificado(null)
-                .build();
-        bancosResponse = List.of(bancoResponse);
+        @BeforeEach
+        void setUp() {
+                // Inicializar los objetos necesarios para los tests
+                bancoRequest = new BancoRequest("Banco de Prueba");
+                bancoResponse = BancoResponse.builder()
+                                .id(1)
+                                .nombre("Banco de Prueba")
+                                .activo(true)
+                                .fechaRegistro(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS))
+                                .fechaEliminado(null)
+                                .fechaModificado(null)
+                                .build();
+                bancosResponse = List.of(bancoResponse);
 
-        // Configurar el comportamiento del servicio mockeado
-        Mockito.when(bancoService.createBanco(Mockito.any(BancoRequest.class))).thenReturn(bancoResponse);
-        Mockito.when(bancoService.getAllBancos()).thenReturn(bancosResponse);
-    }
+                // Configurar el comportamiento del servicio mockeado
+                Mockito.when(bancoService.createBanco(Mockito.any(BancoRequest.class))).thenReturn(bancoResponse);
+                Mockito.when(bancoService.getAllBancos()).thenReturn(bancosResponse);
+        }
 
-    @Test
-    @DisplayName("Crear un banco exitosamente - debe retornar 201 y el objeto creado")
-    void createBanco_DebeRetornar201_CuandoBancoEsValido() throws Exception {
-        mockMvc.perform(post("/bancos")
-                .contentType(MediaType.APPLICATION_JSON_VALUE)
-                .content(objectMapper.writeValueAsString(bancoRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(bancoResponse.id()))
-                .andExpect(jsonPath("$.nombre").value(bancoResponse.nombre()))
-                .andExpect(jsonPath("$.activo").value(bancoResponse.activo()))
-                .andExpect(jsonPath("$.fechaRegistro").value(bancoResponse.fechaRegistro().toString()));
+        /*
+         * ==========================
+         * Tests para crear un banco
+         * (POST /bancos)
+         * ==========================
+         */
 
-        verify(bancoService, times(1)).createBanco(any(BancoRequest.class));
-    }
+        @Test
+        @DisplayName("Crear un banco exitosamente - debe retornar 201 y el objeto creado")
+        void createBanco_DebeRetornar201_CuandoBancoEsValido() throws Exception {
+                mockMvc.perform(post("/bancos")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(objectMapper.writeValueAsString(bancoRequest)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").value(bancoResponse.id()))
+                                .andExpect(jsonPath("$.nombre").value(bancoResponse.nombre()))
+                                .andExpect(jsonPath("$.activo").value(bancoResponse.activo()))
+                                .andExpect(jsonPath("$.fechaRegistro").value(bancoResponse.fechaRegistro().toString()));
 
-    @Test
-    @DisplayName("Obtener todos los bancos exitosamente - debe retornar 200 y una lista de bancos")
-    void getAllBancos_DebeRetornar200_CuandoHayBancos() throws Exception {
-        mockMvc.perform(get("/bancos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(bancosResponse.size()))
-                .andExpect(jsonPath("$[0].id").value(bancoResponse.id()))
-                .andExpect(jsonPath("$[0].nombre").value(bancoResponse.nombre()))
-                .andExpect(jsonPath("$[0].activo").value(bancoResponse.activo()))
-                .andExpect(jsonPath("$[0].fechaRegistro").value(bancoResponse.fechaRegistro().toString()));
+                verify(bancoService, times(1)).createBanco(any(BancoRequest.class));
+        }
 
-        verify(bancoService, times(1)).getAllBancos();
-    }
+        @Test
+        @DisplayName("Crear un banco con datos inválidos - debe retornar 400")
+        void createBanco_DebeRetornar400_CuandoBancoEsInvalido() throws Exception {
+                BancoRequest invalidRequest = new BancoRequest("");
+                mockMvc.perform(post("/bancos")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(objectMapper.writeValueAsString(invalidRequest)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    @Test
-    @DisplayName("Obtener banco por ID exitosamente - debe retornar 200 y el banco")
-    void getBancoById_DebeRetornar200() throws Exception {
-        when(bancoService.getBancoById(1)).thenReturn(bancoResponse);
+        /*
+         * ==========================
+         * Tests para obtener bancos
+         * (GET /bancos)
+         * ==========================
+         */
+        @Test
+        @DisplayName("Obtener todos los bancos exitosamente - debe retornar 200 y una lista de bancos")
+        void getAllBancos_DebeRetornar200_CuandoHayBancos() throws Exception {
+                mockMvc.perform(get("/bancos"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(bancosResponse.size()))
+                                .andExpect(jsonPath("$[0].id").value(bancoResponse.id()))
+                                .andExpect(jsonPath("$[0].nombre").value(bancoResponse.nombre()))
+                                .andExpect(jsonPath("$[0].activo").value(bancoResponse.activo()))
+                                .andExpect(jsonPath("$[0].fechaRegistro")
+                                                .value(bancoResponse.fechaRegistro().toString()));
 
-        mockMvc.perform(get("/bancos/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(bancoResponse.id()))
-                .andExpect(jsonPath("$.nombre").value(bancoResponse.nombre()));
+                verify(bancoService, times(1)).getAllBancos();
+        }
 
-        verify(bancoService, times(1)).getBancoById(1);
-    }
+        @Test
+        @DisplayName("Obtener todos los bancos cuando no hay bancos - debe retornar 200 y una lista vacía")
+        void getAllBancos_DebeRetornar200_CuandoNoHayBancos() throws Exception {
+                when(bancoService.getAllBancos()).thenReturn(List.of());
 
-    @Test
-    @DisplayName("Obtener banco con ID inválido - debe retornar 400")
-    void getBancoById_DebeRetornar400_CuandoIdNoExiste() throws Exception {
+                mockMvc.perform(get("/bancos"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(0));
+                verify(bancoService, times(1)).getAllBancos();
+        }
 
-        given(bancoService.getBancoById(-5)).willThrow(new EntityNotFoundException("Banco no encontrado"));
+        /*
+         * ==========================
+         * Tests para obtener un banco por ID
+         * (GET /bancos/{id})
+         * ==========================
+         */
 
-        mockMvc.perform(get("/bancos/-5"))
-                .andExpect(status().isBadRequest());
-    }
+        @Test
+        @DisplayName("Obtener banco por ID exitosamente - debe retornar 200 y el banco")
+        void getBancoById_DebeRetornar200() throws Exception {
+                when(bancoService.getBancoById(1)).thenReturn(bancoResponse);
 
-    @Test
-    @DisplayName("Actualizar banco exitosamente - debe retornar 200 y el banco actualizado")
-    void updateBanco_DebeRetornar200() throws Exception {
-        BancoResponse actualizado = BancoResponse.builder()
-                .id(1)
-                .nombre("Banco Actualizado")
-                .activo(true)
-                .fechaRegistro(bancoResponse.fechaRegistro())
-                .fechaModificado(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS))
-                .build();
+                mockMvc.perform(get("/bancos/1"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(bancoResponse.id()))
+                                .andExpect(jsonPath("$.nombre").value(bancoResponse.nombre()));
 
-        when(bancoService.updateBanco(eq(1), any(BancoRequest.class))).thenReturn(actualizado);
+                verify(bancoService, times(1)).getBancoById(1);
+        }
 
-        mockMvc.perform(put("/bancos/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(bancoRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.nombre").value("Banco Actualizado"))
-                .andExpect(jsonPath("$.fechaModificado").value(actualizado.fechaModificado().toString()));
+        @Test
+        @DisplayName("Obtener banco con ID Negativo - debe retornar 400")
+        void getBancoById_DebeRetornar400_CuandoIdEsNegativo() throws Exception {
 
-        verify(bancoService, times(1)).updateBanco(eq(1), any(BancoRequest.class));
-    }
+                given(bancoService.getBancoById(-5)).willThrow(new EntityNotFoundException("Banco no encontrado"));
 
-    @Test
-    @DisplayName("Actualizar banco con ID inválido - debe retornar 400")
-    void updateBanco_DebeRetornar400_CuandoIdEsInvalido() throws Exception {
-        mockMvc.perform(put("/bancos/-1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(bancoRequest)))
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(get("/bancos/-5"))
+                                .andExpect(status().isBadRequest());
+        }
 
-    @Test
-    @DisplayName("Eliminar banco exitosamente - debe retornar 200 y el banco eliminado")
-    void deleteBanco_DebeRetornar200() throws Exception {
-        BancoResponse eliminado = BancoResponse.builder()
-                .id(1)
-                .nombre("Banco Eliminado")
-                .activo(false)
-                .fechaRegistro(bancoResponse.fechaRegistro())
-                .fechaEliminado(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS))
-                .build();
+        @Test
+        @DisplayName("Obtener banco con ID no existente - debe retornar 404")
+        void getBancoById_DebeRetornar404_CuandoIdNoExiste() throws Exception {
+                when(bancoService.getBancoById(999)).thenThrow(new EntityNotFoundException("Banco no encontrado"));
+                mockMvc.perform(get("/bancos/999"))
+                                .andExpect(status().isNotFound());
+                verify(bancoService, times(1)).getBancoById(999);
+        }
 
-        when(bancoService.deleteBanco(1)).thenReturn(eliminado);
+        /*
+         * ==========================
+         * Tests para actualizar un banco
+         * (PUT /bancos/{id})
+         * ==========================
+         */
 
-        mockMvc.perform(delete("/bancos/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.activo").value(false))
-                .andExpect(jsonPath("$.fechaEliminado").value(eliminado.fechaEliminado().toString()));
+        @Test
+        @DisplayName("Actualizar banco exitosamente - debe retornar 200 y el banco actualizado")
+        void updateBanco_DebeRetornar200() throws Exception {
+                BancoResponse actualizado = BancoResponse.builder()
+                                .id(1)
+                                .nombre("Banco Actualizado")
+                                .activo(true)
+                                .fechaRegistro(bancoResponse.fechaRegistro())
+                                .fechaModificado(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS))
+                                .build();
 
-        verify(bancoService, times(1)).deleteBanco(1);
-    }
+                when(bancoService.updateBanco(eq(1), any(BancoRequest.class))).thenReturn(actualizado);
 
-    @Test
-    @DisplayName("Eliminar banco con ID inválido - debe retornar 400")
-    void deleteBanco_DebeRetornar400_CuandoIdEsInvalido() throws Exception {
-        mockMvc.perform(delete("/bancos/-3"))
-                .andExpect(status().isBadRequest());
-    }
+                mockMvc.perform(put("/bancos/1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(bancoRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(1))
+                                .andExpect(jsonPath("$.nombre").value("Banco Actualizado"))
+                                .andExpect(jsonPath("$.fechaModificado")
+                                                .value(actualizado.fechaModificado().toString()));
 
-    @Test
-    @DisplayName("Buscar bancos por nombre exitosamente - debe retornar 200 y una lista")
-    void getBancosByNombre_DebeRetornar200() throws Exception {
-        when(bancoService.getBancosByNombre("Prueba")).thenReturn(bancosResponse);
+                verify(bancoService, times(1)).updateBanco(eq(1), any(BancoRequest.class));
+        }
 
-        mockMvc.perform(get("/bancos/buscar").param("nombre", "Prueba"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].nombre").value("Banco de Prueba"));
+        @Test
+        @DisplayName("Actualizar banco con ID Negativo - debe retornar 400")
+        void updateBanco_DebeRetornar400_CuandoIdEsNegativo() throws Exception {
+                mockMvc.perform(put("/bancos/-1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(bancoRequest)))
+                                .andExpect(status().isBadRequest());
+        }
 
-        verify(bancoService, times(1)).getBancosByNombre("Prueba");
-    }
+        @Test
+        @DisplayName("Actualizar banco con ID inexistente - debe retornar 404")
+        void updateBanco_DebeRetornar404_CuandoIdNoExiste() throws Exception {
+                when(bancoService.updateBanco(eq(999), any(BancoRequest.class)))
+                                .thenThrow(new EntityNotFoundException("Banco no encontrado"));
+                mockMvc.perform(put("/bancos/999")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(bancoRequest)))
+                                .andExpect(status().isNotFound());
+                verify(bancoService, times(1)).updateBanco(eq(999), any(BancoRequest.class));
+        }
 
-    @Test
-    @DisplayName("Buscar bancos con nombre vacío - debe retornar 400")
-    void getBancosByNombre_DebeRetornar400_CuandoNombreEsVacio() throws Exception {
-        mockMvc.perform(get("/bancos/buscar").param("nombre", ""))
-                .andExpect(status().isBadRequest());
-    }
+        @Test
+        @DisplayName("Actualizar banco con datos inválidos - debe retornar 400")
+        void updateBanco_DebeRetornar400_CuandoBancoEsInvalido() throws Exception {
+                BancoRequest invalido = new BancoRequest("");
+                mockMvc.perform(put("/bancos/1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(invalido)))
+                                .andExpect(status().isBadRequest());
+        }
+
+        /*
+         * ==========================
+         * Tests para eliminar un banco
+         * (DELETE /bancos/{id})
+         * ==========================
+         */
+
+        @Test
+        @DisplayName("Eliminar banco exitosamente - debe retornar 200 y el banco eliminado")
+        void deleteBanco_DebeRetornar200() throws Exception {
+                BancoResponse eliminado = BancoResponse.builder()
+                                .id(1)
+                                .nombre("Banco Eliminado")
+                                .activo(false)
+                                .fechaRegistro(bancoResponse.fechaRegistro())
+                                .fechaEliminado(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS))
+                                .build();
+
+                when(bancoService.deleteBanco(1)).thenReturn(eliminado);
+
+                mockMvc.perform(delete("/bancos/1"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(1))
+                                .andExpect(jsonPath("$.activo").value(false))
+                                .andExpect(jsonPath("$.fechaEliminado").value(eliminado.fechaEliminado().toString()));
+
+                verify(bancoService, times(1)).deleteBanco(1);
+        }
+
+        @Test
+        @DisplayName("Eliminar banco con ID negativo - debe retornar 400")
+        void deleteBanco_DebeRetornar400_CuandoIdEsNegativo() throws Exception {
+                mockMvc.perform(delete("/bancos/-3"))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Eliminar banco con ID inexistente - debe retornar 404")
+        void deleteBanco_DebeRetornar404_CuandoIdNoExiste() throws Exception {
+                when(bancoService.deleteBanco(999)).thenThrow(new EntityNotFoundException("Banco no encontrado"));
+
+                mockMvc.perform(delete("/bancos/999"))
+                                .andExpect(status().isNotFound());
+
+                verify(bancoService, times(1)).deleteBanco(999);
+        }
+
+        /*
+         * ==========================
+         * Tests para buscar bancos por nombre
+         * (GET /bancos/buscar)
+         * ==========================
+         */
+
+        @Test
+        @DisplayName("Buscar bancos por nombre exitosamente - debe retornar 200 y una lista")
+        void getBancosByNombre_DebeRetornar200() throws Exception {
+                when(bancoService.getBancosByNombre("Prueba")).thenReturn(bancosResponse);
+
+                mockMvc.perform(get("/bancos/buscar").param("nombre", "Prueba"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(1))
+                                .andExpect(jsonPath("$[0].nombre").value("Banco de Prueba"));
+
+                verify(bancoService, times(1)).getBancosByNombre("Prueba");
+        }
+
+        @Test
+        @DisplayName("Buscar bancos por nombre sin resultados - debe retornar 200 con lista vacía")
+        void getBancosByNombre_DebeRetornar200_CuandoNoHayResultados() throws Exception {
+                when(bancoService.getBancosByNombre("Inexistente")).thenReturn(List.of());
+
+                mockMvc.perform(get("/bancos/buscar").param("nombre", "Inexistente"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(0));
+
+                verify(bancoService, times(1)).getBancosByNombre("Inexistente");
+        }
+
+        @Test
+        @DisplayName("Buscar bancos con nombre vacío - debe retornar 400")
+        void getBancosByNombre_DebeRetornar400_CuandoNombreEsVacio() throws Exception {
+                mockMvc.perform(get("/bancos/buscar").param("nombre", ""))
+                                .andExpect(status().isBadRequest());
+        }
 
 }
