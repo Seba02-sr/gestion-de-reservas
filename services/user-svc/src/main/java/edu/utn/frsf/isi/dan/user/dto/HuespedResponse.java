@@ -6,6 +6,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import lombok.Builder;
+
+@Builder
 public record HuespedResponse(
     Integer id,
     String nombre,

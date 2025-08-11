@@ -16,14 +16,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "tarjetas_credito")
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
 public class TarjetaCredito extends AuditableEntity {
 
     @Id

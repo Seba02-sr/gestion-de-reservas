@@ -2,7 +2,9 @@ package edu.utn.frsf.isi.dan.user.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 
+@Builder
 public record CuentaRequest(
     @NotBlank(message = "El número de cuenta no puede estar vacío")
     String numeroCuenta,

@@ -9,12 +9,14 @@ import jakarta.persistence.OneToOne;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @DiscriminatorValue("PROPIETARIO")
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 public class Propietario extends Usuario {
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)

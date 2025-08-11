@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolationException;
+
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RestControllerAdvice
@@ -61,4 +63,19 @@ public class ControllerAdvisor {
         return new ResponseEntity<>(exceptionInfo, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ExceptionInfo> handleConstraintViolationException(ConstraintViolationException ex, WebRequest request) {
+        String errorMessage = ex.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .reduce((message1, message2) -> message1 + ", " + message2)
+                .orElse("Constraint violation error");
+
+        ExceptionInfo exceptionInfo = new ExceptionInfo(
+                errorMessage,
+                request.getDescription(false),
+                String.valueOf(System.currentTimeMillis()),
+                HttpStatus.BAD_REQUEST.value()
+        );
+        return new ResponseEntity<>(exceptionInfo, HttpStatus.BAD_REQUEST);
+    }
 }

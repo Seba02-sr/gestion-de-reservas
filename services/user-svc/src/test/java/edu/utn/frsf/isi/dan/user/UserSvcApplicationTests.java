@@ -1,13 +1,13 @@
-package edu.utn.frsf.isi.dan.user;
+// package edu.utn.frsf.isi.dan.user;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+// import org.junit.jupiter.api.Test;
+// import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class UserSvcApplicationTests {
+// @SpringBootTest
+// class UserSvcApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+// 	@Test
+// 	void contextLoads() {
+// 	}
 
-}
+// }

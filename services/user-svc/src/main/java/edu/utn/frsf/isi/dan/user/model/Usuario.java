@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "usuarios")
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
+@SuperBuilder
 public abstract class Usuario extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
