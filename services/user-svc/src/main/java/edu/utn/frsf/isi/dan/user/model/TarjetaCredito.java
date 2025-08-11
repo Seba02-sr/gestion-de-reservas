@@ -1,9 +1,8 @@
 package edu.utn.frsf.isi.dan.user.model;
 
-import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import edu.utn.frsf.isi.dan.user.util.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,15 +14,17 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "tarjetas_credito")
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class TarjetaCredito {
+public class TarjetaCredito extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,7 +40,8 @@ public class TarjetaCredito {
     @Column(name = "codigo_seguridad")    
     private String cvc;
     @Column(name = "es_principal")    
-    private Boolean esPrincipal;
+    @Builder.Default
+    private Boolean esPrincipal = false;
 
     @ManyToOne
     @JoinColumn(name = "banco_id")
@@ -49,12 +51,6 @@ public class TarjetaCredito {
     @JoinColumn(name = "usuario_id")
     @JsonIgnore
     private Huesped huesped;
-
-    @Column(name = "fecha_registro")
-    private LocalDateTime fechaRegistro;
-
-    @Builder.Default
-    private Boolean activo = true;
 
     public boolean isPrincipal() {
         return esPrincipal != null && esPrincipal;

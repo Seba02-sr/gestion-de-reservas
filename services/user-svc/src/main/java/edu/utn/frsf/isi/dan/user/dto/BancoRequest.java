@@ -2,7 +2,9 @@ package edu.utn.frsf.isi.dan.user.dto;
 
 import org.hibernate.validator.constraints.Length;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
 
+@Builder
 public record BancoRequest(
     @NotBlank(message = "El nombre no puede estar vacío")
     @Length(max = 255, message = "El nombre no puede tener mas de 255 caracteres")

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import edu.utn.frsf.isi.dan.user.dto.BancoResponse;
 import edu.utn.frsf.isi.dan.user.dto.BancoRequest;
@@ -34,83 +37,74 @@ public class BancoController {
     @Autowired
     private BancoService bancoService;
 
-    @Operation(summary = "Crear un banco", 
-                description = "Crea un nuevo banco",
-                responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Banco creado exitosamente"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Error en la solicitud"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
-    )
+    @Operation(summary = "Crear un banco", description = "Crea un nuevo banco")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Banco creado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor") })
+
     @PostMapping
-    public ResponseEntity<Void> createBanco(@Valid @RequestBody BancoRequest bancoRecord) {
-        bancoService.createBanco(bancoRecord);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<BancoResponse> createBanco(@Valid @RequestBody BancoRequest bancoRecord) {
+        BancoResponse banco = bancoService.createBanco(bancoRecord);
+        return ResponseEntity.status(HttpStatus.CREATED).body(banco);
     }
 
-    @Operation(summary = "Obtener todos los bancos", 
-                description = "Devuelve una lista de bancos",
-                responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Lista de bancos obtenida exitosamente"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
-                    )
+    @Operation(summary = "Obtener todos los bancos", description = "Devuelve una lista de bancos")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de bancos obtenida exitosamente"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor") })
     @GetMapping
     public ResponseEntity<List<BancoResponse>> getAllBancos() {
         List<BancoResponse> bancos = bancoService.getAllBancos();
         return ResponseEntity.ok(bancos);
     }
 
-    @Operation(summary = "Obtener banco por ID", 
-                description = "Devuelve un banco por su ID",
-                responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Banco encontrado"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Banco no encontrado"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
-                )
+    @Operation(summary = "Obtener banco por ID", description = "Devuelve un banco por su ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Banco encontrado"),
+            @ApiResponse(responseCode = "400", description = "ID inválido"),
+            @ApiResponse(responseCode = "404", description = "Banco no encontrado"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor") })
     @GetMapping("/{id}")
     public ResponseEntity<BancoResponse> getBancoById(@PathVariable @Positive Integer id) {
         BancoResponse banco = bancoService.getBancoById(id);
         return ResponseEntity.ok(banco);
     }
 
-    @Operation(summary = "Actualizar banco", 
-                description = "Actualiza los datos de un banco",
-                responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Banco actualizado exitosamente"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Error en la solicitud"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Banco no encontrado"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
-                )
+    @Operation(summary = "Actualizar banco", description = "Actualiza los datos de un banco")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Banco actualizado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
+            @ApiResponse(responseCode = "404", description = "Banco no encontrado"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor") })
     @PutMapping("/{id}")
-    public ResponseEntity<BancoResponse> updateBanco(@PathVariable @Positive Integer id, @Valid @RequestBody BancoRequest bancoRecord) {
+    public ResponseEntity<BancoResponse> updateBanco(@PathVariable @Positive Integer id,
+            @Valid @RequestBody BancoRequest bancoRecord) {
         BancoResponse bancoActualizado = bancoService.updateBanco(id, bancoRecord);
         return ResponseEntity.ok(bancoActualizado);
     }
 
-    @Operation(summary = "Eliminar banco", 
-                description = "Elimina un banco por su ID",
-                responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Banco eliminado exitosamente"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Banco no encontrado"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
-                )
+    @Operation(summary = "Eliminar banco", description = "Elimina un banco por su ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Banco eliminado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "ID inválido"),
+            @ApiResponse(responseCode = "404", description = "Banco no encontrado"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor") })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBanco(@PathVariable @Positive Integer id) {
-        bancoService.deleteBanco(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<BancoResponse> deleteBanco(@PathVariable @Positive Integer id) {
+        BancoResponse bancoEliminado = bancoService.deleteBanco(id);
+        return ResponseEntity.ok(bancoEliminado);
     }
 
-    @Operation(summary = "Buscar bancos por nombre", 
-                description = "Devuelve bancos cuyo nombre contiene la cadena indicada",
-                responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bancos encontrados"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Error en la solicitud"),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
-                )
+    @Operation(summary = "Buscar bancos por nombre", description = "Devuelve bancos cuyo nombre contiene la cadena indicada")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bancos encontrados"),
+            @ApiResponse(responseCode = "400", description = "Error en la solicitud"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor") })
     @GetMapping("/buscar")
     public ResponseEntity<List<BancoResponse>> getBancosByNombre(@RequestParam @NotBlank String nombre) {
         List<BancoResponse> bancos = bancoService.getBancosByNombre(nombre);
         return ResponseEntity.ok(bancos);
     }
-
 
 }
