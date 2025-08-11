@@ -28,7 +28,7 @@ public class UserController {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
     @PostMapping("/huesped")
-    public ResponseEntity<Void> crearUsuarioHuesped(@RequestBody HuespedRequest huespedRecord) {
+    public ResponseEntity<Void> crearUsuarioHuesped(@RequestBody @Valid HuespedRequest huespedRecord) {
         userService.crearUsuarioHuesped(huespedRecord);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }

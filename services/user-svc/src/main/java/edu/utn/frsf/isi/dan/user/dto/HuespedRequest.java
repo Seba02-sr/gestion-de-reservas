@@ -1,54 +1,36 @@
 package edu.utn.frsf.isi.dan.user.dto;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
-import edu.utn.frsf.isi.dan.user.model.Banco;
-import edu.utn.frsf.isi.dan.user.model.Huesped;
-import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
+import org.hibernate.validator.constraints.Length;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 
 public record HuespedRequest(
+    @NotBlank(message = "El nombre no puede estar vacío")     
+    @Length(min = 2, message = "El nombre no puede tener menos de 2 caracteres")  
     String nombre,
+    
+    @Email(message = "El email no es válido")
     String email,
+    
+    @NotBlank(message = "El teléfono no puede estar vacío")
     String telefono,
+    
+    @NotBlank(message = "El DNI no puede estar vacío")
+    String dni,
+    
+    @NotNull(message = "La fecha de nacimiento es obligatoria")
+    @Past(message = "La fecha de nacimiento debe ser una fecha pasada")
     LocalDate fechaNacimiento,
-    String numeroCC,
-    String nombreTitular,
-    String fechaVencimientoCC,
-    String cvcCC,
-    Boolean esPrincipalCC,
-    Integer idBanco
-) {
-
-    public Huesped toHuesped() {
-        Huesped huesped = new Huesped();
-        huesped.setNombre(this.nombre);
-        huesped.setEmail(this.email);
-        huesped.setTelefono(this.telefono);
-        huesped.setFechaNacimiento(this.fechaNacimiento);
-        huesped.setTarjetaCredito(new ArrayList<>(List.of(
-            TarjetaCredito.builder()
-            .numero(this.numeroCC)
-            .nombreTitular(this.nombreTitular)
-            .fechaVencimiento(this.fechaVencimientoCC)
-            .cvc(this.cvcCC)
-            .esPrincipal(this.esPrincipalCC)
-            .banco(Banco.builder()
-                .id(this.idBanco)
-                .build()).build()
-        )));
-        return huesped;
-    }
-
-    public TarjetaCredito toTarjetaCredito() {
-        return TarjetaCredito.builder()
-            .numero(this.numeroCC)
-            .fechaVencimiento(this.fechaVencimientoCC)
-            .nombreTitular(this.nombreTitular)
-            .cvc(this.cvcCC)
-            .esPrincipal(this.esPrincipalCC)
-            .build();
-    }
-
-}
+    
+    @Valid
+    @NotEmpty(message = "Debe tener al menos una tarjeta de crédito")
+    List<TarjetaCreditoRequest> tarjetasCredito
+) {}
