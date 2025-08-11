@@ -1,5 +1,7 @@
 package edu.utn.frsf.isi.dan.user.model;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,4 +36,6 @@ public class CuentaBancaria {
     @OneToOne(mappedBy = "cuentaBancaria")
     private Propietario propietario;
 
+    @Column(name = "fecha_registro")
+    private LocalDateTime fechaRegistro;
 }

@@ -25,6 +25,12 @@ public record HuespedRequest(
     
     @NotBlank(message = "El DNI no puede estar vacío")
     String dni,
+
+    @NotBlank(message = "El nombre de usuario es obligatorio")
+    String username,
+
+    @NotBlank(message = "La contraseña no puede estar vacía")
+    String password,
     
     @NotNull(message = "La fecha de nacimiento es obligatoria")
     @Past(message = "La fecha de nacimiento debe ser una fecha pasada")

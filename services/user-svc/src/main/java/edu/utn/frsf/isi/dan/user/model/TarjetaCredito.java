@@ -1,5 +1,7 @@
 package edu.utn.frsf.isi.dan.user.model;
 
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
@@ -47,6 +49,12 @@ public class TarjetaCredito {
     @JoinColumn(name = "usuario_id")
     @JsonIgnore
     private Huesped huesped;
+
+    @Column(name = "fecha_registro")
+    private LocalDateTime fechaRegistro;
+
+    @Builder.Default
+    private Boolean activo = true;
 
     public boolean isPrincipal() {
         return esPrincipal != null && esPrincipal;

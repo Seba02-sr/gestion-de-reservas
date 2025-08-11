@@ -22,6 +22,7 @@ public interface CuentaMapper {
     @Mapping(target = "banco.id", source = "idBanco")
     @Mapping(target = "banco.nombre", ignore = true)
     @Mapping(target = "propietario", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
     CuentaBancaria toEntity(CuentaRequest request);
 
     /**
@@ -42,5 +43,6 @@ public interface CuentaMapper {
     @Mapping(target = "banco.id", source = "idBanco")
     @Mapping(target = "banco.nombre", ignore = true)
     @Mapping(target = "propietario", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
     void updateEntityFromRequest(CuentaRequest request, @MappingTarget CuentaBancaria cuentaBancaria);
 }

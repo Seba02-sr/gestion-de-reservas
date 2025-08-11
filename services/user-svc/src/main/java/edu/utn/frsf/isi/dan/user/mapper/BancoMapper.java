@@ -18,6 +18,9 @@ public interface BancoMapper {
      * @return
      */
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "fechaEliminado", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
     Banco toEntity(BancoRequest request);
 
     /**
@@ -34,6 +37,9 @@ public interface BancoMapper {
      * @param banco
      */
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "fechaEliminado", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
     void updateEntityFromRequest(BancoRequest request, @org.mapstruct.MappingTarget Banco banco);
 
 }

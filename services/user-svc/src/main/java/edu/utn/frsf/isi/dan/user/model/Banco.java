@@ -1,5 +1,8 @@
 package edu.utn.frsf.isi.dan.user.model;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,4 +26,13 @@ public class Banco {
     private Integer id;
 
     private String nombre;
-}
+
+    @Builder.Default
+    private Boolean activo = true;
+
+    @Column(name = "fecha_registro")
+    private LocalDateTime fechaRegistro;
+
+    @Column(name = "fecha_eliminado")
+    private LocalDateTime fechaEliminado;
+};

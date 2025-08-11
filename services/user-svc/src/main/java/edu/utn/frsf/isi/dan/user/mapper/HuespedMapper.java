@@ -20,6 +20,9 @@ public interface HuespedMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
+    @Mapping(target = "fechaEliminado", ignore = true)
     Huesped toEntity(HuespedRequest request);
 
     /**
@@ -37,5 +40,8 @@ public interface HuespedMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
+    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "fechaRegistro", ignore = true)
+    @Mapping(target = "fechaEliminado", ignore = true)
     void updateEntityFromRequest(HuespedRequest request, @org.mapstruct.MappingTarget Huesped huesped);
 }
