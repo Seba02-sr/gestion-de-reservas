@@ -11,7 +11,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import lombok.Builder;
 
+@Builder
 public record HuespedRequest(
     @NotBlank(message = "El nombre no puede estar vacío")     
     @Length(min = 2, message = "El nombre no puede tener menos de 2 caracteres")  

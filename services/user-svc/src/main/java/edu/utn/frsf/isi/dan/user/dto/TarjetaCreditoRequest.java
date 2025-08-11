@@ -4,7 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
+@Builder
 public record TarjetaCreditoRequest(
     @NotBlank(message = "El número de tarjeta de crédito no puede estar vacío")
     @Size(min = 13, max = 19, message = "El número de tarjeta debe tener entre 13 y 19 dígitos")

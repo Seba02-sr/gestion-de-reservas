@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import lombok.Builder;
+
+@Builder
 public record PropietarioResponse(
     Integer id,
     String nombre,

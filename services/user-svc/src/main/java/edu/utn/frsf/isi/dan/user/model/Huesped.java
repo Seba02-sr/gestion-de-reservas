@@ -10,12 +10,14 @@ import jakarta.persistence.OneToMany;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @DiscriminatorValue("HUESPED")
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 public class Huesped extends Usuario {
 
     private LocalDate fechaNacimiento;

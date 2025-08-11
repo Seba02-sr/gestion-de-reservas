@@ -5,7 +5,9 @@ import org.hibernate.validator.constraints.Length;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 
+@Builder
 public record PropietarioRequest(
     @NotBlank(message = "El nombre no puede estar vacío") 
     @Length(min = 2, message = "El nombre no puede tener menos de 2 caracteres")  
