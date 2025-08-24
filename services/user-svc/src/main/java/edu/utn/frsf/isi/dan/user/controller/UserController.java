@@ -1,7 +1,7 @@
 package edu.utn.frsf.isi.dan.user.controller;
 
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
+import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
 import edu.utn.frsf.isi.dan.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,14 +28,14 @@ public class UserController {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error interno del servidor")}
     )
     @PostMapping("/huesped")
-    public ResponseEntity<Void> crearUsuarioHuesped(@RequestBody HuespedRecord huespedRecord) {
+    public ResponseEntity<Void> crearUsuarioHuesped(@RequestBody @Valid HuespedRequest huespedRecord) {
         userService.crearUsuarioHuesped(huespedRecord);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     @Operation(summary = "Crear usuario propietario", description = "Crea un nuevo usuario de tipo propietario")
     @PostMapping("/propietario")
-    public ResponseEntity<Void> crearUsuarioPropietario(@RequestBody @Valid PropietarioRecord propietarioRecord) {
+    public ResponseEntity<Void> crearUsuarioPropietario(@RequestBody @Valid PropietarioRequest propietarioRecord) {
         userService.crearUsuarioPropietario(propietarioRecord);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
