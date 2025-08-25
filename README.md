@@ -178,3 +178,8 @@ Usa feat para funcionalidades nuevas, fix para correcciones.
 
 ### Gestor de proyecto
 - [Quire](https://quire.io/w/Reservas_ARN/33)
+
+
+### TP Etapa 02
+- Tareas necesarias para completar el servicio gestion-svc y reservas-svc [ETAPA02.md](./ETAPA02.md).
+- Descripción paso a paso de las acciones a realizar [PRACTICA_02.pdf](PRACTICA_02.pdf)

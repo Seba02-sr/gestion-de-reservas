@@ -91,11 +91,32 @@
             <version>0.2.0</version>
         </dependency>
 
-    </dependencies>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>1.19.0</version>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
 
     <modules>
         <module>services/user-svc</module>
-    </modules>
+      <module>services/gestion-svc</module>
+    <module>services/reservas-svc</module>
+    <module>common/dan-common-lib</module>
+  </modules>
 
     <build>
         <plugins>
