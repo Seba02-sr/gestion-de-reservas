@@ -7,6 +7,7 @@ import edu.utn.frsf.isi.dan.user.mapper.HuespedMapper;
 import edu.utn.frsf.isi.dan.user.mapper.PropietarioMapper;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
+import edu.utn.frsf.isi.dan.user.model.Usuario;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
