@@ -1,0 +1,97 @@
+// =============================================================================
+// VARIABLES SCSS - Sistema de diseño RARF
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// COLORES
+// -----------------------------------------------------------------------------
+// Color primario para tipografías
+$rarf-color-primary: #2563eb;
+$rarf-color-secondary: #64748b;
+$rarf-color-accent: #0ea5e9;
+
+// Colores de texto
+$rarf-color-text-primary: $rarf-color-primary;
+$rarf-color-text-secondary: $rarf-color-secondary;
+$rarf-color-text-muted: #94a3b8;
+$rarf-color-text-light: #f8fafc;
+$rarf-color-text-dark: #0f172a;
+
+// Colores de fondo
+$rarf-color-bg-primary: #ffffff;
+$rarf-color-bg-secondary: #f8fafc;
+$rarf-color-bg-dark: #0f172a;
+
+// -----------------------------------------------------------------------------
+// TIPOGRAFÍA - TAMAÑOS
+// -----------------------------------------------------------------------------
+// Tamaños de fuente (mobile first)
+$rarf-font-size-h1: 42px;
+$rarf-font-size-h2: 36px;
+$rarf-font-size-h3: 30px;
+$rarf-font-size-h4: 24px;
+$rarf-font-size-h5: 18px;
+$rarf-font-size-h6: 16px;
+$rarf-font-size-p: 12px;
+$rarf-font-size-span: 12px;
+$rarf-font-size-a: 12px;
+
+// Tamaños de fuente para desktop
+$rarf-desktop-font-size-h1: 48px;
+$rarf-desktop-font-size-h2: 42px;
+$rarf-desktop-font-size-h3: 36px;
+$rarf-desktop-font-size-h4: 30px;
+$rarf-desktop-font-size-h5: 24px;
+$rarf-desktop-font-size-h6: 20px;
+$rarf-desktop-font-size-p: 16px;
+$rarf-desktop-font-size-span: 16px;
+$rarf-desktop-font-size-a: 16px;
+
+// -----------------------------------------------------------------------------
+// TIPOGRAFÍA - PESOS DE FUENTE
+// -----------------------------------------------------------------------------
+
+$weights: (
+    light: 300,
+    normal: 400,
+    medium: 500,
+    semibold: 600,
+    bold: 700,
+    extrabold: 800
+);
+
+// -----------------------------------------------------------------------------
+// TIPOGRAFÍA - ALTURAS DE LÍNEA
+// -----------------------------------------------------------------------------
+
+$line-height: (
+    12: 12px,
+    14: 14px,
+    16: 16px,
+    18: 18px,
+    20: 20px,
+    22: 22px,
+    24: 24px,
+    26: 26px,
+    28: 28px,
+    30: 30px,
+    34: 34px,
+    38: 38px,
+    42: 42px,
+    46: 46px,
+    50: 50px
+);
+
+// -----------------------------------------------------------------------------
+// BREAKPOINTS
+// -----------------------------------------------------------------------------
+
+$breakpoints: (
+    "mobile-sm": 320px,
+    "mobile-md": 375px,
+    "mobile-l": 425px,
+    "tablet": 768px,
+    "laptop": 1024px,
+    "laptop-l": 1440px,
+    "desktop": 2560px
+);
