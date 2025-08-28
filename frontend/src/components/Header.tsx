@@ -8,7 +8,6 @@ const Header: React.FC = () => {
           {/* Logo */}
           <div className="header__logo">
             <img src="/src/assets/images/hotelReservas.png" alt="HotelReservas" className="h-8 w-auto" />
-            <span className="ml-2 text-xl font-semibold text-white bg-gray-800 px-3 py-1 rounded">HotelReservas</span>
           </div>
 
           {/* Navigation */}

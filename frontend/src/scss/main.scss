@@ -5,12 +5,6 @@
 @use "base/mixins" as *;
 @use "base/typography" as *;
 
-// Estilos globales
-body {
-  font-family: sans-serif;
-  @apply px-4 py-3 bg-gray-100 text-gray-800;
-}
-
 // Header styles
 .header {
   @apply bg-white shadow-sm border-b border-gray-200;
