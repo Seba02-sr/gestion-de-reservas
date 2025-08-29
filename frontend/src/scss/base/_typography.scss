@@ -3,34 +3,34 @@
 @use "variables" as *;
 
 
-.rarf-typography {
+.rarn-typography {
   // ---------------------------------------------------------------------------
   // MOBILE FIRST (base)
   // ---------------------------------------------------------------------------
-  &-h1 { font-size: $rarf-font-size-h1; }
-  &-h2 { font-size: $rarf-font-size-h2; }
-  &-h3 { font-size: $rarf-font-size-h3; }
-  &-h4 { font-size: $rarf-font-size-h4; }
-  &-h5 { font-size: $rarf-font-size-h5; }
-  &-h6 { font-size: $rarf-font-size-h6; }
-  &-p  { font-size: $rarf-font-size-p; }
-  &-span { font-size: $rarf-font-size-span; }
-  &-a  { font-size: $rarf-font-size-a; }
+  &-h1 { font-size: $rarn-font-size-h1; }
+  &-h2 { font-size: $rarn-font-size-h2; }
+  &-h3 { font-size: $rarn-font-size-h3; }
+  &-h4 { font-size: $rarn-font-size-h4; }
+  &-h5 { font-size: $rarn-font-size-h5; }
+  &-h6 { font-size: $rarn-font-size-h6; }
+  &-p  { font-size: $rarn-font-size-p; }
+  &-span { font-size: $rarn-font-size-span; }
+  &-a  { font-size: $rarn-font-size-a; }
 
   // ---------------------------------------------------------------------------
   // DESKTOP
   // ---------------------------------------------------------------------------
 
   @include respond-from("tablet") {
-    &-h1 { font-size: $rarf-desktop-font-size-h1; }
-    &-h2 { font-size: $rarf-desktop-font-size-h2; }
-    &-h3 { font-size: $rarf-desktop-font-size-h3; }
-    &-h4 { font-size: $rarf-desktop-font-size-h4; }
-    &-h5 { font-size: $rarf-desktop-font-size-h5; }
-    &-h6 { font-size: $rarf-desktop-font-size-h6; }
-    &-p  { font-size: $rarf-desktop-font-size-p; }
-    &-span { font-size: $rarf-desktop-font-size-span; }
-    &-a  { font-size: $rarf-desktop-font-size-a; }
+    &-h1 { font-size: $rarn-desktop-font-size-h1; }
+    &-h2 { font-size: $rarn-desktop-font-size-h2; }
+    &-h3 { font-size: $rarn-desktop-font-size-h3; }
+    &-h4 { font-size: $rarn-desktop-font-size-h4; }
+    &-h5 { font-size: $rarn-desktop-font-size-h5; }
+    &-h6 { font-size: $rarn-desktop-font-size-h6; }
+    &-p  { font-size: $rarn-desktop-font-size-p; }
+    &-span { font-size: $rarn-desktop-font-size-span; }
+    &-a  { font-size: $rarn-desktop-font-size-a; }
   }
 }
 
@@ -39,13 +39,13 @@
 // -----------------------------------------------------------------------------
 @each $key, $value in $line-height {
   // Mobile first
-  .rarf-line-height-#{$key} {
+  .rarn-line-height-#{$key} {
     line-height: $value;
   }
 
   // Desktop
   @include respond-from("tablet") {
-    .rarf-desktop-line-height-#{$key} {
+    .rarn-desktop-line-height-#{$key} {
       line-height: $value;
     }
   }
@@ -56,13 +56,13 @@
 // -----------------------------------------------------------------------------
 @each $name, $weight in $weights {
   // Mobile first
-  .rarf-font-weight-#{$name} {
+  .rarn-font-weight-#{$name} {
     font-weight: $weight;
   }
 
   // Desktop
   @include respond-from("tablet") {
-    .rarf-desktop-font-weight-#{$name} {
+    .rarn-desktop-font-weight-#{$name} {
       font-weight: $weight;
     }
   }
@@ -72,81 +72,87 @@
 // -----------------------------------------------------------------------------
 // APLICACIÓN AUTOMÁTICA A ELEMENTOS HTML
 // -----------------------------------------------------------------------------
+
+h1,h2,h3,h4,h5,h6,p,a,span {
+  font-family: $rarn-font-family;
+  margin: 0;
+  padding: 0;
+}
 h1 { 
-  font-size: $rarf-font-size-h1;
-  color: $rarf-color-text-primary;
+  font-size: $rarn-font-size-h1;
+  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarf-desktop-font-size-h1;
+    font-size: $rarn-desktop-font-size-h1;
   }
 }
 
 h2 { 
-  font-size: $rarf-font-size-h2;
-  color: $rarf-color-text-primary;
+  font-size: $rarn-font-size-h2;
+  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarf-desktop-font-size-h2;
+    font-size: $rarn-desktop-font-size-h2;
   }
 }
 
 h3 { 
-  font-size: $rarf-font-size-h3;
-  color: $rarf-color-text-primary;
+  font-size: $rarn-font-size-h3;
+  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarf-desktop-font-size-h3;
+    font-size: $rarn-desktop-font-size-h3;
   }
 }
 
 h4 { 
-  font-size: $rarf-font-size-h4;
-  color: $rarf-color-text-primary;
+  font-size: $rarn-font-size-h4;
+  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarf-desktop-font-size-h4;
+    font-size: $rarn-desktop-font-size-h4;
   }
 }
 
 h5 { 
-  font-size: $rarf-font-size-h5;
-  color: $rarf-color-text-primary;
+  font-size: $rarn-font-size-h5;
+  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarf-desktop-font-size-h5;
+    font-size: $rarn-desktop-font-size-h5;
   }
 }
 
 h6 { 
-  font-size: $rarf-font-size-h6;
-  color: $rarf-color-text-primary;
+  font-size: $rarn-font-size-h6;
+  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarf-desktop-font-size-h6;
+    font-size: $rarn-desktop-font-size-h6;
   }
 }
 
 p { 
-  font-size: $rarf-font-size-p;
-  color: $rarf-color-text-secondary;
+  font-size: $rarn-font-size-p;
+  color: $rarn-color-text-secondary;
   
   @include respond-from("tablet") {
-    font-size: $rarf-desktop-font-size-p;
+    font-size: $rarn-desktop-font-size-p;
   }
 }
 
 a { 
-  font-size: $rarf-font-size-a;
-  color: $rarf-color-accent;
+  font-size: $rarn-font-size-a;
+  color: $rarn-color-accent;
   text-decoration: none;
   transition: color 0.3s ease;
   
   &:hover {
-    color: $rarf-color-accent;
+    color: $rarn-color-accent;
     text-decoration: underline;
   }
   
   @include respond-from("tablet") {
-    font-size: $rarf-desktop-font-size-a;
+    font-size: $rarn-desktop-font-size-a;
   }
 }

@@ -1,51 +1,62 @@
 // =============================================================================
-// VARIABLES SCSS - Sistema de diseño RARF
+// VARIABLES SCSS - Sistema de diseño rarn
 // =============================================================================
+// -----------------------------------------------------------------------------
+// FAMILIA TIPOGRÁFICA
+// -----------------------------------------------------------------------------
+$rarn-font-family: 'Montserrat', Regular;
 
+@font-face {
+    font-family: 'Montserrat';
+    src: url(../../assets/fonts/Montserrat-Regular.woff) format('woff');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
 // -----------------------------------------------------------------------------
 // COLORES
 // -----------------------------------------------------------------------------
 // Color primario para tipografías
-$rarf-color-primary: #2563eb;
-$rarf-color-secondary: #64748b;
-$rarf-color-accent: #0ea5e9;
+$rarn-color-primary: #2563eb;
+$rarn-color-secondary: #64748b;
+$rarn-color-accent: #0ea5e9;
 
 // Colores de texto
-$rarf-color-text-primary: $rarf-color-primary;
-$rarf-color-text-secondary: $rarf-color-secondary;
-$rarf-color-text-muted: #94a3b8;
-$rarf-color-text-light: #f8fafc;
-$rarf-color-text-dark: #0f172a;
+$rarn-color-text-primary: $rarn-color-primary;
+$rarn-color-text-secondary: $rarn-color-secondary;
+$rarn-color-text-muted: #94a3b8;
+$rarn-color-text-light: #f8fafc;
+$rarn-color-text-dark: #0f172a;
 
 // Colores de fondo
-$rarf-color-bg-primary: #ffffff;
-$rarf-color-bg-secondary: #f8fafc;
-$rarf-color-bg-dark: #0f172a;
+$rarn-color-bg-primary: #ffffff;
+$rarn-color-bg-secondary: #f8fafc;
+$rarn-color-bg-dark: #0f172a;
 
 // -----------------------------------------------------------------------------
 // TIPOGRAFÍA - TAMAÑOS
 // -----------------------------------------------------------------------------
 // Tamaños de fuente (mobile first)
-$rarf-font-size-h1: 42px;
-$rarf-font-size-h2: 36px;
-$rarf-font-size-h3: 30px;
-$rarf-font-size-h4: 24px;
-$rarf-font-size-h5: 18px;
-$rarf-font-size-h6: 16px;
-$rarf-font-size-p: 12px;
-$rarf-font-size-span: 12px;
-$rarf-font-size-a: 12px;
+$rarn-font-size-h1: 42px;
+$rarn-font-size-h2: 36px;
+$rarn-font-size-h3: 30px;
+$rarn-font-size-h4: 24px;
+$rarn-font-size-h5: 18px;
+$rarn-font-size-h6: 16px;
+$rarn-font-size-p: 12px;
+$rarn-font-size-span: 12px;
+$rarn-font-size-a: 12px;
 
 // Tamaños de fuente para desktop
-$rarf-desktop-font-size-h1: 48px;
-$rarf-desktop-font-size-h2: 42px;
-$rarf-desktop-font-size-h3: 36px;
-$rarf-desktop-font-size-h4: 30px;
-$rarf-desktop-font-size-h5: 24px;
-$rarf-desktop-font-size-h6: 20px;
-$rarf-desktop-font-size-p: 16px;
-$rarf-desktop-font-size-span: 16px;
-$rarf-desktop-font-size-a: 16px;
+$rarn-desktop-font-size-h1: 48px;
+$rarn-desktop-font-size-h2: 42px;
+$rarn-desktop-font-size-h3: 36px;
+$rarn-desktop-font-size-h4: 30px;
+$rarn-desktop-font-size-h5: 24px;
+$rarn-desktop-font-size-h6: 20px;
+$rarn-desktop-font-size-p: 16px;
+$rarn-desktop-font-size-span: 16px;
+$rarn-desktop-font-size-a: 16px;
 
 // -----------------------------------------------------------------------------
 // TIPOGRAFÍA - PESOS DE FUENTE

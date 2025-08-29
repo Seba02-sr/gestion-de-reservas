@@ -1,63 +1,91 @@
-import { MapPinIcon, CalendarIcon, UserGroupIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
+import { MapPinIcon, CalendarIcon, UserGroupIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
 
+// Lista de imágenes (ajusta las rutas según tu estructura)
+import hotel1 from "../assets/images/hotel1.jpg";
+import hotel2 from "../assets/images/hotel2.jpg";
+import hotel3 from "../assets/images/hotel3.jpg";
+
+const images = [hotel1, hotel2, hotel3];
 export default function Hero() {
-  return (
-    <section className="bg-gradient-to-br from-slate-50 to-slate-100 py-16 px-4">
-      <div className="max-w-6xl mx-auto text-center">
-        <h1 className="rarf-typography-h1 mb-4 text-slate-800">Encuentra tu hotel perfecto</h1>
-        <p className="rarf-typography-p mb-12 text-slate-600 max-w-2xl mx-auto">
-          Miles de hoteles disponibles al mejor precio
-        </p>
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+  // Cambiar imagen cada 5 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }, 5000); // 5 segundos
+
+    return () => clearInterval(interval); // Limpieza al desmontar
+  }, []);
+
+  return (
+    <section className="hero relative w-full py-16 px-4 overflow-hidden">
+      {/* Carrusel de fondo */}
+      <div className="hero__carousel absolute inset-0 z-0">
+        {images.map((img, index) => (
+          <div
+            key={index}
+            className={`hero__slide absolute inset-0 transition-opacity duration-1000 ${
+              index === currentImageIndex ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <img
+              src={img}
+              alt={`Fondo ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Overlay para suavizar contraste */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-slate-900/20 z-10"></div>
+
+      {/* Contenido */}
+      <div className="hero__container relative z-20 max-w-6xl mx-auto text-center">
+        <h1 className="hero__title rarn-font-weight-extrabold">Encuentra tu hotel perfecto</h1>
+        <p className="hero__subtitle rarn-font-weight-bold">Miles de hoteles disponibles al mejor precio</p>
+
+        <div className="hero__form">
+          <div className="hero__grid">
             {/* Destino */}
-            <div className="text-left">
-              <label className="block rarf-typography-span text-slate-700 mb-2 rarn-font-weight-medium">Destino</label>
-              <div className="relative">
-                <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <div className="hero__field">
+              <label className="hero__label">Destino</label>
+              <div className="hero__input-container">
+                <MapPinIcon className="hero__icon" />
                 <input
                   type="text"
                   placeholder="¿A dónde viajas?"
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent rarf-typography-p"
+                  className="hero__input"
                 />
               </div>
             </div>
 
             {/* Check-in */}
-            <div className="text-left">
-              <label className="block rarf-typography-span text-slate-700 mb-2 rarn-font-weight-medium">Check-in</label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="date"
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent rarf-typography-p"
-                />
+            <div className="hero__field">
+              <label className="hero__label">Check-in</label>
+              <div className="hero__input-container">
+                <CalendarIcon className="hero__icon" />
+                <input type="date" className="hero__input" />
               </div>
             </div>
 
             {/* Check-out */}
-            <div className="text-left">
-              <label className="block rarf-typography-span text-slate-700 mb-2 rarn-font-weight-medium">
-                Check-out
-              </label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="date"
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent rarf-typography-p"
-                />
+            <div className="hero__field">
+              <label className="hero__label">Check-out</label>
+              <div className="hero__input-container">
+                <CalendarIcon className="hero__icon" />
+                <input type="date" className="hero__input" />
               </div>
             </div>
 
             {/* Huéspedes */}
-            <div className="text-left">
-              <label className="block rarf-typography-span text-slate-700 mb-2 rarn-font-weight-medium">
-                Huéspedes
-              </label>
-              <div className="relative">
-                <UserGroupIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <select className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent rarf-typography-p appearance-none bg-white">
+            <div className="hero__field">
+              <label className="hero__label">Huéspedes</label>
+              <div className="hero__input-container">
+                <UserGroupIcon className="hero__icon" />
+                <select className="hero__select">
                   <option>1 huésped</option>
                   <option>2 huéspedes</option>
                   <option>3 huéspedes</option>
@@ -68,12 +96,12 @@ export default function Hero() {
             </div>
           </div>
 
-          <button className="w-full md:w-auto bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 rarf-typography-p rarn-font-weight-medium">
+          <button className="hero__button">
             <MagnifyingGlassIcon className="h-5 w-5" />
             Buscar Hoteles
           </button>
         </div>
       </div>
     </section>
-  )
+  );
 }
