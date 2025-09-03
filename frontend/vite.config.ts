@@ -1,25 +1,32 @@
 // vite.config.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import { defineConfig } from "vite"
+import react from "@vitejs/plugin-react"
+import { fileURLToPath, URL } from "node:url"
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: resolve(process.cwd(), 'src/scss/main.scss'),
+        // si también tenés una entrada HTML/TSX principal, dejala;
+        // esta línea es para tu CSS principal
+        main: "src/scss/main.scss",
       },
       output: {
-        entryFileNames: '[name].js', // opcional, si tienes JS
+        entryFileNames: "[name].js",
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name?.endsWith('.css')) return 'main.css';
-          return 'assets/[name].[ext]';
+          if (assetInfo.name?.endsWith(".css")) return "main.css"
+          return "assets/[name].[ext]"
         },
       },
     },
     cssCodeSplit: true,
   },
-});
+})
