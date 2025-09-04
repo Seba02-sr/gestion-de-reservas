@@ -1,0 +1,74 @@
+/* src/scss/main.scss */
+@use "sass:list";
+@use "../tailwind.scss" as *;
+@use "base/variables" as *;
+@use "base/mixins" as *;
+@use "base/typography" as *;
+
+// Header styles
+.header {
+  @apply bg-white shadow-sm border-b border-gray-200;
+  
+  &__container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  &__content {
+    @apply flex items-center justify-between h-16;
+  }
+  
+  &__logo {
+    @apply flex items-center;
+    
+    img {
+      @apply h-8 w-auto;
+    }
+    
+    span {
+      @apply ml-2 text-xl font-semibold;
+      color: $rarf-color-primary;
+    }
+  }
+  
+  &__nav {
+    @apply hidden md:flex items-center space-x-8;
+    
+    a {
+      @apply text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors;
+      color: $rarf-color-text-secondary;
+      
+      &:hover {
+        color: $rarf-color-primary;
+      }
+      
+      &.active {
+        color: $rarf-color-primary;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  &__actions {
+    @apply flex items-center space-x-4;
+  }
+  
+  &__auth-btn {
+    @apply px-4 py-2 text-sm font-medium text-white rounded-md transition-colors;
+    background-color: $rarf-color-primary;
+    
+    &:hover {
+      background-color: $rarf-color-primary;
+    }
+  }
+  
+  &__register-btn {
+    @apply px-4 py-2 text-sm font-medium border rounded-md transition-colors;
+    color: $rarf-color-primary;
+    border-color: $rarf-color-primary;
+    
+    &:hover {
+      background-color: $rarf-color-primary;
+      color: white;
+    }
+  }
+}
