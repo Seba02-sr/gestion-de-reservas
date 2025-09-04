@@ -1,57 +1,30 @@
-@use "sass:list";
 @use "../base/variables" as *;
-@use "../base/typography" as *;
+@use "../base/mixins" as *;
 
 .hero {
-  @apply w-full max-w-none bg-gradient-to-br from-slate-50 to-slate-100 py-16;
-}
+  @apply relative w-full overflow-hidden;
+  min-height: 75vh;
+  display: flex; align-items: center; justify-content: center;
 
-.hero__container {
-  @apply max-w-6xl mx-auto text-center;
-}
+  &__slides { @apply absolute inset-0; z-index: 0; }
+  &__slide  { @apply absolute inset-0 transition-opacity duration-1000; opacity: 0; &.is-active { opacity: 1; } }
+  &__image  { @apply block w-full h-full object-cover; }
 
-.hero__title {
-  @apply rarn-typography-h1 mb-4 text-slate-800;
-}
+  &__overlay {
+    @apply absolute inset-0 pointer-events-none; z-index: 10;
+    background-image: linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,.30), rgba(0,0,0,.50));
+  }
 
-.hero__subtitle {
-  @apply rarn-typography-p mb-12 text-slate-600 max-w-2xl mx-auto;
-}
+  &__container { @apply relative max-w-5xl w-full px-4 text-center mx-auto; z-index: 20; }
+  &__title { color: $rarn-color-text-inverse; @apply drop-shadow; }
+  &__subtitle { color: $rarn-color-text-inverse-weak; margin-top: .5rem; }
+  &__card {
+    @apply mt-8 rounded-xl shadow-lg p-6;
+    background: $rarn-color-gray-card;
+    border: 1px solid $rarn-color-gray-border;
+    backdrop-filter: blur(6px);
+  }
 
-.hero__form {
-  @apply bg-white rounded-2xl shadow-lg p-8 max-w-4xl mx-auto;
+  &__form  { @apply w-full; }
+  &__grid  { @apply grid grid-cols-1 md:grid-cols-4 gap-4; }
 }
-
-.hero__grid {
-  @apply grid grid-cols-1 md:grid-cols-4 gap-6 mb-6;
-}
-
-.hero__field {
-  @apply text-left;
-}
-
-.hero__label {
-  @apply block rarn-typography-span text-slate-700 mb-2 rarn-font-weight-medium;
-}
-
-.hero__input-container {
-  @apply relative;
-}
-
-.hero__icon {
-  @apply absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400;
-}
-
-.hero__input,
-.hero__select {
-  @apply w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent rarn-typography-p;
-}
-
-.hero__select {
-  @apply appearance-none bg-white;
-}
-
-.hero__button {
-  @apply w-full md:w-auto bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 rarn-typography-p rarn-font-weight-medium;
-}
-

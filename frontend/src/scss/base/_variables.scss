@@ -14,24 +14,74 @@ $rarn-font-family: 'Montserrat', Regular;
     font-display: swap;
 }
 // -----------------------------------------------------------------------------
-// COLORES
+// BRAND / TEXT
 // -----------------------------------------------------------------------------
-// Color primario para tipografías
-$rarn-color-primary: #2563eb;
-$rarn-color-secondary: #64748b;
-$rarn-color-accent: #0ea5e9;
+$rarn-color-primary:   #0F172A !default; // Azul petróleo (brand principal)
+$rarn-color-secondary: #475569 !default; // Slate-600 (mejor contraste p/ texto secundario)
+$rarn-color-accent:     #0F172A !default; // Color base
+$rarn-color-accent-600: #1E293B !default; // Hover: más claro pero coherente
+$rarn-color-white:     #ffffff !default;
 
-// Colores de texto
-$rarn-color-text-primary: $rarn-color-primary;
-$rarn-color-text-secondary: $rarn-color-secondary;
-$rarn-color-text-muted: #94a3b8;
-$rarn-color-text-light: #f8fafc;
-$rarn-color-text-dark: #0f172a;
+// Texto
+$rarn-color-text-primary:   $rarn-color-primary !default;
+$rarn-color-text-secondary: $rarn-color-secondary !default; // (ajustado desde #64748b)
+$rarn-color-text-muted:     #94a3b8 !default;
+$rarn-color-text-light:     #f8fafc !default;
+$rarn-color-text-dark:      #0f172a !default;
 
-// Colores de fondo
-$rarn-color-bg-primary: #ffffff;
-$rarn-color-bg-secondary: #f8fafc;
-$rarn-color-bg-dark: #0f172a;
+// Inversos (sobre imagen u oscuro)
+$rarn-color-text-inverse:        #ffffff !default;
+$rarn-color-text-inverse-weak:   rgba(255,255,255,.9) !default;
+
+// Fondos
+$rarn-color-bg-primary:   #ffffff !default;
+$rarn-color-bg-secondary: #f8fafc !default;
+$rarn-color-bg-dark:      #0f172a !default;
+
+// -----------------------------------------------------------------------------
+// GRAY SEMÁNTICO
+// -----------------------------------------------------------------------------
+$rarn-color-gray-background: #f5f5f5 !default;
+$rarn-color-gray-section:    #fafafa !default;
+$rarn-color-gray-card:       #ffffff !default;
+
+$rarn-color-gray-border-light:  #eeeeee !default;
+$rarn-color-gray-border:        #e0e0e0 !default;
+$rarn-color-gray-border-strong: #bdbdbd !default;
+
+$rarn-color-gray-text-primary:    #212121 !default;
+$rarn-color-gray-text-secondary:  #616161 !default;
+$rarn-color-gray-text-muted:      #9e9e9e !default;
+$rarn-color-gray-text-placeholder:#bdbdbd !default;
+
+$rarn-color-inactive-button-bg:   #e0e0e0 !default;
+$rarn-color-inactive-button-text: #9e9e9e !default;
+$rarn-color-gray-hover:           #f0f0f0 !default;
+$rarn-color-gray-pressed:         #d6d6d6 !default;
+
+// -----------------------------------------------------------------------------
+// ESTADOS (UI feedback)
+// -----------------------------------------------------------------------------
+$rarn-color-success:       #16a34a !default;
+$rarn-color-success-600:   #15803d !default;
+$rarn-color-warning:       #f59e0b !default;
+$rarn-color-warning-600:   #d97706 !default;
+$rarn-color-danger:        #dc2626 !default;
+$rarn-color-danger-600:    #b91c1c !default;
+$rarn-color-info:          $rarn-color-accent !default; // azul/cyan informativo
+
+// Focus ring (accesibilidad)
+$rarn-color-focus-ring:    $rarn-color-accent !default;
+$rarn-color-focus-offset:  #ffffff !default;
+
+// -----------------------------------------------------------------------------
+// MAPA DESTINOS (escala 3 niveles)
+// -----------------------------------------------------------------------------
+$rarn-color-map-low:   #2dd4bf !default; // Turquesa (Bajo 1–50)
+$rarn-color-map-mid:   #3b82f6 !default; // Azul (Medio 51–150)
+$rarn-color-map-high:  #f97316 !default; // Naranja (Alto 151+)
+$rarn-color-map-off:   #cbd5e1 !default; // Slate 300 (sin datos)
+
 
 // -----------------------------------------------------------------------------
 // TIPOGRAFÍA - TAMAÑOS
@@ -43,20 +93,9 @@ $rarn-font-size-h3: 30px;
 $rarn-font-size-h4: 24px;
 $rarn-font-size-h5: 18px;
 $rarn-font-size-h6: 16px;
-$rarn-font-size-p: 12px;
+$rarn-font-size-p: 14px;
 $rarn-font-size-span: 12px;
 $rarn-font-size-a: 12px;
-
-// Tamaños de fuente para desktop
-$rarn-desktop-font-size-h1: 48px;
-$rarn-desktop-font-size-h2: 42px;
-$rarn-desktop-font-size-h3: 36px;
-$rarn-desktop-font-size-h4: 30px;
-$rarn-desktop-font-size-h5: 24px;
-$rarn-desktop-font-size-h6: 20px;
-$rarn-desktop-font-size-p: 16px;
-$rarn-desktop-font-size-span: 16px;
-$rarn-desktop-font-size-a: 16px;
 
 // -----------------------------------------------------------------------------
 // TIPOGRAFÍA - PESOS DE FUENTE

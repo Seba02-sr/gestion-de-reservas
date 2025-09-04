@@ -1,0 +1,18 @@
+@use "../base/variables" as *;
+
+.rarn-card {
+  background: $rarn-color-gray-card;
+  border: 1px solid $rarn-color-gray-border;
+  @apply rounded-xl shadow-md;
+  transition: box-shadow .2s ease, transform .1s ease;
+
+  &--hoverable:hover {
+    @apply shadow-lg;
+    transform: translateY(-1px);
+  }
+
+  &__header { @apply p-4; border-bottom: 1px solid $rarn-color-gray-border-light; }
+  &__title  { color: $rarn-color-text-primary; @apply font-semibold text-lg; }
+  &__body   { @apply p-4; }
+  &__footer { @apply p-4; border-top: 1px solid $rarn-color-gray-border-light; }
+}

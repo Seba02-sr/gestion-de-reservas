@@ -1,0 +1,12 @@
+@use "../base/variables" as *;
+
+.mapa-ar {
+  inline-size: 100%;
+  block-size: clamp(360px, 55vh, 560px);
+  border-radius: 0.75rem;
+  overflow: hidden;
+
+  /* Tokens locales que controlan el borde de selección */
+  --map-stroke-selected: #{$rarn-color-primary}; /* ← viene de _variables.scss */
+  --map-stroke-selected-w: 2; /* grosor en px (número) */
+}

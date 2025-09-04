@@ -1,0 +1,97 @@
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+
+// Fondo gris claro de sección (si ya tienes un token específico, reemplaza aquí)
+$rarn-section-bg: #F6F7F9 !default;
+
+.rarn-benefits {
+  background: $rarn-section-bg;
+  color: $rarn-color-text-primary;
+
+  &__container {
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    padding-block: 2.25rem;
+
+    @include respond-from("tablet") {
+      padding-inline: 2rem;
+      padding-block: 2.75rem;
+    }
+
+    @include respond-from("laptop") {
+      padding-inline: 2.5rem;
+      padding-block: 3rem;
+    }
+  }
+
+  &__title {
+    text-align: center;
+    margin-bottom: 1.75rem;
+    font-weight: 700;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+
+    @include respond-from("tablet") {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+  }
+
+  /* ITEM: limpio, sin fondo/borde */
+  &__item {
+    text-align: center;
+    padding: 0.5rem 0.25rem;
+  }
+
+  /* ICONO: círculo = primario (currentColor), path = blanco */
+  &__icon {
+    display: inline-flex;
+    margin-bottom: 0.625rem;
+    color: $rarn-color-primary; // círculo
+  }
+
+  &__icon-svg {
+    width: 48px;
+    height: 48px;
+    display: block;
+
+    @include respond-from("tablet") {
+      width: 56px;
+      height: 56px;
+    }
+
+    @include respond-from("laptop") {
+      width: 64px;
+      height: 64px;
+    }
+
+    /* Escalar el pictograma para que quede más chico dentro del círculo */
+    path {
+      transform: scale(0.75);
+      transform-origin: center;
+    }
+  }
+
+  &__item-title {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    font-size: 1.125rem; // ~18px
+
+    @include respond-from("tablet") {
+      font-size: 1.25rem; // ~20px
+    }
+  }
+
+  &__item-desc {
+    color: $rarn-color-gray-text-secondary;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 40ch;
+    margin-inline: auto;
+  }
+}

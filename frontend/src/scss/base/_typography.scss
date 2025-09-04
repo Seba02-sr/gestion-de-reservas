@@ -22,15 +22,15 @@
   // ---------------------------------------------------------------------------
 
   @include respond-from("tablet") {
-    &-h1 { font-size: $rarn-desktop-font-size-h1; }
-    &-h2 { font-size: $rarn-desktop-font-size-h2; }
-    &-h3 { font-size: $rarn-desktop-font-size-h3; }
-    &-h4 { font-size: $rarn-desktop-font-size-h4; }
-    &-h5 { font-size: $rarn-desktop-font-size-h5; }
-    &-h6 { font-size: $rarn-desktop-font-size-h6; }
-    &-p  { font-size: $rarn-desktop-font-size-p; }
-    &-span { font-size: $rarn-desktop-font-size-span; }
-    &-a  { font-size: $rarn-desktop-font-size-a; }
+    &-h1 { font-size: $rarn-font-size-h1; }
+    &-h2 { font-size: $rarn-font-size-h2; }
+    &-h3 { font-size: $rarn-font-size-h3; }
+    &-h4 { font-size: $rarn-font-size-h4; }
+    &-h5 { font-size: $rarn-font-size-h5; }
+    &-h6 { font-size: $rarn-font-size-h6; }
+    &-p  { font-size: $rarn-font-size-p; }
+    &-span { font-size: $rarn-font-size-span; }
+    &-a  { font-size: $rarn-font-size-a; }
   }
 }
 
@@ -45,7 +45,7 @@
 
   // Desktop
   @include respond-from("tablet") {
-    .rarn-desktop-line-height-#{$key} {
+    .rarn-line-height-#{$key} {
       line-height: $value;
     }
   }
@@ -62,7 +62,7 @@
 
   // Desktop
   @include respond-from("tablet") {
-    .rarn-desktop-font-weight-#{$name} {
+    .rarn-font-weight-#{$name} {
       font-weight: $weight;
     }
   }
@@ -80,79 +80,70 @@ h1,h2,h3,h4,h5,h6,p,a,span {
 }
 h1 { 
   font-size: $rarn-font-size-h1;
-  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarn-desktop-font-size-h1;
+    font-size: $rarn-font-size-h1;
   }
 }
 
 h2 { 
   font-size: $rarn-font-size-h2;
-  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarn-desktop-font-size-h2;
+    font-size: $rarn-font-size-h2;
   }
 }
 
 h3 { 
   font-size: $rarn-font-size-h3;
-  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarn-desktop-font-size-h3;
+    font-size: $rarn-font-size-h3;
   }
 }
 
 h4 { 
   font-size: $rarn-font-size-h4;
-  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarn-desktop-font-size-h4;
+    font-size: $rarn-font-size-h4;
   }
 }
 
 h5 { 
   font-size: $rarn-font-size-h5;
-  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarn-desktop-font-size-h5;
+    font-size: $rarn-font-size-h5;
   }
 }
 
 h6 { 
   font-size: $rarn-font-size-h6;
-  color: $rarn-color-text-primary;
   
   @include respond-from("tablet") {
-    font-size: $rarn-desktop-font-size-h6;
+    font-size: $rarn-font-size-h6;
   }
 }
 
 p { 
   font-size: $rarn-font-size-p;
-  color: $rarn-color-text-secondary;
   
   @include respond-from("tablet") {
-    font-size: $rarn-desktop-font-size-p;
+    font-size: $rarn-font-size-p;
   }
 }
 
 a { 
   font-size: $rarn-font-size-a;
-  color: $rarn-color-accent;
   text-decoration: none;
   transition: color 0.3s ease;
   
   &:hover {
-    color: $rarn-color-accent;
     text-decoration: underline;
   }
   
   @include respond-from("tablet") {
-    font-size: $rarn-desktop-font-size-a;
+    font-size: $rarn-font-size-a;
   }
 }
