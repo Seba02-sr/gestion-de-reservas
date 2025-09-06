@@ -1,0 +1,73 @@
+@use "../base/variables" as *;
+@use "../base/layout" as layout;
+
+// Tokens locales (pueden irse a variables si querés globalizarlos)
+$explora-spacing-y: 4rem !default; // padding vertical sección
+$explora-gap: 2rem !default;
+$explora-radius: 0.75rem !default;
+
+.explora {
+  background: $rarn-color-gray-section;
+
+  &__container { @include layout.container(80rem); }
+
+  // Header
+  &__header { @apply text-center mb-12; }
+  &__title  { color: $rarn-color-text-primary; @apply font-bold; font-size: 1.25rem; line-height: 1.6; }
+  &__subtitle { color: $rarn-color-text-secondary; font-size: 0.95rem; }
+
+  // Card envolvente (reutiliza .rarn-card)
+  &__card { @apply p-6; }
+
+  // Grid principal
+  &__grid { @apply grid grid-cols-1 gap-8 lg:grid-cols-2; }
+
+  // Columna izquierda (mapa)
+  &__map { @apply flex flex-col gap-4; }
+
+  &__legend {
+    @apply flex items-center gap-6;
+    color: $rarn-color-gray-text-secondary; font-size: 0.9rem;
+  }
+  &__legend-item { @apply flex items-center gap-2; }
+  &__dot { inline-size: 0.75rem; block-size: 0.75rem; border-radius: 999px; display: inline-block; }
+  &__dot--ok  { background: $rarn-color-accent; }
+  &__dot--off { background: $rarn-color-gray-border-strong; }
+
+  &__mapbox {
+    background: $rarn-color-gray-background;
+    border: 1px solid $rarn-color-gray-border;
+    border-radius: $explora-radius;
+    @apply p-8;
+    min-block-size: 400px;
+    @apply flex items-center justify-center;
+  }
+
+  // Columna derecha (lista)
+  &__list { @apply flex flex-col gap-5; }
+  &__list-title { color: $rarn-color-text-primary; @apply font-bold; font-size: 1.1rem; }
+
+  &__items { @apply flex flex-col gap-3 list-none p-0 m-0; }
+
+  &__item {
+    @apply flex items-center justify-between p-4;
+    border: 1px solid $rarn-color-gray-border;
+    border-radius: $explora-radius;
+    background: $rarn-color-gray-card;
+    @apply transition-shadow;
+    transition: border-color .15s ease, transform .1s ease;
+
+    &:hover { border-color: $rarn-color-gray-border-strong; box-shadow: 0 2px 10px rgba(0,0,0,.04); transform: translateY(-1px); }
+  }
+
+  &__item-info { @apply flex flex-col gap-1; }
+  &__item-name { color: $rarn-color-text-primary; @apply font-semibold; font-size: 1rem; }
+  &__item-meta { color: $rarn-color-text-secondary; font-size: 0.875rem; }
+
+  &__item-price { @apply text-right; }
+  &__price { color: $rarn-color-text-primary; @apply font-semibold; font-size: 1rem; }
+  &__pernight { color: $rarn-color-accent; font-size: 0.8125rem; }
+
+  // CTA
+  &__cta { @apply w-full; }
+}

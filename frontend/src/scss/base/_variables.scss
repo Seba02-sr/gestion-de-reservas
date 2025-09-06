@@ -1,51 +1,119 @@
 // =============================================================================
-// VARIABLES SCSS - Sistema de diseño RARF
+// VARIABLES SCSS - Sistema de diseño rarn
 // =============================================================================
+// -----------------------------------------------------------------------------
+// FAMILIA TIPOGRÁFICA
+// -----------------------------------------------------------------------------
+$rarn-font-family: 'Montserrat', Regular;
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url(../../assets/fonts/Montserrat-Regular.woff) format('woff');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+// -----------------------------------------------------------------------------
+// BRAND / TEXT
+// -----------------------------------------------------------------------------
+// Identidad cromática (retorno a estilo anterior, azul petróleo sobrio)
+$rarn-color-primary:   #0F172A !default; // Azul petróleo (brand principal)
+$rarn-color-secondary: #475569 !default; // Slate-600
+$rarn-color-accent:     $rarn-color-primary !default; // Color base
+$rarn-color-accent-600: #1E293B !default; // Hover coherente
+$rarn-color-white:     #ffffff !default;
+
+// Texto
+// Tipografía (preferimos slate para legibilidad)
+$rarn-color-text-primary:   #0F172A !default; // Slate-900
+$rarn-color-text-secondary: #475569 !default; // Slate-600
+$rarn-color-text-muted:     #94A3B8 !default; // Slate-400
+$rarn-color-text-light:     #F8FAFC !default; // Slate-50
+$rarn-color-text-dark:      #0F172A !default;
+
+// Inversos (sobre imagen u oscuro)
+$rarn-color-text-inverse:        #ffffff !default;
+$rarn-color-text-inverse-weak:   rgba(255,255,255,.9) !default;
+
+// Fondos
+$rarn-color-bg-primary:   #FFFFFF !default;
+$rarn-color-bg-secondary: #F8FAFC !default; // Slate-50
+$rarn-color-bg-dark:      #0F172A !default;
 
 // -----------------------------------------------------------------------------
-// COLORES
+// GRAY SEMÁNTICO
 // -----------------------------------------------------------------------------
-// Color primario para tipografías
-$rarf-color-primary: #2563eb;
-$rarf-color-secondary: #64748b;
-$rarf-color-accent: #0ea5e9;
+// Neutrales (consolidados a escala Slate coherente)
+$rarn-color-gray-background: #F1F5F9 !default; // Slate-100
+$rarn-color-gray-section:    #F8FAFC !default; // Slate-50
+$rarn-color-gray-card:       #FFFFFF !default;
 
-// Colores de texto
-$rarf-color-text-primary: $rarf-color-primary;
-$rarf-color-text-secondary: $rarf-color-secondary;
-$rarf-color-text-muted: #94a3b8;
-$rarf-color-text-light: #f8fafc;
-$rarf-color-text-dark: #0f172a;
+$rarn-color-gray-border-light:  #E2E8F0 !default; // Slate-200
+$rarn-color-gray-border:        #E2E8F0 !default;
+$rarn-color-gray-border-strong: #CBD5E1 !default; // Slate-300
 
-// Colores de fondo
-$rarf-color-bg-primary: #ffffff;
-$rarf-color-bg-secondary: #f8fafc;
-$rarf-color-bg-dark: #0f172a;
+$rarn-color-gray-text-primary:    #0F172A !default; // Slate-900
+$rarn-color-gray-text-secondary:  #475569 !default; // Slate-600
+$rarn-color-gray-text-muted:      #94A3B8 !default; // Slate-400
+$rarn-color-gray-text-placeholder:#94A3B8 !default; // Slate-400
+
+$rarn-color-inactive-button-bg:   #E2E8F0 !default; // Slate-200
+$rarn-color-inactive-button-text: #64748B !default; // Slate-500
+$rarn-color-gray-hover:           #F1F5F9 !default; // Slate-100
+$rarn-color-gray-pressed:         #CBD5E1 !default; // Slate-300
+
+// -----------------------------------------------------------------------------
+// ESTADOS (UI feedback)
+// -----------------------------------------------------------------------------
+// Estados (alineados a escala Tailwind por coherencia)
+$rarn-color-success:       #16A34A !default; // Green-600
+$rarn-color-success-600:   #15803D !default; // Green-700
+$rarn-color-warning:       #F59E0B !default; // Amber-500
+$rarn-color-warning-600:   #D97706 !default; // Amber-600
+$rarn-color-danger:        #DC2626 !default; // Red-600
+$rarn-color-danger-600:    #B91C1C !default; // Red-700
+$rarn-color-info:          $rarn-color-accent !default;
+
+// Focus ring (accesibilidad)
+$rarn-color-focus-ring:    $rarn-color-accent !default;
+$rarn-color-focus-offset:  #FFFFFF !default;
+
+// -----------------------------------------------------------------------------
+// MAPA DESTINOS (escala 3 niveles)
+// -----------------------------------------------------------------------------
+$rarn-color-map-low:   #93C5FD !default; // Blue-300
+$rarn-color-map-mid:   #3B82F6 !default; // Blue-500
+$rarn-color-map-high:  #1E40AF !default; // Blue-800
+$rarn-color-map-off:   #CBD5E1 !default; // Slate-300
+
+// Exponer variables clave como CSS custom properties para integración JS/CSS
+:root {
+  // Brand
+  --brand-primary: #{$rarn-color-primary};
+  --brand-primary-600: #{$rarn-color-accent-600};
+
+  // Mapa de Argentina (consumidas por JS y legendas)
+  --map-stroke-selected: #{$rarn-color-primary};
+  --map-fill-low:  #{$rarn-color-map-low};
+  --map-fill-mid:  #{$rarn-color-map-mid};
+  --map-fill-high: #{$rarn-color-map-high};
+  --map-fill-off:  #{$rarn-color-map-off};
+}
+
 
 // -----------------------------------------------------------------------------
 // TIPOGRAFÍA - TAMAÑOS
 // -----------------------------------------------------------------------------
 // Tamaños de fuente (mobile first)
-$rarf-font-size-h1: 42px;
-$rarf-font-size-h2: 36px;
-$rarf-font-size-h3: 30px;
-$rarf-font-size-h4: 24px;
-$rarf-font-size-h5: 18px;
-$rarf-font-size-h6: 16px;
-$rarf-font-size-p: 12px;
-$rarf-font-size-span: 12px;
-$rarf-font-size-a: 12px;
-
-// Tamaños de fuente para desktop
-$rarf-desktop-font-size-h1: 48px;
-$rarf-desktop-font-size-h2: 42px;
-$rarf-desktop-font-size-h3: 36px;
-$rarf-desktop-font-size-h4: 30px;
-$rarf-desktop-font-size-h5: 24px;
-$rarf-desktop-font-size-h6: 20px;
-$rarf-desktop-font-size-p: 16px;
-$rarf-desktop-font-size-span: 16px;
-$rarf-desktop-font-size-a: 16px;
+$rarn-font-size-h1: 42px;
+$rarn-font-size-h2: 36px;
+$rarn-font-size-h3: 30px;
+$rarn-font-size-h4: 24px;
+$rarn-font-size-h5: 18px;
+$rarn-font-size-h6: 16px;
+$rarn-font-size-p: 14px;
+$rarn-font-size-span: 12px;
+$rarn-font-size-a: 12px;
 
 // -----------------------------------------------------------------------------
 // TIPOGRAFÍA - PESOS DE FUENTE
