@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: reservas-arn-frontend:latest
+    container_name: reservas-arn-frontend
+    ports:
+      - "8080:80" # http://localhost:8080
+    restart: unless-stopped
+

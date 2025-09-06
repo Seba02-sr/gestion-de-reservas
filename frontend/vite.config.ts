@@ -13,20 +13,5 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        // si también tenés una entrada HTML/TSX principal, dejala;
-        // esta línea es para tu CSS principal
-        main: "src/scss/main.scss",
-      },
-      output: {
-        entryFileNames: "[name].js",
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name?.endsWith(".css")) return "main.css"
-          return "assets/[name].[ext]"
-        },
-      },
-    },
-    cssCodeSplit: true,
   },
 })
