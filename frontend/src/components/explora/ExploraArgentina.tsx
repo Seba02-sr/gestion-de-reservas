@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import MapaArgentina from "./MapaArgentina";
+import SectionHeader from "../ui/SectionHeader";
+import Section from "../ui/Section";
 import { MAP_COLORS, MAP_THRESHOLDS } from "./mapColors";
 
 interface DestinoPopular { nombre: string; hoteles: number; precioDesde: number; }
@@ -22,14 +24,14 @@ export default function ExploraArgentina() {
   };
 
   return (
-    <section className="explora">
-      <div className="explora__container">
-        <header className="explora__header">
-          <h2 className="explora__title rarn-typography-h6">Explora destinos en Argentina</h2>
-          <p className="explora__subtitle rarn-typography-p">
-            Haz clic en cualquier provincia para ver hoteles disponibles
-          </p>
-        </header>
+    <Section className="explora" containerClassName="explora__container">
+        <SectionHeader
+          className="explora__header"
+          titleClassName="explora__title rarn-typography-h6"
+          subtitleClassName="explora__subtitle rarn-typography-p"
+          title="Explora destinos en Argentina"
+          subtitle="Haz clic en cualquier provincia para ver hoteles disponibles"
+        />
 
         <div className="explora__card rarn-card rarn-card--hoverable">
           <div className="explora__grid">
@@ -86,7 +88,6 @@ export default function ExploraArgentina() {
             </aside>
           </div>
         </div>
-      </div>
-    </section>
+    </Section>
   );
 }

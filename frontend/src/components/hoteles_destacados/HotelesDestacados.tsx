@@ -3,6 +3,8 @@
 
 import { HotelCard } from "./HotelCard"
 import type { Hotel } from "../../util/hotel"
+import SectionHeader from "../ui/SectionHeader"
+import Section from "../ui/Section"
 
 
 import hotel1 from "@/assets/images/hotel1.webp"
@@ -48,30 +50,26 @@ export default function HotelesDestacados() {
   }
 
   return (
-    <section className="py-16 px-4 bg-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="rarn-typography-h2 mb-4">Hoteles Destacados</h2>
-          <p className="rarn-typography-p text-gray-600">
-            Descubre los mejores alojamientos seleccionados para ti
-          </p>
-        </div>
+    <Section className="hoteles" containerClassName="hoteles__container">
+        <SectionHeader
+          className="hoteles__header"
+          titleClassName="hoteles__title rarn-typography-h2"
+          subtitleClassName="hoteles__subtitle rarn-typography-p"
+          title="Hoteles Destacados"
+          subtitle="Descubre los mejores alojamientos seleccionados para ti"
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div className="hoteles__grid">
           {hotelesData.map((hotel) => (
             <HotelCard key={hotel.id} hotel={hotel} onVerDetalles={handleVerDetalles} />
           ))}
         </div>
 
-        <div className="text-center">
-          <button
-            onClick={handleVerTodos}
-            className="bg-rarn-dark text-white py-3 px-8 rounded-md rarn-typography-span font-medium hover:bg-opacity-90 transition-colors duration-200"
-          >
+        <div className="hoteles__actions">
+          <button onClick={handleVerTodos} className="rarn-btn rarn-btn--primary rarn-btn--lg">
             Ver todos los hoteles
           </button>
         </div>
-      </div>
-    </section>
+    </Section>
   )
 }

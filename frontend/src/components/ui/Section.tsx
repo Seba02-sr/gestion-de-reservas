@@ -1,17 +1,16 @@
 import type { ReactNode } from "react";
 
-
 interface SectionProps {
-id?: string;
-className?: string;
-children: ReactNode;
+  id?: string;
+  className?: string;
+  containerClassName?: string;
+  children: ReactNode;
 }
 
-
-export default function Section({ id, className = "", children }: SectionProps) {
-return (
-<section id={id} className={`py-8 md:py-12 lg:py-16 ${className}`}>
-<div className="container mx-auto">{children}</div>
-</section>
-);
+export default function Section({ id, className = "", containerClassName = "", children }: SectionProps) {
+  return (
+    <section id={id} className={`rarn-section ${className}`}>
+      <div className={`rarn-section__container ${containerClassName}`}>{children}</div>
+    </section>
+  );
 }

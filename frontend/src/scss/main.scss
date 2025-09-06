@@ -4,10 +4,12 @@
 @use "base/variables" as *;
 @use "base/mixins" as *;
 @use "base/typography" as *;
+@use "base/layout" as *;
 
 @use "components/button" as *;
 @use "components/card" as *;
 @use "components/hero" as *;
+@use "components/section" as *;
 @use "components/form" as *;
 @use "components/searchbar" as *;
 @use "layout/header" as *;
@@ -15,7 +17,6 @@
 @use "components/explora-arg" as *;
 @use "components/mapa-arg" as *;
 @use "components/hotel-card" as *;
+@use "components/hoteles" as *;
 @use "components/benefits" as *;
 @use "layout/footer" as *;
-
-

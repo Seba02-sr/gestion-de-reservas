@@ -1,4 +1,5 @@
 @use "../base/variables" as *;
+@use "../base/layout" as layout;
 
 .rarn-footer {
   // Si querés replicar el tono oscuro del screenshot usa el token de fondo elevado:
@@ -7,20 +8,14 @@
   color: $rarn-color-gray-text-placeholder;
   padding-block: 3rem 2rem;
 
-  .container {
-    max-width: 1200px;
-    margin-inline: auto;
-    padding-inline: 1rem;
-  }
+  .container { @include layout.container(80rem); }
 
   &__inner {
-    display: grid;
+    @apply grid gap-8;
     grid-template-columns: 1fr;
-    gap: 2rem;
-
     @media (min-width: 900px) {
       grid-template-columns: 1.2fr 2fr;
-      align-items: start;
+      @apply items-start;
     }
   }
 
@@ -42,15 +37,9 @@
   }
 
   /* Grid de columnas */
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.25rem;
+  &__grid { @apply grid grid-cols-3 gap-5 sm:gap-8; }
 
-    @media (min-width: 600px) { gap: 2rem; }
-  }
-
-  &__col { display: grid; gap: .75rem; }
+  &__col { @apply grid gap-3; }
 
   &__colTitle {
     color: $rarn-color-text-light;
@@ -58,38 +47,22 @@
     font-size: 1rem;
   }
 
-  &__list { display: grid; gap: .5rem; padding: 0; margin: 0; list-style: none; }
+  &__list { @apply grid gap-2 p-0 m-0 list-none; }
 
   &__link {
-    display: inline-flex;
-    align-items: center;
-    gap: .375rem;
+    @apply inline-flex items-center gap-1.5 no-underline transition-colors;
     font-size: .95rem;
     color: $rarn-color-gray-text-secondary;
-    text-decoration: none;
-    transition: color .15s ease, transform .15s ease;
-
     &:hover,
     &:focus-visible { color: $rarn-color-gray-text-placeholder; }
     &:active { transform: translateY(1px); }
   }
 
   /* Divider */
-  &__divider {
-    border: 0;
-    border-top: 1px solid $rarn-color-gray-border;
-    margin-block: 2rem 1rem;
-    opacity: .5;
-  }
+  &__divider { @apply border-0; border-top: 1px solid $rarn-color-gray-border; margin-block: 2rem 1rem; opacity: .5; }
 
   /* Bottom row */
-  &__bottom {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
+  &__bottom { @apply flex gap-4 items-center justify-between flex-wrap; }
 
   &__copy { font-size: .875rem; color: $rarn-color-gray-text-secondary; }
 }

@@ -9,4 +9,10 @@
   /* Tokens locales que controlan el borde de selección */
   --map-stroke-selected: #{$rarn-color-primary}; /* ← viene de _variables.scss */
   --map-stroke-selected-w: 2; /* grosor en px (número) */
+
+  /* Colores de relleno por rango (expuestos como CSS vars) */
+  --map-fill-low:  #{$rarn-color-map-low};
+  --map-fill-mid:  #{$rarn-color-map-mid};
+  --map-fill-high: #{$rarn-color-map-high};
+  --map-fill-off:  #{$rarn-color-map-off};
 }

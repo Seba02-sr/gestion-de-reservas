@@ -2,23 +2,12 @@
 
 .searchbar {
   &__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-
-    @media (min-width: 768px) {
-      grid-template-columns: repeat(4, 1fr);
-      align-items: end; /* alinea bases */
-    }
+    // Grid responsivo con Tailwind; mantiene alineación inferior en desktop
+    @apply grid grid-cols-1 gap-4 md:grid-cols-4 md:items-end;
   }
 
   &__actions {
-    display: flex;
-    justify-content: center;
-    margin-top: 1rem;
-
-    @media (min-width: 768px) {
-      margin-top: 1.25rem;
-    }
+    // Acciones centradas y espaciado consistente con Hero
+    @apply flex justify-center mt-4 md:mt-5;
   }
 }

@@ -1,74 +1,43 @@
 @use "../base/variables" as *;
 @use "../base/mixins" as *;
+@use "../base/layout" as layout;
 
-// Fondo gris claro de sección (si ya tienes un token específico, reemplaza aquí)
-$rarn-section-bg: #F6F7F9 !default;
+// Fondo de sección usa el neutral global
+$rarn-section-bg: $rarn-color-gray-section !default;
 
 .rarn-benefits {
   background: $rarn-section-bg;
   color: $rarn-color-text-primary;
 
   &__container {
-    max-width: 1200px;
-    margin-inline: auto;
-    padding-inline: 1rem;
-    padding-block: 2.25rem;
-
-    @include respond-from("tablet") {
-      padding-inline: 2rem;
-      padding-block: 2.75rem;
-    }
-
-    @include respond-from("laptop") {
-      padding-inline: 2.5rem;
-      padding-block: 3rem;
-    }
+    // Unifica con el container global; el spacing vertical viene de .rarn-section
+    @include layout.container();
   }
 
   &__title {
-    text-align: center;
+    @apply text-center font-bold;
     margin-bottom: 1.75rem;
-    font-weight: 700;
   }
 
   &__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.75rem;
-
-    @include respond-from("tablet") {
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-    }
+    // Grid responsivo con Tailwind
+    @apply grid grid-cols-1 gap-7 md:grid-cols-3 md:gap-8;
   }
 
   /* ITEM: limpio, sin fondo/borde */
   &__item {
-    text-align: center;
+    @apply text-center;
     padding: 0.5rem 0.25rem;
   }
 
   /* ICONO: círculo = primario (currentColor), path = blanco */
   &__icon {
-    display: inline-flex;
-    margin-bottom: 0.625rem;
+    @apply inline-flex mb-2.5;
     color: $rarn-color-primary; // círculo
   }
 
   &__icon-svg {
-    width: 48px;
-    height: 48px;
-    display: block;
-
-    @include respond-from("tablet") {
-      width: 56px;
-      height: 56px;
-    }
-
-    @include respond-from("laptop") {
-      width: 64px;
-      height: 64px;
-    }
+    @apply block w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16;
 
     /* Escalar el pictograma para que quede más chico dentro del círculo */
     path {
@@ -78,7 +47,7 @@ $rarn-section-bg: #F6F7F9 !default;
   }
 
   &__item-title {
-    font-weight: 700;
+    @apply font-bold;
     margin-bottom: 0.25rem;
     font-size: 1.125rem; // ~18px
 

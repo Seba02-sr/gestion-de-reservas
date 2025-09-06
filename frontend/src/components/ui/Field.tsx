@@ -1,4 +1,5 @@
 import React from "react";
+import ChevronDownIcon from "../icons/ChevronDownIcon";
 
 export function Field({
   label,
@@ -57,11 +58,7 @@ export function SelectIcon({
       <select id={id} className="rarn-select rarn-input-icon__control" {...rest}>
         {children}
       </select>
-      {useCustomChevron && (
-        <svg aria-hidden viewBox="0 0 20 20" className="rarn-select__chev">
-          <path d="M6 8l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      )}
+      {useCustomChevron && <ChevronDownIcon />}
     </div>
   );
 }
