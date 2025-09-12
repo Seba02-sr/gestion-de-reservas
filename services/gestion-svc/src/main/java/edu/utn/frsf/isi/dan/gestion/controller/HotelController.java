@@ -2,7 +2,6 @@ package edu.utn.frsf.isi.dan.gestion.controller;
 
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
-import edu.utn.frsf.isi.dan.gestion.model.Hotel;
 import edu.utn.frsf.isi.dan.gestion.service.HotelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -35,30 +34,16 @@ public class HotelController {
         return new ResponseEntity<>(hotelService.crearHotel(hotelRequest), HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Hotel> getById(@PathVariable Integer id) {
-        return hotelService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping
-    public List<Hotel> getAll() {
-        return hotelService.findAll();
-    }
-
-    /*
+    @Operation(summary = "Actualizar un hotel existente",
+                description = "Permite actualizar la categoría, el teléfono y el correo de contacto de un hotel existente.",
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Hotel actualizado correctamente"),
+                    @ApiResponse(responseCode = "400", description = "Error al actualizar el hotel"),
+                    @ApiResponse(responseCode = "404", description = "Hotel no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+                })
     @PutMapping("/{id}")
-    public ResponseEntity<Hotel> update(@PathVariable Integer id, @RequestBody Hotel hotel) {
-        if (!hotelService.findById(id).isPresent()) return ResponseEntity.notFound().build();
-        hotel.setId(id);
-        return ResponseEntity.ok(hotelService.save(hotel));
-    }*/
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        if (!hotelService.findById(id).isPresent()) return ResponseEntity.notFound().build();
-        hotelService.deleteById(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<HotelResponse> actualizarHotel(@PathVariable Integer id, @Valid @RequestBody HotelRequest hotelRequest) {
+        return new ResponseEntity<>(hotelService.actualizarHotel(id, hotelRequest), HttpStatus.OK);
     }
 }
