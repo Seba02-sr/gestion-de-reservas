@@ -1,7 +1,9 @@
 package edu.utn.frsf.isi.dan.gestion.controller;
 
+import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
+import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.service.HotelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 
 @RestController
 @RequestMapping("/hoteles")
@@ -44,5 +47,18 @@ public class HotelController {
     @PutMapping("/{id}")
     public ResponseEntity<HotelResponse> actualizarHotel(@PathVariable Integer id, @Valid @RequestBody HotelRequest hotelRequest) {
         return new ResponseEntity<>(hotelService.actualizarHotel(id, hotelRequest), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Agregar amenities a un hotel",
+                description = "Permite agregar uno o más amenities a un hotel existente.",
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Amenities agregados correctamente"),
+                    @ApiResponse(responseCode = "400", description = "Error al agregar amenities"),
+                    @ApiResponse(responseCode = "404", description = "Hotel no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+                })
+    @PutMapping("/{id}/amenities")
+    public ResponseEntity<HotelResponse> agregarAmenities(@PathVariable Integer id, @RequestBody List<AmenityHotelRequest> amenityRequests) {
+        return new ResponseEntity<>(hotelService.agregarAmenities(id, amenityRequests), HttpStatus.OK);
     }
 }

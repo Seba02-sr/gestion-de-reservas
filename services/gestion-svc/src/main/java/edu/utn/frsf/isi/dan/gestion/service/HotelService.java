@@ -1,9 +1,12 @@
 package edu.utn.frsf.isi.dan.gestion.service;
 
 import edu.utn.frsf.isi.dan.gestion.dao.HotelRepository;
+import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
+import edu.utn.frsf.isi.dan.gestion.mapper.AmenityHotelMapper;
 import edu.utn.frsf.isi.dan.gestion.mapper.HotelMapper;
+import edu.utn.frsf.isi.dan.gestion.model.AmenityHotel;
 import edu.utn.frsf.isi.dan.gestion.model.Hotel;
 import lombok.extern.log4j.Log4j2;
 
@@ -11,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -21,6 +25,9 @@ public class HotelService {
 
     @Autowired
     private HotelMapper hotelMapper;
+
+    @Autowired
+    private AmenityHotelMapper amenityHotelMapper;
 
     /**
      * El mapper ya se encarga de:
@@ -81,6 +88,47 @@ public class HotelService {
             return hotelMapper.toResponse(hotelActualizado);
         } catch (Exception e) {
             log.error("Error al actualizar el hotel: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * Agrega uno o más amenities a un hotel existente.
+     * 
+     * @param id Identificador del hotel al que se agregarán los amenities.
+     * @param amenityRequests Lista de AmenityHotelRequest a agregar.
+     * @return HotelResponse con los datos actualizados.
+     */
+    @Transactional
+    public HotelResponse agregarAmenities(Integer id, List<AmenityHotelRequest> amenityRequests) {
+        if (amenityRequests == null || amenityRequests.isEmpty()) {
+            log.warn("Se intentó agregar amenities con una lista nula o vacía");
+            throw new IllegalArgumentException("La lista de amenities no puede ser nula o vacía");
+        }
+
+        log.info("Iniciando la adición de amenities al hotel con ID {}", id);
+
+        Optional<Hotel> optionalHotel = hotelRepository.findById(id);
+        if (optionalHotel.isEmpty()) {
+            log.warn("No se encontró un hotel con ID {}", id);
+            throw new IllegalArgumentException("El hotel con el ID especificado no existe");
+        }
+
+        try {
+            Hotel hotelExistente = optionalHotel.get();
+            List<AmenityHotel> amenityHotels = hotelExistente.getAmenities();
+
+            for (AmenityHotelRequest request : amenityRequests) {
+                AmenityHotel amenityHotel = amenityHotelMapper.toEntity(request);
+                amenityHotel.setHotel(hotelExistente);
+                amenityHotels.add(amenityHotel);
+            }
+
+            hotelExistente.setAmenities(amenityHotels);
+            Hotel hotelActualizado = hotelRepository.save(hotelExistente);
+            return hotelMapper.toResponse(hotelActualizado);
+        } catch (Exception e) {
+            log.error("Error al agregar amenities al hotel: {}", e.getMessage(), e);
             throw e;
         }
     }
