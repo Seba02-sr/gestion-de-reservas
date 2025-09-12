@@ -21,6 +21,8 @@ public interface HotelMapper {
      * @return
      */
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "habitaciones", expression = "java(new java.util.ArrayList<>())")
+    @Mapping(target = "amenities", expression = "java(new java.util.ArrayList<>())")
     Hotel toEntity(HotelRequest request);
 
     /**
