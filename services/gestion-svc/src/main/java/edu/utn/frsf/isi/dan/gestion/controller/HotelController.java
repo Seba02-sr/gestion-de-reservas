@@ -3,7 +3,6 @@ package edu.utn.frsf.isi.dan.gestion.controller;
 import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
-import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.service.HotelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -60,5 +59,19 @@ public class HotelController {
     @PutMapping("/{id}/amenities")
     public ResponseEntity<HotelResponse> agregarAmenities(@PathVariable Integer id, @RequestBody List<AmenityHotelRequest> amenityRequests) {
         return new ResponseEntity<>(hotelService.agregarAmenities(id, amenityRequests), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Eliminar un amenity de un hotel",
+                description = "Permite eliminar un amenity de un hotel existente.",
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Amenity eliminado correctamente"),
+                    @ApiResponse(responseCode = "400", description = "Error al eliminar el amenity"),
+                    @ApiResponse(responseCode = "404", description = "Hotel o amenity no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+                })
+    @DeleteMapping("/{id}/amenities/{amenityId}")
+    public ResponseEntity<Void> eliminarAmenity(@PathVariable Integer id, @PathVariable Long amenityId) {
+        hotelService.eliminarAmenity(id, amenityId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

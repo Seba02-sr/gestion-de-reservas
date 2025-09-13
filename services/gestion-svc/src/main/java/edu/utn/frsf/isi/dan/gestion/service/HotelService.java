@@ -132,4 +132,44 @@ public class HotelService {
             throw e;
         }
     }
+
+    /**
+     * Elimina un amenity de un hotel existente.
+     * 
+     * @param id Identificador del hotel.
+     * @param amenityId Identificador del amenity a eliminar.
+     */
+    @Transactional
+    public void eliminarAmenity(Integer id, Long amenityId) {
+        if (id == null || amenityId == null) {
+            log.warn("Se intentó eliminar un amenity con id o amenityId nulos");
+            throw new IllegalArgumentException("El id del hotel y el id del amenity no pueden ser nulos");
+        }
+
+        log.info("Iniciando eliminación del amenity con ID {} del hotel con ID {}", amenityId, id);
+
+        try {
+            Optional<Hotel> optionalHotel = hotelRepository.findById(id);
+            if (optionalHotel.isEmpty()) {
+                log.warn("No se encontró un hotel con ID {}", id);
+                throw new IllegalArgumentException("El hotel con el ID especificado no existe");
+            }
+
+            Hotel hotelExistente = optionalHotel.get();
+            List<AmenityHotel> amenityHotels = hotelExistente.getAmenities();
+
+            boolean removed = amenityHotels.removeIf(amenityHotel -> amenityHotel.getId().equals(amenityId));
+            if (!removed) {
+                log.warn("No se encontró un amenity con ID {} en el hotel con ID {}", amenityId, id);
+                throw new IllegalArgumentException("El amenity con el ID especificado no existe en el hotel");
+            }
+
+            hotelExistente.setAmenities(amenityHotels);
+            hotelRepository.save(hotelExistente);
+            log.info("Amenity con ID {} eliminado del hotel con ID {}", amenityId, id);
+        } catch (Exception e) {
+            log.error("Error al eliminar el amenity: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
 }
