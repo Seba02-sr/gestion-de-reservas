@@ -172,4 +172,38 @@ public class HotelService {
             throw e;
         }
     }
+
+    /**
+     * Marca un hotel como cerrado.
+     * 
+     * @param id Identificador del hotel a cerrar.
+     * @return HotelResponse con los datos actualizados.
+     */
+    @Transactional
+    public HotelResponse cerrarHotel(Integer id) {
+        if (id == null) {
+            log.warn("Se intentó cerrar un hotel con un ID nulo");
+            throw new IllegalArgumentException("El ID del hotel no puede ser nulo");
+        }
+
+        log.info("Iniciando el cierre del hotel con ID {}", id);
+
+        try {
+            Optional<Hotel> optionalHotel = hotelRepository.findById(id);
+            if (optionalHotel.isEmpty()) {
+                log.warn("No se encontró un hotel con ID {}", id);
+                throw new IllegalArgumentException("El hotel con el ID especificado no existe");
+            }
+
+            Hotel hotelExistente = optionalHotel.get();
+            hotelExistente.setCerrado(true);
+
+            Hotel hotelActualizado = hotelRepository.save(hotelExistente);
+            log.info("Hotel con ID {} marcado como cerrado", id);
+            return hotelMapper.toResponse(hotelActualizado);
+        } catch (Exception e) {
+            log.error("Error al cerrar el hotel: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
 }

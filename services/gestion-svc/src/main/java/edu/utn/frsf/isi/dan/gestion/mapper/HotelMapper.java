@@ -23,6 +23,7 @@ public interface HotelMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "habitaciones", expression = "java(new java.util.ArrayList<>())")
     @Mapping(target = "amenities", expression = "java(new java.util.ArrayList<>())")
+    @Mapping(target = "cerrado", expression = "java(false)")
     Hotel toEntity(HotelRequest request);
 
     /**

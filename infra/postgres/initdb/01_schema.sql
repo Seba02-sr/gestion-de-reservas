@@ -2,12 +2,12 @@
 CREATE SCHEMA IF NOT EXISTS tp_dan;
 
 -- Crear secuencia para el ID de la tabla HOTEL
-do $$
+do $
 begin
     if not exists (select 1 from pg_class where relname = 'hotel_id_seq') then
         create sequence tp_dan.hotel_id_seq;
     end if;
-end$$;
+end$;
 
 -- Crear tabla HOTEL
 CREATE TABLE IF NOT EXISTS tp_dan.hotel (
@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS tp_dan.hotel (
     longitud decimal(10,7),
     telefono varchar(30),
     correo_contacto varchar(100),
-    categoria integer NOT NULL
+    categoria integer NOT NULL,
+    cerrado boolean NOT NULL DEFAULT false
 );
 
 -- Tabla tipo_habitacion
@@ -52,12 +53,12 @@ CREATE TABLE IF NOT EXISTS tp_dan.tarifa (
 );
 
 -- Secuencia para habitacion
-DO $$
+DO $
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'habitacion_id_seq') THEN
         CREATE SEQUENCE tp_dan.habitacion_id_seq;
     END IF;
-END$$;
+END$;
 
 -- Tabla habitacion
 CREATE TABLE IF NOT EXISTS tp_dan.habitacion (
@@ -69,12 +70,12 @@ CREATE TABLE IF NOT EXISTS tp_dan.habitacion (
 );
 
 -- Secuencia para amenity_hotel_id_seq
-DO $$
+DO $
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'amenity_hotel_id_seq') THEN
         CREATE SEQUENCE tp_dan.amenity_hotel_id_seq;
     END IF;
-END$$;
+END$;
 
 -- Tabla amenity_hotel
 CREATE TABLE IF NOT EXISTS tp_dan.amenity_hotel (

@@ -74,4 +74,17 @@ public class HotelController {
         hotelService.eliminarAmenity(id, amenityId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @Operation(summary = "Cerrar un hotel",
+                description = "Permite marcar un hotel como cerrado.",
+                responses = {
+                    @ApiResponse(responseCode = "200", description = "Hotel cerrado correctamente"),
+                    @ApiResponse(responseCode = "400", description = "Error al cerrar el hotel"),
+                    @ApiResponse(responseCode = "404", description = "Hotel no encontrado"),
+                    @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+                })
+    @PutMapping("/{id}/cerrar")
+    public ResponseEntity<HotelResponse> cerrarHotel(@PathVariable Integer id) {
+        return new ResponseEntity<>(hotelService.cerrarHotel(id), HttpStatus.OK);
+    }
 }

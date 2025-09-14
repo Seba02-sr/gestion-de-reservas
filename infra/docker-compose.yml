@@ -144,7 +144,7 @@ services:
     ports:
       - "8083:8080"
     depends_on:
-      - mysql
+      - postgres
       - rabbitmq
     environment:
       SPRING_PROFILES_ACTIVE: default

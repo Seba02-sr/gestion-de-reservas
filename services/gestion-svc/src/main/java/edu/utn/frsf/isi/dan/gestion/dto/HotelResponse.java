@@ -12,7 +12,8 @@ public record HotelResponse(
     Double longitud,
     String telefono,
     String correoContacto,
-    Integer categoria
+    Integer categoria,
+    Boolean cerrado
     // Falta lista de amenities y habitaciones (agregar cuando se crees los dto de las mismas y sus mapper)
 ) {
 
