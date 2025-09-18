@@ -12,8 +12,8 @@ import edu.utn.frsf.isi.dan.user.dto.BancoResponse;
 import edu.utn.frsf.isi.dan.user.service.BancoService;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -89,8 +89,7 @@ public class BancoControllerTest {
         .andExpect(jsonPath("$.nombre").value(bancoResponse.nombre()))
         .andExpect(jsonPath("$.activo").value(bancoResponse.activo()))
         .andExpect(
-            jsonPath("$.fechaRegistro")
-                .value(bancoResponse.fechaRegistro().format(JSON_DT)));
+            jsonPath("$.fechaRegistro").value(bancoResponse.fechaRegistro().format(JSON_DT)));
 
     verify(bancoService, times(1)).createBanco(any(BancoRequest.class));
   }
@@ -124,8 +123,7 @@ public class BancoControllerTest {
         .andExpect(jsonPath("$[0].nombre").value(bancoResponse.nombre()))
         .andExpect(jsonPath("$[0].activo").value(bancoResponse.activo()))
         .andExpect(
-            jsonPath("$[0].fechaRegistro")
-                .value(bancoResponse.fechaRegistro().format(JSON_DT)));
+            jsonPath("$[0].fechaRegistro").value(bancoResponse.fechaRegistro().format(JSON_DT)));
 
     verify(bancoService, times(1)).getAllBancos();
   }
@@ -281,8 +279,7 @@ public class BancoControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1))
         .andExpect(jsonPath("$.activo").value(false))
-        .andExpect(
-            jsonPath("$.fechaEliminado").value(eliminado.fechaEliminado().format(JSON_DT)));
+        .andExpect(jsonPath("$.fechaEliminado").value(eliminado.fechaEliminado().format(JSON_DT)));
 
     verify(bancoService, times(1)).deleteBanco(1);
   }
