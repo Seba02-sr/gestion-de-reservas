@@ -30,7 +30,7 @@ jobs:
           cache: maven
 
       - name: Spotless check (format)
-        run: mvn -B -ntp -Pci spotless:check
+        run: mvn -B -ntp -Pci -Dspotless.ratchetFrom=origin/${{ github.event.repository.default_branch }} spotless:check
 
       - name: Run tests
         run: mvn -B -ntp test

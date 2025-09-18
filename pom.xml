@@ -175,7 +175,7 @@
                         <artifactId>spotless-maven-plugin</artifactId>
                         <version>2.43.0</version>
                         <configuration>
-                            <ratchetFrom>origin/main</ratchetFrom>
+                            <ratchetFrom>${spotless.ratchetFrom}</ratchetFrom>
                         </configuration>
                     </plugin>
                 </plugins>
