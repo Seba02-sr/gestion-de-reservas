@@ -1,7 +1,6 @@
 package edu.utn.frsf.isi.dan.user.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import edu.utn.frsf.isi.dan.user.util.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,33 +26,36 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class TarjetaCredito extends AuditableEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    @Column(name = "numero_tarjeta")
-    private String numero;
+  @Column(name = "numero_tarjeta")
+  private String numero;
 
-    @Column(name = "nombre_titular")
-    private String nombreTitular;
-    @Column(name = "fecha_vencimiento")    
-    private String fechaVencimiento;
-    @Column(name = "codigo_seguridad")    
-    private String cvc;
-    @Column(name = "es_principal")    
-    @Builder.Default
-    private Boolean esPrincipal = false;
+  @Column(name = "nombre_titular")
+  private String nombreTitular;
 
-    @ManyToOne
-    @JoinColumn(name = "banco_id")
-    private Banco banco;
+  @Column(name = "fecha_vencimiento")
+  private String fechaVencimiento;
 
-    @ManyToOne
-    @JoinColumn(name = "usuario_id")
-    @JsonIgnore
-    private Huesped huesped;
+  @Column(name = "codigo_seguridad")
+  private String cvc;
 
-    public boolean isPrincipal() {
-        return esPrincipal != null && esPrincipal;
-    }
+  @Column(name = "es_principal")
+  @Builder.Default
+  private Boolean esPrincipal = false;
+
+  @ManyToOne
+  @JoinColumn(name = "banco_id")
+  private Banco banco;
+
+  @ManyToOne
+  @JoinColumn(name = "usuario_id")
+  @JsonIgnore
+  private Huesped huesped;
+
+  public boolean isPrincipal() {
+    return esPrincipal != null && esPrincipal;
+  }
 }

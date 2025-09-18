@@ -21,9 +21,10 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class Banco extends AuditableEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    private String nombre;
-};
+  private String nombre;
+}
+;

@@ -10,16 +10,18 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Habitacion {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    private Integer numero;
-    private Integer piso;
-    @ManyToOne
-    @JoinColumn(name = "id_tipo")
-    private TipoHabitacion tipoHabitacion;
-    @ManyToOne
-    @JoinColumn(name = "id_hotel")
-    private Hotel hotel;
-    
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
+
+  private Integer numero;
+  private Integer piso;
+
+  @ManyToOne
+  @JoinColumn(name = "id_tipo")
+  private TipoHabitacion tipoHabitacion;
+
+  @ManyToOne
+  @JoinColumn(name = "id_hotel")
+  private Hotel hotel;
 }
