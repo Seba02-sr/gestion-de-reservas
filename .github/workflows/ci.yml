@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -28,7 +30,7 @@ jobs:
           cache: maven
 
       - name: Spotless check (format)
-        run: mvn -B -ntp spotless:check
+        run: mvn -B -ntp -Pci spotless:check
 
       - name: Run tests
         run: mvn -B -ntp test
