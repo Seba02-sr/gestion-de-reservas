@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Huesped {
 
-        private String idUsuario;
-        private String nombreApellido;
-        private String email;
+  private String idUsuario;
+  private String nombreApellido;
+  private String email;
 }

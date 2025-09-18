@@ -10,9 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class TipoHabitacion {
-    @Id
-    private Integer id;
-    private String nombre;
-    private String descripcion;
-    private Integer capacidad;
+  @Id private Integer id;
+  private String nombre;
+  private String descripcion;
+  private Integer capacidad;
 }

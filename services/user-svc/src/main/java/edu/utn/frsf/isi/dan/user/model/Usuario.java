@@ -24,15 +24,15 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @SuperBuilder
 public abstract class Usuario extends AuditableEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    protected Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  protected Integer id;
 
-    protected String nombre;
-    protected String email;
-    protected String telefono;
-    protected String dni;
-    
-    protected String username;
-    protected String password;
+  protected String nombre;
+  protected String email;
+  protected String telefono;
+  protected String dni;
+
+  protected String username;
+  protected String password;
 }

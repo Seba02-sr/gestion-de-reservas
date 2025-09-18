@@ -8,9 +8,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    @Bean
-    public MessageConverter jackson2MessageConverter() {
-        // Este convertidor usará Jackson para serializar/deserializar objetos a/desde JSON.
-        return new Jackson2JsonMessageConverter();
-    }
+  @Bean
+  public MessageConverter jackson2MessageConverter() {
+    // Este convertidor usará Jackson para serializar/deserializar objetos a/desde JSON.
+    return new Jackson2JsonMessageConverter();
+  }
 }
