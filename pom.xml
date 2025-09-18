@@ -163,7 +163,6 @@
                     <java>
                         <googleJavaFormat version="1.17.0"/>
                         <removeUnusedImports/>
-                        <target>**/*.java</target>
                     </java>
                 </configuration>
             </plugin>
