@@ -7,7 +7,7 @@ const Header: React.FC = () => {
         <div className="header__content">
           {/* Logo */}
           <div className="header__logo">
-            <img src="/src/assets/svg/ARN-logo.svg" alt="HotelReservas" className="h-8 w-auto" />
+            <img src="/ARN-logo.svg" alt="HotelReservas" className="h-8 w-auto" />
           </div>
 
           {/* Navigation */}
