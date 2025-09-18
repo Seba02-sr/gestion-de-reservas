@@ -13,6 +13,7 @@ import edu.utn.frsf.isi.dan.user.service.BancoService;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +45,8 @@ public class BancoControllerTest {
   private BancoRequest bancoRequest;
   private BancoResponse bancoResponse;
   private List<BancoResponse> bancosResponse;
+  private static final DateTimeFormatter JSON_DT =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
   @BeforeEach
   void setUp() {
@@ -85,7 +88,9 @@ public class BancoControllerTest {
         .andExpect(jsonPath("$.id").value(bancoResponse.id()))
         .andExpect(jsonPath("$.nombre").value(bancoResponse.nombre()))
         .andExpect(jsonPath("$.activo").value(bancoResponse.activo()))
-        .andExpect(jsonPath("$.fechaRegistro").value(bancoResponse.fechaRegistro().toString()));
+        .andExpect(
+            jsonPath("$.fechaRegistro")
+                .value(bancoResponse.fechaRegistro().format(JSON_DT)));
 
     verify(bancoService, times(1)).createBanco(any(BancoRequest.class));
   }
@@ -118,7 +123,9 @@ public class BancoControllerTest {
         .andExpect(jsonPath("$[0].id").value(bancoResponse.id()))
         .andExpect(jsonPath("$[0].nombre").value(bancoResponse.nombre()))
         .andExpect(jsonPath("$[0].activo").value(bancoResponse.activo()))
-        .andExpect(jsonPath("$[0].fechaRegistro").value(bancoResponse.fechaRegistro().toString()));
+        .andExpect(
+            jsonPath("$[0].fechaRegistro")
+                .value(bancoResponse.fechaRegistro().format(JSON_DT)));
 
     verify(bancoService, times(1)).getAllBancos();
   }
@@ -205,7 +212,8 @@ public class BancoControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1))
         .andExpect(jsonPath("$.nombre").value("Banco Actualizado"))
-        .andExpect(jsonPath("$.fechaModificado").value(actualizado.fechaModificado().toString()));
+        .andExpect(
+            jsonPath("$.fechaModificado").value(actualizado.fechaModificado().format(JSON_DT)));
 
     verify(bancoService, times(1)).updateBanco(eq(1), any(BancoRequest.class));
   }
@@ -273,7 +281,8 @@ public class BancoControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1))
         .andExpect(jsonPath("$.activo").value(false))
-        .andExpect(jsonPath("$.fechaEliminado").value(eliminado.fechaEliminado().toString()));
+        .andExpect(
+            jsonPath("$.fechaEliminado").value(eliminado.fechaEliminado().format(JSON_DT)));
 
     verify(bancoService, times(1)).deleteBanco(1);
   }
