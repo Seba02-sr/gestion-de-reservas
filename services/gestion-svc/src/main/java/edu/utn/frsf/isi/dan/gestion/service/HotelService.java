@@ -25,8 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Log4j2
 public class HotelService {
+
   @Autowired private HotelRepository hotelRepository;
+
   @Autowired private HotelMapper hotelMapper;
+
   @Autowired private AmenityHotelMapper amenityHotelMapper;
 
   /**
@@ -78,10 +81,18 @@ public class HotelService {
       throw new IllegalArgumentException("El hotel con el ID especificado no existe");
     }
 
-    // Si se hay un campo con un cambio no permitido, lanzar excepción
-
     try {
       Hotel hotelExistente = optionalHotel.get();
+      // Verificar campos que NO pueden ser modificados
+      if (!hotelExistente.getNombre().equals(hotelRequest.nombre()) ||
+          !hotelExistente.getCuit().equals(hotelRequest.cuit()) ||
+          !hotelExistente.getDomicilio().equals(hotelRequest.domicilio()) ||
+          !hotelExistente.getLatitud().equals(hotelRequest.latitud()) ||
+          !hotelExistente.getLongitud().equals(hotelRequest.longitud())) {
+        log.warn("Intento de modificar campos no permitidos en el hotel con ID {}", id);
+        throw new IllegalArgumentException("Solo se pueden modificar la categoría, el teléfono y el correo de contacto");
+      }
+
       hotelExistente.setCategoria(hotelRequest.categoria());
       hotelExistente.setTelefono(hotelRequest.telefono());
       hotelExistente.setCorreoContacto(hotelRequest.correoContacto());
@@ -171,9 +182,6 @@ public class HotelService {
       }
 
       hotelExistente.getAmenities().remove(amenityHotelAEliminar);
-      // Elimina el AmenityHotel de la base de datos si existe un repositorio para AmenityHotel
-      // amenityHotelRepository.deleteById(amenityId); // Si tienes el repositorio
-
       hotelRepository.save(hotelExistente);
       log.info("Amenity con ID {} eliminado del hotel con ID {}", amenityId, id);
     } catch (Exception e) {
@@ -209,6 +217,14 @@ public class HotelService {
 
       Hotel hotelActualizado = hotelRepository.save(hotelExistente);
       log.info("Hotel con ID {} marcado como cerrado", id);
+
+      /*
+       * Falta agregar la siguiente lógica:
+       * Marcar como no disponible todas las habitaciones del hotel
+       * Se envia un mensaje a reservas-svc que el hotel cierra
+       * Se crea una reserva del tipo CERRADO, para todas las habitaciones con fecha de inicio de hoy y fecha final null
+       */
+
       return hotelMapper.toResponse(hotelActualizado);
     } catch (Exception e) {
       log.error("Error al cerrar el hotel: {}", e.getMessage(), e);
