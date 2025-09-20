@@ -30,6 +30,6 @@ public class Hotel {
   @JsonIgnore
   private List<Habitacion> habitaciones;
   
-  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "hotel")
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "hotel", orphanRemoval = true)
   private List<AmenityHotel> amenities;
 }

@@ -158,16 +158,22 @@ public class HotelService {
       }
 
       Hotel hotelExistente = optionalHotel.get();
-      List<AmenityHotel> amenityHotels = hotelExistente.getAmenities();
-
-      //revisar por que no funciona el removeIf
-      boolean removed = amenityHotels.removeIf(amenityHotel -> amenityHotel.getId().equals(amenityId));
-      if (!removed) {
+      AmenityHotel amenityHotelAEliminar = null;
+      for (AmenityHotel ah : hotelExistente.getAmenities()) {
+        if (ah.getId().equals(amenityId)) {
+          amenityHotelAEliminar = ah;
+          break;
+        }
+      }
+      if (amenityHotelAEliminar == null) {
         log.warn("No se encontró un amenity con ID {} en el hotel con ID {}", amenityId, id);
         throw new IllegalArgumentException("El amenity con el ID especificado no existe en el hotel");
       }
 
-      hotelExistente.setAmenities(amenityHotels);
+      hotelExistente.getAmenities().remove(amenityHotelAEliminar);
+      // Elimina el AmenityHotel de la base de datos si existe un repositorio para AmenityHotel
+      // amenityHotelRepository.deleteById(amenityId); // Si tienes el repositorio
+
       hotelRepository.save(hotelExistente);
       log.info("Amenity con ID {} eliminado del hotel con ID {}", amenityId, id);
     } catch (Exception e) {
