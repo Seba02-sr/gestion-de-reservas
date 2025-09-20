@@ -3,6 +3,7 @@ package edu.utn.frsf.isi.dan.gestion.controller;
 import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
+import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.service.HotelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -85,4 +86,33 @@ public class HotelController {
     public ResponseEntity<HotelResponse> cerrarHotel(@PathVariable Integer id) {
       return new ResponseEntity<>(hotelService.cerrarHotel(id), HttpStatus.OK);
     }
+
+    @Operation(summary = "Consultar hoteles con filtros",
+              description = "Permite consultar hoteles aplicando filtros opcionales como nombre, CUIT, domicilio, categoría y amenities.",
+              responses = {
+                @ApiResponse(responseCode = "200", description = "Consulta realizada correctamente"),
+                @ApiResponse(responseCode = "400", description = "Error en los parámetros de consulta"),
+                @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+              })
+  @GetMapping("/consultar")
+  public ResponseEntity<List<HotelResponse>> consultarHoteles(
+      @RequestParam(required = false) String nombre,
+      @RequestParam(required = false) String cuit,
+      @RequestParam(required = false) String domicilio,
+      @RequestParam(required = false) Integer categoria,
+      @RequestParam(required = false) List<Amenity> amenities) {
+    return new ResponseEntity<>(hotelService.consultarHoteles(nombre, cuit, domicilio, categoria, amenities), HttpStatus.OK);
+  }
+
+  @Operation(summary = "Listar todos los hoteles",
+            description = "Permite listar todos los hoteles sin aplicar filtros.",
+            responses = {
+              @ApiResponse(responseCode = "200", description = "Hoteles listados correctamente"),
+              @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+            })
+  @GetMapping
+  public ResponseEntity<List<HotelResponse>> listarHoteles() {
+    return new ResponseEntity<>(hotelService.listarHoteles(), HttpStatus.OK);
+  }
+
 }

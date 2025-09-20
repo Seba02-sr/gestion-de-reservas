@@ -6,13 +6,19 @@ import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
 import edu.utn.frsf.isi.dan.gestion.mapper.AmenityHotelMapper;
 import edu.utn.frsf.isi.dan.gestion.mapper.HotelMapper;
+import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.model.AmenityHotel;
 import edu.utn.frsf.isi.dan.gestion.model.Hotel;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.List;
+import java.util.ArrayList;
+
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -202,6 +208,58 @@ public class HotelService {
       log.error("Error al cerrar el hotel: {}", e.getMessage(), e);
       throw e;
     }
+  }
+
+  /**
+   * Consulta hoteles con filtros opcionales.
+   * 
+   * @param nombre
+   * @param cuit
+   * @param domicilio
+   * @param categoria
+   * @param amenities
+   * @return
+   */
+  public List<HotelResponse> consultarHoteles(String nombre, String cuit, String domicilio, Integer categoria, List<Amenity> amenities) {
+    log.info("Consultando hoteles con filtros: nombre={}, cuit={}, domicilio={}, categoria={}, amenities={}", nombre, cuit, domicilio, categoria, amenities);
+    try {
+      Specification<Hotel> spec = (root, query, cb) -> {
+        query.distinct(true);
+        List<Predicate> predicates = new ArrayList<>();
+        if (nombre != null) {
+          predicates.add(cb.like(cb.lower(root.get("nombre")), "%" + nombre.toLowerCase() + "%"));
+        }
+        if (cuit != null) {
+          predicates.add(cb.equal(cb.lower(root.get("cuit")), cuit.toLowerCase()));
+        }
+        if (domicilio != null) {
+          predicates.add(cb.like(cb.lower(root.get("domicilio")), "%" + domicilio.toLowerCase() + "%"));
+        }
+        if (categoria != null) {
+          predicates.add(cb.equal(root.get("categoria"), categoria));
+        }
+        if (amenities != null && !amenities.isEmpty()) {
+          Join<Object, Object> joinAmenities = root.join("amenities");
+          predicates.add(joinAmenities.get("amenity").in(amenities));
+        }
+        return cb.and(predicates.toArray(new Predicate[0]));
+      };
+      List<Hotel> result = hotelRepository.findAll(spec);
+      return result.stream().map(hotelMapper::toResponse).toList();
+    } catch (Exception e) {
+      log.error("Error al consultar hoteles: {}", e.getMessage(), e);
+      throw e;
+    }
+  }
+
+  /**
+   * Lista todos los hoteles sin filtros.
+   * 
+   * @return
+   */
+  public List<HotelResponse> listarHoteles() {
+    List<Hotel> hoteles = hotelRepository.findAll();
+    return hoteles.stream().map(hotelMapper::toResponse).toList();
   }
 
 }
