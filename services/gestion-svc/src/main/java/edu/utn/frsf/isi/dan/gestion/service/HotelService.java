@@ -10,14 +10,12 @@ import edu.utn.frsf.isi.dan.gestion.mapper.HotelMapper;
 import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.model.AmenityHotel;
 import edu.utn.frsf.isi.dan.gestion.model.Hotel;
-import lombok.extern.log4j.Log4j2;
-
-import java.util.List;
-import java.util.ArrayList;
-
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -34,21 +32,23 @@ public class HotelService {
   @Autowired private AmenityHotelMapper amenityHotelMapper;
 
   /**
-   * El mapper ya se encarga de:
-   * 1- Inicializar habitaciones y amenities como listas vacías
-   * 
+   * El mapper ya se encarga de: 1- Inicializar habitaciones y amenities como listas vacías
+   *
    * @param hotelRequest
    * @return
    */
   @Transactional
   public HotelResponse crearHotel(HotelRequest hotelRequest) {
-    if(hotelRequest == null) {
+    if (hotelRequest == null) {
       log.warn("Se intentó crear un hotel con una solicitud nula");
       throw new IllegalArgumentException("La transaccion no puede ser nula");
     }
 
-    log.info("Iniciando registro de un hotel con nombre {} y cuit {}", hotelRequest.nombre(), hotelRequest.cuit());
-    
+    log.info(
+        "Iniciando registro de un hotel con nombre {} y cuit {}",
+        hotelRequest.nombre(),
+        hotelRequest.cuit());
+
     try {
       Hotel hotelNuevo = hotelMapper.toEntity(hotelRequest);
       Hotel hotelGuardado = hotelRepository.save(hotelNuevo);
@@ -60,9 +60,9 @@ public class HotelService {
   }
 
   /**
-   * Actualiza un hotel existente con los datos permitidos.
-   * Solo se pueden actualizar la categoría, el teléfono y el correo de contacto.
-   * 
+   * Actualiza un hotel existente con los datos permitidos. Solo se pueden actualizar la categoría,
+   * el teléfono y el correo de contacto.
+   *
    * @param id Identificador del hotel a actualizar.
    * @param hotelRequest Datos a actualizar.
    * @return HotelResponse con los datos actualizados.
@@ -85,13 +85,14 @@ public class HotelService {
     try {
       Hotel hotelExistente = optionalHotel.get();
       // Verificar campos que NO pueden ser modificados
-      if (!hotelExistente.getNombre().equals(hotelRequest.nombre()) ||
-          !hotelExistente.getCuit().equals(hotelRequest.cuit()) ||
-          !hotelExistente.getDomicilio().equals(hotelRequest.domicilio()) ||
-          !hotelExistente.getLatitud().equals(hotelRequest.latitud()) ||
-          !hotelExistente.getLongitud().equals(hotelRequest.longitud())) {
+      if (!hotelExistente.getNombre().equals(hotelRequest.nombre())
+          || !hotelExistente.getCuit().equals(hotelRequest.cuit())
+          || !hotelExistente.getDomicilio().equals(hotelRequest.domicilio())
+          || !hotelExistente.getLatitud().equals(hotelRequest.latitud())
+          || !hotelExistente.getLongitud().equals(hotelRequest.longitud())) {
         log.warn("Intento de modificar campos no permitidos en el hotel con ID {}", id);
-        throw new IllegalArgumentException("Solo se pueden modificar la categoría, el teléfono y el correo de contacto");
+        throw new IllegalArgumentException(
+            "Solo se pueden modificar la categoría, el teléfono y el correo de contacto");
       }
 
       hotelExistente.setCategoria(hotelRequest.categoria());
@@ -108,7 +109,7 @@ public class HotelService {
 
   /**
    * Agrega uno o más amenities a un hotel existente.
-   * 
+   *
    * @param id Identificador del hotel al que se agregarán los amenities.
    * @param amenityRequests Lista de AmenityHotelRequest a agregar.
    * @return HotelResponse con los datos actualizados.
@@ -133,9 +134,9 @@ public class HotelService {
       List<AmenityHotel> amenityHotels = hotelExistente.getAmenities();
 
       for (AmenityHotelRequest request : amenityRequests) {
-          AmenityHotel amenityHotel = amenityHotelMapper.toEntity(request);
-          amenityHotel.setHotel(hotelExistente);
-          amenityHotels.add(amenityHotel);
+        AmenityHotel amenityHotel = amenityHotelMapper.toEntity(request);
+        amenityHotel.setHotel(hotelExistente);
+        amenityHotels.add(amenityHotel);
       }
 
       hotelExistente.setAmenities(amenityHotels);
@@ -149,15 +150,15 @@ public class HotelService {
 
   /**
    * Elimina un amenity de un hotel existente.
-   * 
+   *
    * @param id Identificador del hotel.
    * @param amenityId Identificador del amenity a eliminar.
    */
   @Transactional
   public void eliminarAmenity(Integer id, Long amenityId) {
     if (id == null || amenityId == null) {
-        log.warn("Se intentó eliminar un amenity con id o amenityId nulos");
-        throw new IllegalArgumentException("El id del hotel y el id del amenity no pueden ser nulos");
+      log.warn("Se intentó eliminar un amenity con id o amenityId nulos");
+      throw new IllegalArgumentException("El id del hotel y el id del amenity no pueden ser nulos");
     }
 
     log.info("Iniciando eliminación del amenity con ID {} del hotel con ID {}", amenityId, id);
@@ -179,7 +180,8 @@ public class HotelService {
       }
       if (amenityHotelAEliminar == null) {
         log.warn("No se encontró un amenity con ID {} en el hotel con ID {}", amenityId, id);
-        throw new IllegalArgumentException("El amenity con el ID especificado no existe en el hotel");
+        throw new IllegalArgumentException(
+            "El amenity con el ID especificado no existe en el hotel");
       }
 
       hotelExistente.getAmenities().remove(amenityHotelAEliminar);
@@ -193,15 +195,15 @@ public class HotelService {
 
   /**
    * Marca un hotel como cerrado.
-   * 
+   *
    * @param id Identificador del hotel a cerrar.
    * @return HotelResponse con los datos actualizados.
    */
   @Transactional
   public HotelResponse cerrarHotel(Integer id) {
     if (id == null) {
-        log.warn("Se intentó cerrar un hotel con un ID nulo");
-        throw new IllegalArgumentException("El ID del hotel no puede ser nulo");
+      log.warn("Se intentó cerrar un hotel con un ID nulo");
+      throw new IllegalArgumentException("El ID del hotel no puede ser nulo");
     }
 
     log.info("Iniciando el cierre del hotel con ID {}", id);
@@ -235,7 +237,7 @@ public class HotelService {
 
   /**
    * Consulta hoteles con filtros opcionales.
-   * 
+   *
    * @param nombre
    * @param cuit
    * @param domicilio
@@ -243,30 +245,40 @@ public class HotelService {
    * @param amenities
    * @return
    */
-  public List<HotelResponse> consultarHoteles(String nombre, String cuit, String domicilio, Integer categoria, List<Amenity> amenities) {
-    log.info("Consultando hoteles con filtros: nombre={}, cuit={}, domicilio={}, categoria={}, amenities={}", nombre, cuit, domicilio, categoria, amenities);
+  public List<HotelResponse> consultarHoteles(
+      String nombre, String cuit, String domicilio, Integer categoria, List<Amenity> amenities) {
+    log.info(
+        "Consultando hoteles con filtros: nombre={}, cuit={}, domicilio={}, categoria={}, amenities={}",
+        nombre,
+        cuit,
+        domicilio,
+        categoria,
+        amenities);
     try {
-      Specification<Hotel> spec = (root, query, cb) -> {
-        query.distinct(true);
-        List<Predicate> predicates = new ArrayList<>();
-        if (nombre != null) {
-          predicates.add(cb.like(cb.lower(root.get("nombre")), "%" + nombre.toLowerCase() + "%"));
-        }
-        if (cuit != null) {
-          predicates.add(cb.equal(cb.lower(root.get("cuit")), cuit.toLowerCase()));
-        }
-        if (domicilio != null) {
-          predicates.add(cb.like(cb.lower(root.get("domicilio")), "%" + domicilio.toLowerCase() + "%"));
-        }
-        if (categoria != null) {
-          predicates.add(cb.equal(root.get("categoria"), categoria));
-        }
-        if (amenities != null && !amenities.isEmpty()) {
-          Join<Object, Object> joinAmenities = root.join("amenities");
-          predicates.add(joinAmenities.get("amenity").in(amenities));
-        }
-        return cb.and(predicates.toArray(new Predicate[0]));
-      };
+      Specification<Hotel> spec =
+          (root, query, cb) -> {
+            query.distinct(true);
+            List<Predicate> predicates = new ArrayList<>();
+            if (nombre != null) {
+              predicates.add(
+                  cb.like(cb.lower(root.get("nombre")), "%" + nombre.toLowerCase() + "%"));
+            }
+            if (cuit != null) {
+              predicates.add(cb.equal(cb.lower(root.get("cuit")), cuit.toLowerCase()));
+            }
+            if (domicilio != null) {
+              predicates.add(
+                  cb.like(cb.lower(root.get("domicilio")), "%" + domicilio.toLowerCase() + "%"));
+            }
+            if (categoria != null) {
+              predicates.add(cb.equal(root.get("categoria"), categoria));
+            }
+            if (amenities != null && !amenities.isEmpty()) {
+              Join<Object, Object> joinAmenities = root.join("amenities");
+              predicates.add(joinAmenities.get("amenity").in(amenities));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+          };
       List<Hotel> result = hotelRepository.findAll(spec);
       return result.stream().map(hotelMapper::toResponse).toList();
     } catch (Exception e) {
@@ -277,7 +289,7 @@ public class HotelService {
 
   /**
    * Lista todos los hoteles sin filtros.
-   * 
+   *
    * @return
    */
   public List<HotelResponse> listarHoteles() {
@@ -287,7 +299,7 @@ public class HotelService {
 
   /**
    * Lista todos los amenities de un hotel.
-   * 
+   *
    * @param hotelId
    * @return
    */
@@ -300,5 +312,4 @@ public class HotelService {
     Hotel hotel = optionalHotel.get();
     return hotel.getAmenities().stream().map(amenityHotelMapper::toResponse).toList();
   }
-
 }

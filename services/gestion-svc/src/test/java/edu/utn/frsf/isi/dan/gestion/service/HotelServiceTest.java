@@ -1,4 +1,3 @@
-
 package edu.utn.frsf.isi.dan.gestion.service;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -6,23 +5,23 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import edu.utn.frsf.isi.dan.gestion.dao.HotelRepository;
+import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
+import edu.utn.frsf.isi.dan.gestion.mapper.AmenityHotelMapper;
 import edu.utn.frsf.isi.dan.gestion.mapper.HotelMapper;
+import edu.utn.frsf.isi.dan.gestion.model.Amenity;
+import edu.utn.frsf.isi.dan.gestion.model.AmenityHotel;
 import edu.utn.frsf.isi.dan.gestion.model.Hotel;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
-import edu.utn.frsf.isi.dan.gestion.mapper.AmenityHotelMapper;
-import edu.utn.frsf.isi.dan.gestion.model.Amenity;
-import edu.utn.frsf.isi.dan.gestion.model.AmenityHotel;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -53,7 +52,6 @@ class HotelServiceTest {
             "123456789",
             "contacto@hoteltest.com",
             5);
-
 
     hotel = new Hotel();
     hotel.setId(1);
@@ -234,18 +232,18 @@ class HotelServiceTest {
 
   @Test
   void agregarAmenities_cuandoRequestEsValido_debeAgregarAmenities() {
-  AmenityHotelRequest amenityRequest = new AmenityHotelRequest(1, Amenity.GIMNASIO);
-  AmenityHotel amenityHotel = new AmenityHotel();
-  hotel.setAmenities(new ArrayList<>()); // Inicializa la lista de amenities
-  when(hotelRepository.findById(1)).thenReturn(Optional.of(hotel));
-  when(amenityHotelMapper.toEntity(any(AmenityHotelRequest.class))).thenReturn(amenityHotel);
-  when(hotelRepository.save(any(Hotel.class))).thenReturn(hotel);
-  when(hotelMapper.toResponse(any(Hotel.class))).thenReturn(hotelResponse);
+    AmenityHotelRequest amenityRequest = new AmenityHotelRequest(1, Amenity.GIMNASIO);
+    AmenityHotel amenityHotel = new AmenityHotel();
+    hotel.setAmenities(new ArrayList<>()); // Inicializa la lista de amenities
+    when(hotelRepository.findById(1)).thenReturn(Optional.of(hotel));
+    when(amenityHotelMapper.toEntity(any(AmenityHotelRequest.class))).thenReturn(amenityHotel);
+    when(hotelRepository.save(any(Hotel.class))).thenReturn(hotel);
+    when(hotelMapper.toResponse(any(Hotel.class))).thenReturn(hotelResponse);
 
-  HotelResponse result = hotelService.agregarAmenities(1, List.of(amenityRequest));
+    HotelResponse result = hotelService.agregarAmenities(1, List.of(amenityRequest));
 
-  assertNotNull(result);
-  verify(hotelRepository, times(1)).save(hotel);
+    assertNotNull(result);
+    verify(hotelRepository, times(1)).save(hotel);
   }
 
   @Test

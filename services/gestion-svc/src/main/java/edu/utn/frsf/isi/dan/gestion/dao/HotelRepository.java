@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface HotelRepository extends JpaRepository<Hotel, Integer>, JpaSpecificationExecutor<Hotel> {}
+public interface HotelRepository
+    extends JpaRepository<Hotel, Integer>, JpaSpecificationExecutor<Hotel> {}
