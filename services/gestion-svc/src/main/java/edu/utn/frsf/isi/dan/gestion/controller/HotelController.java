@@ -1,6 +1,7 @@
 package edu.utn.frsf.isi.dan.gestion.controller;
 
 import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
+import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelResponse;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
 import edu.utn.frsf.isi.dan.gestion.model.Amenity;
@@ -113,6 +114,18 @@ public class HotelController {
   @GetMapping
   public ResponseEntity<List<HotelResponse>> listarHoteles() {
     return new ResponseEntity<>(hotelService.listarHoteles(), HttpStatus.OK);
+  }
+
+  @Operation(summary = "Listar amenities de un hotel",
+            description = "Permite listar los amenities de un hotel específico.",
+            responses = {
+              @ApiResponse(responseCode = "200", description = "Amenities listados correctamente"),
+              @ApiResponse(responseCode = "404", description = "Hotel no encontrado"),
+              @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+            })
+  @GetMapping("/{id}/amenities")
+  public ResponseEntity<List<AmenityHotelResponse>> listarAmenities(@PathVariable Integer id) {
+    return new ResponseEntity<>(hotelService.listarAmenities(id), HttpStatus.OK);
   }
 
 }

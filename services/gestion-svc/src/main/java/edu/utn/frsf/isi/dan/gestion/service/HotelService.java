@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.gestion.service;
 
 import edu.utn.frsf.isi.dan.gestion.dao.HotelRepository;
 import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
+import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelResponse;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
 import edu.utn.frsf.isi.dan.gestion.mapper.AmenityHotelMapper;
@@ -282,6 +283,22 @@ public class HotelService {
   public List<HotelResponse> listarHoteles() {
     List<Hotel> hoteles = hotelRepository.findAll();
     return hoteles.stream().map(hotelMapper::toResponse).toList();
+  }
+
+  /**
+   * Lista todos los amenities de un hotel.
+   * 
+   * @param hotelId
+   * @return
+   */
+  public List<AmenityHotelResponse> listarAmenities(Integer hotelId) {
+    Optional<Hotel> optionalHotel = hotelRepository.findById(hotelId);
+    if (optionalHotel.isEmpty()) {
+      log.warn("No se encontró un hotel con ID {}", hotelId);
+      throw new IllegalArgumentException("El hotel con el ID especificado no existe");
+    }
+    Hotel hotel = optionalHotel.get();
+    return hotel.getAmenities().stream().map(amenityHotelMapper::toResponse).toList();
   }
 
 }
