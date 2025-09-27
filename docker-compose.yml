@@ -14,6 +14,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
   # ──────────────────────────────────────────────────────────────────────────────
   # Frontend (producción): Nginx sirviendo el build
   # Activar con: `docker compose --profile prod up -d` o COMPOSE_PROFILES=prod
@@ -32,7 +33,7 @@ services:
   # Infraestructura (DBs, MQ) con perfiles por microservicio para habilitarlos a demanda
   # Nota: RabbitMQ figura en múltiples perfiles porque lo usan varios servicios
   mysql:
-    image: mysql:8.3
+    image: mysql:8.3S
     container_name: mysql-users
     restart: unless-stopped
     profiles: ["infra", "user"]
@@ -162,6 +163,7 @@ services:
       - rabbitmq
     environment:
       SPRING_PROFILES_ACTIVE: default
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
 
   reservas-svc:
     build:
