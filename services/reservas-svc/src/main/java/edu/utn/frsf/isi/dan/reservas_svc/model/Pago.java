@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Pago {
-    private String method;
-    private String transactionId;
-    private Tarifa amount;
-    private String status;
-
+  private String method;
+  private String transactionId;
+  private Tarifa amount;
+  private String status;
 }

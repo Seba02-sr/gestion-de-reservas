@@ -8,7 +8,6 @@ import edu.utn.frsf.isi.dan.user.mapper.PropietarioMapper;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
 import edu.utn.frsf.isi.dan.user.model.Usuario;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,75 +16,70 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+  @Autowired private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private HuespedMapper huespedMapper;
+  @Autowired private HuespedMapper huespedMapper;
 
-    @Autowired
-    private PropietarioMapper propietarioMapper;
+  @Autowired private PropietarioMapper propietarioMapper;
 
-    /**
-     * El mapper ya se encarga de:
-     * 1- Setear el banco a cada tarjeta de credito
-     * 2- Setear la tarjeta de credito al huesped
-     * 
-     * Asegurarse de tener cada Tarjeta de Credito seteado el huesped antes de
-     * guardar
-     * 
-     * @param huespedRequest
-     * @return
-     */
-    public Huesped crearUsuarioHuesped(HuespedRequest huespedRequest) {
-        if (huespedRequest == null || huespedRequest.tarjetasCredito() == null
-                || huespedRequest.tarjetasCredito().isEmpty()) {
-            throw new IllegalArgumentException("El request o la lista de tarjetas no puede ser nula o vacía");
-        }
-
-        Huesped usuario = huespedMapper.toEntity(huespedRequest);
-
-        // Relacion inversa, setear huesped a tarjeta de credito
-        if (usuario.getTarjetaCredito() != null) {
-            usuario.getTarjetaCredito().forEach(t -> t.setHuesped(usuario));
-        }
-        return usuarioRepository.save(usuario);
+  /**
+   * El mapper ya se encarga de: 1- Setear el banco a cada tarjeta de credito 2- Setear la tarjeta
+   * de credito al huesped
+   *
+   * <p>Asegurarse de tener cada Tarjeta de Credito seteado el huesped antes de guardar
+   *
+   * @param huespedRequest
+   * @return
+   */
+  public Huesped crearUsuarioHuesped(HuespedRequest huespedRequest) {
+    if (huespedRequest == null
+        || huespedRequest.tarjetasCredito() == null
+        || huespedRequest.tarjetasCredito().isEmpty()) {
+      throw new IllegalArgumentException(
+          "El request o la lista de tarjetas no puede ser nula o vacía");
     }
 
-    /**
-     * El mapper ya se encarga de:
-     * 1- Setear la cuenta bancaria al propietario
-     * 
-     * Asegurarse de tener una cuenta bancaria seteado al propietario antes de
-     * guardar
-     * 
-     * @param propietarioRequest
-     * @return
-     */
-    public Propietario crearUsuarioPropietario(PropietarioRequest propietarioRequest) {
-        if (propietarioRequest == null || propietarioRequest.cuentaBancaria() == null) {
-            throw new IllegalArgumentException("El request o la cuenta vancaria no puede ser nula");
-        }
+    Huesped usuario = huespedMapper.toEntity(huespedRequest);
 
-        Propietario usuario = propietarioMapper.toEntity(propietarioRequest);
+    // Relacion inversa, setear huesped a tarjeta de credito
+    if (usuario.getTarjetaCredito() != null) {
+      usuario.getTarjetaCredito().forEach(t -> t.setHuesped(usuario));
+    }
+    return usuarioRepository.save(usuario);
+  }
 
-        // Relacion inversa, setear propietario a cuenta bancaria
-        if (usuario.getCuentaBancaria() != null) {
-            usuario.getCuentaBancaria().setPropietario(usuario);
-        }
-
-        return usuarioRepository.save(usuario);
+  /**
+   * El mapper ya se encarga de: 1- Setear la cuenta bancaria al propietario
+   *
+   * <p>Asegurarse de tener una cuenta bancaria seteado al propietario antes de guardar
+   *
+   * @param propietarioRequest
+   * @return
+   */
+  public Propietario crearUsuarioPropietario(PropietarioRequest propietarioRequest) {
+    if (propietarioRequest == null || propietarioRequest.cuentaBancaria() == null) {
+      throw new IllegalArgumentException("El request o la cuenta vancaria no puede ser nula");
     }
 
-    public Page<Usuario> buscarPorNombre(String nombre, Pageable pageable) {
-        return usuarioRepository.findByNombreContainingIgnoreCase(nombre, pageable);
+    Propietario usuario = propietarioMapper.toEntity(propietarioRequest);
+
+    // Relacion inversa, setear propietario a cuenta bancaria
+    if (usuario.getCuentaBancaria() != null) {
+      usuario.getCuentaBancaria().setPropietario(usuario);
     }
 
-    public Page<Usuario> buscarPorDni(String dni, Pageable pageable) {
-        return usuarioRepository.findByDniContaining(dni, pageable);
-    }
+    return usuarioRepository.save(usuario);
+  }
 
-    public Usuario buscarPorDniExacto(String dni) {
-        return usuarioRepository.findByDni(dni);
-    }
+  public Page<Usuario> buscarPorNombre(String nombre, Pageable pageable) {
+    return usuarioRepository.findByNombreContainingIgnoreCase(nombre, pageable);
+  }
+
+  public Page<Usuario> buscarPorDni(String dni, Pageable pageable) {
+    return usuarioRepository.findByDniContaining(dni, pageable);
+  }
+
+  public Usuario buscarPorDniExacto(String dni) {
+    return usuarioRepository.findByDni(dni);
+  }
 }

@@ -7,6 +7,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class TarifaDTO {
-    private Integer tipoHabitacionId;
-    private Double nuevoPrecio;
+  private Integer tipoHabitacionId;
+  private Double nuevoPrecio;
 }

@@ -19,10 +19,10 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class Propietario extends Usuario {
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cuenta_bancaria_id")
-    private CuentaBancaria cuentaBancaria;
+  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "cuenta_bancaria_id")
+  private CuentaBancaria cuentaBancaria;
 
-    @Column(name = "hotel_id")
-    private Long idHotel;
+  @Column(name = "hotel_id")
+  private Long idHotel;
 }

@@ -1,110 +1,69 @@
 # Trabajo Práctico DAN 2025
 
-Este trabajo práctico consiste en el desarrollo de una aplicación distribuida compuesta por microservicios utilizando Spring Boot para el backend y tecnologías modernas de frontend. El objetivo es aplicar conceptos de arquitectura de software, integración de servicios, despliegue con Docker y buenas prácticas de desarrollo colaborativo en un entorno de trabajo realista.  
-
-El sistema incluye autenticación de usuarios, gestión de datos persistentes con MySQL, comunicación entre servicios, y una interfaz frontend moderna conectada al backend mediante APIs REST. Todo el proyecto está estructurado como un monorepo para facilitar la integración y el despliegue en conjunto.
-
-(Mejorar descripcion)
+Aplicación distribuida con microservicios (Spring Boot) y frontend moderno. Monorepo con Docker Compose para levantar infraestructura, backend y frontend.
 
 ## Desarrolladores
-
-- Arrua Alejandro   
+- Arrua Alejandro
 - Nicle Santiago
 - Ramella Sebastian
 
-## Diagrama de datos
-```mermaid
-classDiagram
-    %% ========= Clases =========
-    class Usuario {
-        +Integer id
-        +String nombre
-        +String email
-        +String telefono
-    }
+## Cómo levantar el proyecto
 
-    class Propietario {
-        +CuentaBancaria cuentaBancaria
-        +Long idHotel
-    }
+1) Requisitos
+- Java 21, Docker, Node 20+ (para desarrollo del front)
 
-    class Huesped {
-        +LocalDate fechaNacimiento
-        +List~TarjetaCredito~ tarjetaCredito
-    }
-
-    class Banco {
-        +Integer id
-        +String nombre
-    }
-
-    class CuentaBancaria {
-        +Integer id
-        +String numeroCuenta
-        +String cbu
-        +String alias
-    }
-
-    class TarjetaCredito {
-        +String numero
-        +String nombreTitular
-        +String fechaVencimiento
-        +String cvc
-        +Boolean esPrincipal
-    }
-
-    %% ========= Relaciones =========
-    Usuario <|-- Propietario
-    Usuario <|-- Huesped
-
-    Propietario  "1" --> "1"      CuentaBancaria : posee
-    CuentaBancaria "1" --> "1"    Banco          : pertenece
-
-    Huesped      "1" --> "0..*"   TarjetaCredito : tiene
-    TarjetaCredito "0..*" --> "1" Banco          : emitida~por
-    TarjetaCredito "0..*" --> "1" Huesped        : pertenece~a
-
-    Banco        "1" --> "0..*"   CuentaBancaria : ofrece
-
-```
----
-
-# WIKI
-
-## Organización de directorios
-
-Este proyecto es un **monorepo**, es decir, todos los elementos necesarios para ejecutar la aplicación están en un único repositorio.
-
-### `/infra`
-Contiene los archivos Docker para iniciar los servicios de infraestructura:
-- MySQL
-- phpMyAdmin
-
-#### Levantar y bajar MySQL y phpMyAdmin
-
-**Levantar ambos servicios**
+2) Compilar backend (JARs)
 ```bash
-docker compose -f infra/docker-compose.yml up -d mysql phpmyadmin
+./mvnw -DskipTests clean package
 ```
 
-**Bajar todos los servicios**
+3) Elegir perfiles de ejecución
+- Copiar ejemplo: `cp .env.example .env`
+- Editar `COMPOSE_PROFILES` según necesidad:
+  - Todo (frontend dev + infra + microservicios):
+    - `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion`
+  - Solo frontend dev: `COMPOSE_PROFILES=frontend`
+  - Solo un servicio (con su infra mínima):
+    - user-svc: `COMPOSE_PROFILES=frontend,user`
+    - reservas-svc: `COMPOSE_PROFILES=frontend,reservas`
+    - gestion-svc: `COMPOSE_PROFILES=frontend,gestion`
+  - Frontend producción (Nginx):
+    - `COMPOSE_PROFILES=prod,infra,user,reservas,gestion`
+
+4) Levantar con Docker Compose
 ```bash
-docker compose -f infra/docker-compose.yml down
+docker compose up -d --build
 ```
 
-**Bajar y borrar volúmenes (datos)**
-```bash
-docker compose -f infra/docker-compose.yml down -v
-```
+5) URLs y credenciales
+- Frontend dev: `http://localhost:8080`
+- Frontend prod: `http://localhost:8080` (perfil `prod`)
+- user-svc: `http://localhost:8081`
+- reservas-svc: `http://localhost:8082`
+- gestion-svc: `http://localhost:8083`
 
-### `/services`
-Contiene los microservicios Spring Boot. Por ejemplo:
-- user-svc
+- MySQL: `localhost:3306`
+  - Base: `users`
+  - Usuario app: `usr_app` / `usrapp`
+  - Root: `root` / `rootpwd`
+  - phpMyAdmin: `http://localhost:6080`
 
-**Levantar microservicios**
+- PostgreSQL: `localhost:5432`
+  - Base: `appdb`
+  - Usuario app: `appuser` / `apppwd`
+  - pgAdmin: `http://localhost:6081` (login: `admin@admin.com` / `admin`)
+
+- MongoDB: `localhost:27017`
+  - Admin: `root` / `rootpwd`
+  - Mongo Express: `http://localhost:6091`
+
+- RabbitMQ UI: `http://localhost:15672` (login: `admin` / `admin`)
+
+6) Bajar servicios
 ```bash
-cd services/user-svc
-./mvnw spring-boot:run -DskipTests
+docker compose down
+# con volúmenes (borra datos):
+docker compose down -v
 ```
 
 ---

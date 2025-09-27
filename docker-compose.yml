@@ -1,6 +1,6 @@
-version: '3.9'
-
 services:
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Frontend (desarrollo): Vite con HMR en 8080
   frontend:
 <<<<<<< Updated upstream
 =======

@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class GestionSvcApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(GestionSvcApplication.class, args);
-	}
-
+  public static void main(String[] args) {
+    SpringApplication.run(GestionSvcApplication.class, args);
+  }
 }

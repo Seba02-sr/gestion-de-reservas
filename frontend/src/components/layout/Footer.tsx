@@ -1,5 +1,4 @@
 // ⬅️ Sin react-router-dom. Solo <a>
-import arnLogo from "@/assets/svg/ARN-logo.svg";
 
 type FooterLink = { label: string; to: string; external?: boolean };
 
@@ -53,7 +52,7 @@ export default function Footer() {
         <div className="rarn-footer__brand">
           <a href="/" className="rarn-footer__logoLink" aria-label="Volver al inicio">
             <img
-              src={arnLogo}
+              src="/ARN-logo.svg"
               alt="HotelReservas"
               className="rarn-footer__logo"
               width={120}

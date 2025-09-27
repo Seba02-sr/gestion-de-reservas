@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Review {
 
-    private double rating;
-    private String comment;
-    private String createdAt;
+  private double rating;
+  private String comment;
+  private String createdAt;
 }

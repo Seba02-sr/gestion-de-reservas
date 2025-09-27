@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Tarifa {
-    private Double precio;
-    private String moneda;
+  private Double precio;
+  private String moneda;
 }
