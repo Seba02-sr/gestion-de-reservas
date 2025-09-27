@@ -2,6 +2,27 @@ version: '3.9'
 
 services:
   frontend:
+<<<<<<< Updated upstream
+=======
+    profiles: ["frontend"]
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "8080:5173"  # http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Frontend (producción): Nginx sirviendo el build
+  # Activar con: `docker compose --profile prod up -d` o COMPOSE_PROFILES=prod
+  frontend-prod:
+    profiles: ["prod"]
+>>>>>>> Stashed changes
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -11,3 +32,175 @@ services:
       - "8080:80" # http://localhost:8080
     restart: unless-stopped
 
+<<<<<<< Updated upstream
+=======
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Infraestructura (DBs, MQ) con perfiles por microservicio para habilitarlos a demanda
+  # Nota: RabbitMQ figura en múltiples perfiles porque lo usan varios servicios
+  mysql:
+    image: mysql:8.3
+    container_name: mysql-users
+    restart: unless-stopped
+    profiles: ["infra", "user"]
+    environment:
+      MYSQL_DATABASE: users
+      MYSQL_USER: usr_app
+      MYSQL_PASSWORD: usrapp
+      MYSQL_ROOT_PASSWORD: rootpwd
+      TZ: America/Argentina/Cordoba
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 20s
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    profiles: ["infra", "user"]
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    ports:
+      - "6080:80"
+    depends_on:
+      - mysql
+    volumes:
+      # Configuración para auto-login (solo desarrollo)
+      - ./infra/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+
+  postgres:
+    image: postgres:16
+    container_name: postgres-db
+    restart: unless-stopped
+    profiles: ["infra", "gestion"]
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppwd
+      TZ: America/Argentina/Cordoba
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 10s
+      retries: 5
+      start_period: 20s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    profiles: ["infra", "gestion"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "6081:80"
+    depends_on:
+      - postgres
+    volumes:
+      - ./infra/pgadmin/config/servers/:/pgadmin4/servers/
+      - pgadmin_data:/var/lib/pgadmin
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    profiles: ["infra", "user", "reservas", "gestion"]
+    ports:
+      - "5672:5672"   # aplicaciones
+      - "15672:15672" # consola web
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: unless-stopped
+    profiles: ["infra", "reservas"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpwd
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: unless-stopped
+    profiles: ["infra", "reservas"]
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: rootpwd
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "6091:8081"
+    depends_on:
+      - mongodb
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Microservicios (Spring Boot JAR ya construido en `services/*/target/*.jar`)
+  user-svc:
+    build:
+      context: ./services/user-svc
+    container_name: user-svc
+    restart: unless-stopped
+    profiles: ["user"]
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mysql
+      - rabbitmq
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+
+  reservas-svc:
+    build:
+      context: ./services/reservas-svc
+    container_name: reservas-svc
+    restart: unless-stopped
+    profiles: ["reservas"]
+    ports:
+      - "8082:8080"
+    depends_on:
+      - mongodb
+      - rabbitmq
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+
+  gestion-svc:
+    build:
+      context: ./services/gestion-svc
+    container_name: gestion-svc
+    restart: unless-stopped
+    profiles: ["gestion"]
+    ports:
+      - "8083:8080"
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+
+volumes:
+  mysql_data:
+  postgres_data:
+  mongo_data:
+  pgadmin_data:
+>>>>>>> Stashed changes

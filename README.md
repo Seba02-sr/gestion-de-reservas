@@ -109,6 +109,7 @@ cd services/user-svc
 
 ---
 
+<<<<<<< Updated upstream
 ## Guías para el desarrollador y el usuario
 
 ### Convención de nombre de ticket
@@ -183,3 +184,25 @@ Usa feat para funcionalidades nuevas, fix para correcciones.
 ### TP Etapa 02
 - Tareas necesarias para completar el servicio gestion-svc y reservas-svc [ETAPA02.md](./ETAPA02.md).
 - Descripción paso a paso de las acciones a realizar [PRACTICA_02.pdf](PRACTICA_02.pdf)
+=======
+Documentación detallada (wiki)
+- Estructura de carpetas e infraestructura: ver `docs/estructura.md`
+- Arquitectura y modelo de datos: ver `docs/arquitectura.md`
+- Guías de trabajo, convenciones y herramientas: ver `docs/guias.md`
+
+## Login con Google (beta)
+
+Backend (user-svc):
+- Configurar el Client ID de Google como variable de entorno `GOOGLE_CLIENT_ID` (ya referenciado en `docker-compose.yml`).
+- Alternativa: editar `services/user-svc/src/main/resources/application.properties` y setear `google.oauth.clientId`.
+- Endpoint: `POST http://localhost:8081/auth/google` con cuerpo JSON `{ "credential": "<ID_TOKEN>" }`.
+
+Frontend (Vite):
+- Copiar `frontend/.env.example` a `frontend/.env` y completar `VITE_GOOGLE_CLIENT_ID`.
+- Se agregó el script de Google Identity Services y un botón en el `Header`.
+- Al autenticarse, se guarda el usuario en `localStorage` con clave `user`.
+
+Notas:
+- Esta integración verifica el ID Token de Google y crea el usuario (tipo Huesped) si no existe.
+- Aún no emite JWT propio ni protege endpoints; eso puede sumarse en una etapa siguiente.
+>>>>>>> Stashed changes
