@@ -33,7 +33,7 @@ services:
   # Infraestructura (DBs, MQ) con perfiles por microservicio para habilitarlos a demanda
   # Nota: RabbitMQ figura en múltiples perfiles porque lo usan varios servicios
   mysql:
-    image: mysql:8.3S
+    image: mysql:8.3
     container_name: mysql-users
     restart: unless-stopped
     profiles: ["infra", "user"]
