@@ -1,0 +1,68 @@
+@use "../base/variables" as *;
+@use "../base/layout" as layout;
+
+.rarn-footer {
+  // Si querés replicar el tono oscuro del screenshot usa el token de fondo elevado:
+  // background: $rarn-color-bg-elevated;
+  background: $rarn-color-primary;
+  color: $rarn-color-gray-text-placeholder;
+  padding-block: 3rem 2rem;
+
+  .container { @include layout.container(80rem); }
+
+  &__inner {
+    @apply grid gap-8;
+    grid-template-columns: 1fr;
+    @media (min-width: 900px) {
+      grid-template-columns: 1.2fr 2fr;
+      @apply items-start;
+    }
+  }
+
+  /* Brand */
+  &__brand { display: grid; gap: .75rem; }
+
+  &__logo {
+    display: block;
+    height: 32px;
+    width: auto;
+    filter: brightness(0) invert(1); // si el logo es oscuro, lo blanquea
+  }
+
+  &__tagline {
+    font-size: .95rem;
+    color: $rarn-color-gray-text-secondary;
+    max-width: 38ch;
+    line-height: 1.5;
+  }
+
+  /* Grid de columnas */
+  &__grid { @apply grid grid-cols-3 gap-5 sm:gap-8; }
+
+  &__col { @apply grid gap-3; }
+
+  &__colTitle {
+    color: $rarn-color-text-light;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  &__list { @apply grid gap-2 p-0 m-0 list-none; }
+
+  &__link {
+    @apply inline-flex items-center gap-1.5 no-underline transition-colors;
+    font-size: .95rem;
+    color: $rarn-color-gray-text-secondary;
+    &:hover,
+    &:focus-visible { color: $rarn-color-gray-text-placeholder; }
+    &:active { transform: translateY(1px); }
+  }
+
+  /* Divider */
+  &__divider { @apply border-0; border-top: 1px solid $rarn-color-gray-border; margin-block: 2rem 1rem; opacity: .5; }
+
+  /* Bottom row */
+  &__bottom { @apply flex gap-4 items-center justify-between flex-wrap; }
+
+  &__copy { font-size: .875rem; color: $rarn-color-gray-text-secondary; }
+}

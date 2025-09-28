@@ -1,0 +1,59 @@
+/* src/components/hoteles/hotel-card.scss */
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+
+/* Card */
+.rarn-hotel-card {
+  @apply bg-white rounded-lg overflow-hidden border border-gray-200 shadow-md transition-shadow duration-300;
+  &:hover { @apply shadow-lg; }
+}
+
+/* Media */
+.rarn-hotel-card__media {
+  @apply relative h-56 bg-gray-300 flex items-center justify-center;
+  img { @apply w-full h-full object-cover; }
+
+  .rarn-hotel-card__overlay {
+    @apply absolute inset-0 bg-black/20 flex items-center justify-center text-white text-center px-4;
+  }
+
+  /* Rating discreto arriba derecha */
+  .rarn-hotel-card__rating-badge {
+    @apply absolute top-3 right-3 flex items-center gap-1 rounded-md px-2 py-1 text-gray-700 bg-white/90 shadow-sm;
+    .icon { @apply w-4 h-4; color: $rarn-color-gray-text-muted; }
+  }
+}
+
+/* Body */
+.rarn-hotel-card__body { @apply p-6; }
+
+/* Título */
+.rarn-hotel-card__title { @apply mb-2; }
+
+/* Ubicación */
+.rarn-hotel-card__location {
+  @apply flex items-center gap-2 mb-4 text-gray-600;
+  .icon { @apply w-4 h-4; color: $rarn-color-gray-text-muted; }
+}
+
+/* Footer */
+.rarn-hotel-card__footer {
+  @apply flex items-end justify-between;
+}
+
+.rarn-hotel-card__price {
+  @apply flex flex-col;
+  .muted { @apply text-gray-600; }
+  .price-value { color: $rarn-color-text-primary; }
+}
+.rarn-hotel-card__price-stack { @apply leading-tight; }
+
+/* Botón (oscuro como en el mock) */
+.rarn-hotel-card__button {
+  @apply inline-flex items-center justify-center px-5 py-3 rounded-md rarn-typography-span font-medium transition-colors duration-200 text-white;
+  background-color: $rarn-color-primary; /* o $rarn-color-primary si prefieres */
+  &:hover { @apply bg-opacity-90; }
+}
+
+/* Pequeñas ayudas */
+.text-primary { color: $rarn-color-primary; }

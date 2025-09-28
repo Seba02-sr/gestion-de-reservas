@@ -1,0 +1,13 @@
+@use "../base/variables" as *;
+
+.searchbar {
+  &__grid {
+    // Grid responsivo con Tailwind; mantiene alineación inferior en desktop
+    @apply grid grid-cols-1 gap-4 md:grid-cols-4 md:items-end;
+  }
+
+  &__actions {
+    // Acciones centradas y espaciado consistente con Hero
+    @apply flex justify-center mt-4 md:mt-5;
+  }
+}

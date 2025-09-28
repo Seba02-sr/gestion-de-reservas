@@ -1,52 +1,76 @@
 package edu.utn.frsf.isi.dan.user.service;
 
+import edu.utn.frsf.isi.dan.user.dao.HuespedRepository;
+import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
+import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.mapper.HuespedMapper;
+import edu.utn.frsf.isi.dan.user.model.Huesped;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import edu.utn.frsf.isi.dan.user.dao.HuespedRepository;
-import edu.utn.frsf.isi.dan.user.model.Huesped;
 
 @Service
 public class HuespedService {
 
-    @Autowired
-    private HuespedRepository huespedRepository;
+  @Autowired private HuespedRepository huespedRepository;
 
-    public List<Huesped> getAllHuespedes() {
-        return huespedRepository.findAll();
+  @Autowired private HuespedMapper huespedMapper;
+
+  public List<HuespedResponse> getAllHuespedes() {
+    return huespedRepository.findByActivoTrue().stream()
+        .map(huespedMapper::toResponse)
+        .toList();
+  }
+
+  public HuespedResponse getHuespedById(Long id) {
+    Huesped huesped = getHuespedEntityById(id);
+    return huespedMapper.toResponse(huesped);
+  }
+
+  public HuespedResponse actualizarHuesped(Long id, HuespedRequest request) {
+    if (id == null || request == null) {
+      throw new IllegalArgumentException("El id del huésped y el DTO no pueden ser nulos");
     }
 
-    public Optional<Huesped> getHuespedById(Long id) {
-        return huespedRepository.findById(id);
+    Huesped existente = getHuespedEntityById(id);
+    existente.marcarComoModificado();
+    huespedMapper.updateEntityFromRequest(request, existente);
+
+    // Asegurar relación inversa huesped <- tarjetas
+    if (existente.getTarjetaCredito() != null) {
+      existente.getTarjetaCredito().forEach(t -> t.setHuesped(existente));
     }
 
-    public Huesped actualizarHuesped(Long id, Huesped huespedActualizado) {
-        return huespedRepository.findById(id)
-                .map(h -> {
-                    h.setNombre(huespedActualizado.getNombre());
-                    h.setEmail(huespedActualizado.getEmail());
-                    h.setTelefono(huespedActualizado.getTelefono());
-                    h.setFechaNacimiento(huespedActualizado.getFechaNacimiento());
-                    return huespedRepository.save(h);
-                })
-                .orElseThrow(() -> new IllegalArgumentException("Huésped no encontrado con ID: " + id));
-    }
+    Huesped actualizado = huespedRepository.save(existente);
+    return huespedMapper.toResponse(actualizado);
+  }
 
-    public void eliminarHuesped(Long id) {
-        if (!huespedRepository.existsById(id)) {
-            throw new IllegalArgumentException("No se puede eliminar: huésped no encontrado con ID: " + id);
-        }
-        huespedRepository.deleteById(id);
-    }
+  public void eliminarHuesped(Long id) {
+    Huesped huesped = getHuespedEntityById(id);
+    huesped.marcarComoEliminado();
+    huespedRepository.save(huesped);
+  }
 
-    public List<Huesped> buscarPorNombre(String nombre) {
-    return huespedRepository.findByNombreContainingIgnoreCase(nombre);
-    }
+  public List<HuespedResponse> buscarPorNombre(String nombre) {
+    return huespedRepository.findByActivoTrueAndNombreContainingIgnoreCase(nombre).stream()
+        .map(huespedMapper::toResponse)
+        .toList();
+  }
 
-    public List<Huesped> buscarPorDniParcial(String dni) {
-        return huespedRepository.findByDniStartingWith(dni);
+  public HuespedResponse buscarPorDni(String dni) {
+    return huespedRepository
+        .findByActivoTrueAndDni(dni)
+        .map(huespedMapper::toResponse)
+        .orElseThrow(() -> new EntityNotFoundException("Huésped no encontrado con DNI: " + dni));
+  }
+
+  public Huesped getHuespedEntityById(Long id) {
+    if (id == null) {
+      throw new IllegalArgumentException("El ID del huésped no puede ser nulo");
     }
+    return huespedRepository
+        .findByIdAndActivoTrue(id)
+        .orElseThrow(() -> new EntityNotFoundException("Huésped no encontrado con ID: " + id));
+  }
 }
