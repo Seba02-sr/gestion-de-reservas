@@ -1,14 +1,5 @@
 package edu.utn.frsf.isi.dan.user.service;
 
-import java.util.ArrayList;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import edu.utn.frsf.isi.dan.user.dao.BancoRepository;
-import edu.utn.frsf.isi.dan.user.dao.CuentaBancariaRepository;
-import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
 import edu.utn.frsf.isi.dan.user.dao.UsuarioRepository;
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;

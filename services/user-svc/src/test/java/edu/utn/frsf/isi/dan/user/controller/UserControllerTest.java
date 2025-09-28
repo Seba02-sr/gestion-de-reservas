@@ -1,11 +1,14 @@
 package edu.utn.frsf.isi.dan.user.controller;
 
-import java.time.LocalDate;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.utn.frsf.isi.dan.user.service.UserService;
+import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
@@ -14,15 +17,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import edu.utn.frsf.isi.dan.user.dto.CuentaBancariaRecord;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRecord;
-import edu.utn.frsf.isi.dan.user.dto.PropietarioRecord;
-import edu.utn.frsf.isi.dan.user.service.UserService;
 
 @WebMvcTest(UserController.class)
 @DisplayName("Tests del Controlador de Usuarios")
