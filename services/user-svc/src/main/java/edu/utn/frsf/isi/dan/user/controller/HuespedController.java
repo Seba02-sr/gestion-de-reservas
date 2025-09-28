@@ -3,6 +3,7 @@ package edu.utn.frsf.isi.dan.user.controller;
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
 import edu.utn.frsf.isi.dan.user.service.HuespedService;
+import edu.utn.frsf.isi.dan.user.service.TarjetaCreditoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class HuespedController {
 
   @Autowired private HuespedService huespedService;
+  @Autowired private TarjetaCreditoService tarjetaCreditoService;
 
   @Operation(summary = "Listar huéspedes activos")
   @ApiResponses({@ApiResponse(responseCode = "200", description = "Listado obtenido")})
@@ -44,7 +46,7 @@ public class HuespedController {
     @ApiResponse(responseCode = "404", description = "Huésped no encontrado")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<HuespedResponse> getHuespedById(@PathVariable @Positive Long id) {
+  public ResponseEntity<HuespedResponse> getHuespedById(@PathVariable @Positive Integer id) {
     return ResponseEntity.ok(huespedService.getHuespedById(id));
   }
 
@@ -55,14 +57,14 @@ public class HuespedController {
   })
   @PutMapping("/{id}")
   public ResponseEntity<HuespedResponse> actualizarHuesped(
-      @PathVariable @Positive Long id, @RequestBody @Valid HuespedRequest huespedRequest) {
+      @PathVariable @Positive Integer id, @RequestBody @Valid HuespedRequest huespedRequest) {
     return ResponseEntity.ok(huespedService.actualizarHuesped(id, huespedRequest));
   }
 
   @Operation(summary = "Eliminar (soft-delete) un huésped")
   @ApiResponses({@ApiResponse(responseCode = "204", description = "Huésped eliminado")})
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> eliminarHuesped(@PathVariable @Positive Long id) {
+  public ResponseEntity<Void> eliminarHuesped(@PathVariable @Positive Integer id) {
     huespedService.eliminarHuesped(id);
     return ResponseEntity.noContent().build();
   }
@@ -90,5 +92,12 @@ public class HuespedController {
   @GetMapping("/dni")
   public ResponseEntity<HuespedResponse> buscarPorDniQuery(@RequestParam("dni") String dni) {
     return ResponseEntity.ok(huespedService.buscarPorDni(dni));
+  }
+
+  @Operation(summary = "Listar tarjetas de un huésped")
+  @GetMapping("/{id}/tarjetas")
+  public ResponseEntity<java.util.List<edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse>>
+      listarTarjetasPorHuesped(@PathVariable @Positive Integer id) {
+    return ResponseEntity.ok(tarjetaCreditoService.getTarjetasPorHuesped(id));
   }
 }

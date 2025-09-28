@@ -38,7 +38,7 @@ public class TarjetaCreditoController {
   // GET /tarjetas/{id}
   @GetMapping("/{id}")
   public ResponseEntity<TarjetaCreditoResponse> getTarjetaPorId(
-      @PathVariable("id") @Positive Long id) {
+      @PathVariable("id") @Positive Integer id) {
     return ResponseEntity.ok(tarjetaCreditoService.getTarjetaById(id));
   }
 
@@ -55,13 +55,8 @@ public class TarjetaCreditoController {
   // GET /huespedes/{id}/tarjetas
   @GetMapping("/huespedes/{huespedId}/tarjetas")
   public ResponseEntity<List<TarjetaCreditoResponse>> getTarjetasPorHuesped(
-      @PathVariable("huespedId") @Positive Long huespedId) {
-    List<TarjetaCreditoResponse> tarjetas =
-        tarjetaCreditoService.tarjetaCreditoRepository.findByHuespedId(huespedId).stream()
-            .map(tarjetaCreditoService.tarjetaCreditoMapper::toResponse)
-            .toList();
-
-    return ResponseEntity.ok(tarjetas);
+      @PathVariable("huespedId") @Positive Integer huespedId) {
+    return ResponseEntity.ok(tarjetaCreditoService.getTarjetasPorHuesped(huespedId));
   }
 
   /*
@@ -110,7 +105,7 @@ public class TarjetaCreditoController {
       })
   // DELETE /tarejtas/{id}
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> eliminarTarjeta(@PathVariable("id") @Positive Long id) {
+  public ResponseEntity<Void> eliminarTarjeta(@PathVariable("id") @Positive Integer id) {
     tarjetaCreditoService.deleteTarjetaCredito(id);
     return ResponseEntity.noContent().build();
   }
@@ -128,7 +123,7 @@ public class TarjetaCreditoController {
   // PUT /tarjetas/{id}/set-principal
   @PutMapping("/{id}/set-principal")
   public ResponseEntity<TarjetaCreditoResponse> setTarjetaPrincipal(
-      @PathVariable("id") @Positive Long id) {
+      @PathVariable("id") @Positive Integer id) {
     TarjetaCreditoResponse tarjetaPrincipal = tarjetaCreditoService.setTarjetaPrincipal(id);
     return ResponseEntity.ok(tarjetaPrincipal);
   }
@@ -147,7 +142,7 @@ public class TarjetaCreditoController {
   // PUT /{id}
   @PutMapping("/{id}")
   public ResponseEntity<TarjetaCreditoResponse> updateTarjetaCredito(
-      @PathVariable("id") @Positive Long id,
+      @PathVariable("id") @Positive Integer id,
       @Valid @RequestBody TarjetaCreditoRequest tarjetaCreditoRequest) {
     TarjetaCreditoResponse tarjetaCreditoActualizada =
         tarjetaCreditoService.updateTarjetaCredito(id, tarjetaCreditoRequest);
