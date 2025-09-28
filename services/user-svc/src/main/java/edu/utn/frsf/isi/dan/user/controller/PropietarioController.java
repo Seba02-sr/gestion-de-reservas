@@ -44,7 +44,8 @@ public class PropietarioController {
     @ApiResponse(responseCode = "404", description = "Propietario no encontrado")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<PropietarioResponse> getPropietarioById(@PathVariable @Positive Long id) {
+  public ResponseEntity<PropietarioResponse> getPropietarioById(
+      @PathVariable @Positive Integer id) {
     return ResponseEntity.ok(propietarioService.getPropietarioById(id));
   }
 
@@ -52,14 +53,14 @@ public class PropietarioController {
   @ApiResponses({@ApiResponse(responseCode = "200", description = "Propietario actualizado")})
   @PutMapping("/{id}")
   public ResponseEntity<PropietarioResponse> actualizarPropietario(
-      @PathVariable @Positive Long id, @RequestBody @Valid PropietarioRequest request) {
+      @PathVariable @Positive Integer id, @RequestBody @Valid PropietarioRequest request) {
     return ResponseEntity.ok(propietarioService.actualizarPropietario(id, request));
   }
 
   @Operation(summary = "Eliminar propietario (no permitido en etapa 1)")
   @ApiResponses({@ApiResponse(responseCode = "405", description = "Operación no permitida")})
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> eliminarPropietario(@PathVariable @Positive Long id) {
+  public ResponseEntity<Void> eliminarPropietario(@PathVariable @Positive Integer id) {
     return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).build();
   }
 

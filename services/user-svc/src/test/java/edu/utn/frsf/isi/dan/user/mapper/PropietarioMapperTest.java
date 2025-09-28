@@ -8,7 +8,6 @@ import edu.utn.frsf.isi.dan.user.dto.PropietarioResponse;
 import edu.utn.frsf.isi.dan.user.model.Banco;
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
-import java.lang.reflect.Field;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -18,19 +17,9 @@ public class PropietarioMapperTest {
   private PropietarioMapper propietarioMapper;
 
   @BeforeEach
-  void setUp()
-      throws NoSuchFieldException,
-          SecurityException,
-          IllegalArgumentException,
-          IllegalAccessException {
+  void setUp() {
     CuentaMapper cuentaMapper = Mappers.getMapper(CuentaMapper.class);
-    PropietarioMapperImpl impl = new PropietarioMapperImpl();
-
-    Field field = PropietarioMapperImpl.class.getDeclaredField("cuentaMapper");
-    field.setAccessible(true);
-    field.set(impl, cuentaMapper);
-
-    propietarioMapper = impl;
+    propietarioMapper = new PropietarioMapperImpl(cuentaMapper);
   }
 
   @Test

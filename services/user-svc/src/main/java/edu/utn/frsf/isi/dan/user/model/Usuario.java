@@ -34,5 +34,5 @@ public abstract class Usuario extends AuditableEntity {
   protected String dni;
 
   protected String username;
-  protected String password;
+  @com.fasterxml.jackson.annotation.JsonIgnore protected String password;
 }

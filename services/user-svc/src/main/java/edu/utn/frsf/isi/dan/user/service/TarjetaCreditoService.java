@@ -13,9 +13,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class TarjetaCreditoService {
 
-  @Autowired public TarjetaCreditoRepository tarjetaCreditoRepository;
+  @Autowired private TarjetaCreditoRepository tarjetaCreditoRepository;
 
-  @Autowired public TarjetaCreditoMapper tarjetaCreditoMapper;
+  @Autowired private TarjetaCreditoMapper tarjetaCreditoMapper;
 
   public List<TarjetaCreditoResponse> getAllTarjetas() {
     return tarjetaCreditoRepository.findAll().stream()
@@ -23,7 +23,7 @@ public class TarjetaCreditoService {
         .toList();
   }
 
-  public TarjetaCreditoResponse getTarjetaById(Long id) {
+  public TarjetaCreditoResponse getTarjetaById(Integer id) {
     if (id == null) {
       throw new IllegalArgumentException("El ID de la tarjeta no puede ser nulo");
     }
@@ -56,7 +56,7 @@ public class TarjetaCreditoService {
   // }
 
   public TarjetaCreditoResponse updateTarjetaCredito(
-      Long id, TarjetaCreditoRequest tarjetaCreditoRequest) {
+      Integer id, TarjetaCreditoRequest tarjetaCreditoRequest) {
     if (id == null || tarjetaCreditoRequest == null) {
       throw new IllegalArgumentException("El id de la tarjeta y el DTO no pueden ser nulos");
     }
@@ -69,7 +69,7 @@ public class TarjetaCreditoService {
     return tarjetaCreditoMapper.toResponse(tarjetaCreditoActualizada);
   }
 
-  public void deleteTarjetaCredito(Long id) {
+  public void deleteTarjetaCredito(Integer id) {
     if (id == null) {
       throw new IllegalArgumentException("El ID de la tarjeta no puede ser nula");
     }
@@ -83,13 +83,13 @@ public class TarjetaCreditoService {
     tarjetaCreditoRepository.delete(tarjetaCredito);
   }
 
-  public TarjetaCredito getTarjetaEntityById(Long id) {
+  public TarjetaCredito getTarjetaEntityById(Integer id) {
     return tarjetaCreditoRepository
         .findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Tarjeta no encontrada con ID: " + id));
   }
 
-  public TarjetaCreditoResponse setTarjetaPrincipal(Long id) {
+  public TarjetaCreditoResponse setTarjetaPrincipal(Integer id) {
     TarjetaCredito tarjetaCredito = getTarjetaEntityById(id);
 
     List<TarjetaCredito> otrasTarjetas =
@@ -102,5 +102,11 @@ public class TarjetaCreditoService {
     TarjetaCredito tarjetaCreditoGuardada = tarjetaCreditoRepository.save(tarjetaCredito);
 
     return tarjetaCreditoMapper.toResponse(tarjetaCreditoGuardada);
+  }
+
+  public java.util.List<TarjetaCreditoResponse> getTarjetasPorHuesped(Integer huespedId) {
+    return tarjetaCreditoRepository.findByHuespedId(huespedId).stream()
+        .map(tarjetaCreditoMapper::toResponse)
+        .toList();
   }
 }

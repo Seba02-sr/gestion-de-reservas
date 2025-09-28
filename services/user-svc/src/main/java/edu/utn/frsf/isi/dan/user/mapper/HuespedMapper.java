@@ -2,16 +2,14 @@ package edu.utn.frsf.isi.dan.user.mapper;
 
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
-import org.mapstruct.ReportingPolicy;
 
 @Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = {TarjetaCreditoMapper.class},
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    config = MapstructConfig.class,
+    uses = {TarjetaCreditoMapper.class})
 public interface HuespedMapper {
 
   /**

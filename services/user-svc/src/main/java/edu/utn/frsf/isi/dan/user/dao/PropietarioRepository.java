@@ -7,12 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PropietarioRepository extends JpaRepository<Propietario, Long> {
+public interface PropietarioRepository extends JpaRepository<Propietario, Integer> {
 
   // Solo activos
   List<Propietario> findByActivoTrue();
 
-  Optional<Propietario> findByIdAndActivoTrue(Long id);
+  Optional<Propietario> findByIdAndActivoTrue(Integer id);
 
   List<Propietario> findByActivoTrueAndNombreContainingIgnoreCase(String nombre);
 

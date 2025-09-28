@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
+import edu.utn.frsf.isi.dan.user.mapper.UsuarioMapper;
 import edu.utn.frsf.isi.dan.user.model.Usuario;
 import edu.utn.frsf.isi.dan.user.service.UserService;
 import java.time.LocalDate;
@@ -32,6 +33,7 @@ class UserControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @MockitoBean private UserService userService;
+  @MockitoBean private UsuarioMapper usuarioMapper;
   @Autowired private ObjectMapper objectMapper;
 
   private HuespedRequest huespedRequest;

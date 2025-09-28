@@ -10,6 +10,7 @@ import edu.utn.frsf.isi.dan.user.dto.GoogleAuthRequest;
 import edu.utn.frsf.isi.dan.user.dto.GoogleAuthResponse;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.Usuario;
+import jakarta.annotation.PostConstruct;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,11 +24,15 @@ public class GoogleAuthService {
 
   @Autowired private UsuarioRepository usuarioRepository;
 
-  public GoogleAuthResponse authenticate(GoogleAuthRequest request) {
+  @PostConstruct
+  public void validateConfig() {
     if (googleClientId == null || googleClientId.isBlank()) {
       throw new IllegalStateException(
           "google.oauth.clientId no está configurado en application.properties");
     }
+  }
+
+  public GoogleAuthResponse authenticate(GoogleAuthRequest request) {
     try {
       var transport = new NetHttpTransport();
       var jsonFactory = GsonFactory.getDefaultInstance();

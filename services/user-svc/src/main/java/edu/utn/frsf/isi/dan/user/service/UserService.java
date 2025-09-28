@@ -11,6 +11,7 @@ import edu.utn.frsf.isi.dan.user.model.Usuario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,6 +22,8 @@ public class UserService {
   @Autowired private HuespedMapper huespedMapper;
 
   @Autowired private PropietarioMapper propietarioMapper;
+
+  @Autowired private PasswordEncoder passwordEncoder;
 
   /**
    * El mapper ya se encarga de: 1- Setear el banco a cada tarjeta de credito 2- Setear la tarjeta
@@ -40,6 +43,10 @@ public class UserService {
     }
 
     Huesped usuario = huespedMapper.toEntity(huespedRequest);
+
+    if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
+      usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+    }
 
     // Relacion inversa, setear huesped a tarjeta de credito
     if (usuario.getTarjetaCredito() != null) {
@@ -62,6 +69,10 @@ public class UserService {
     }
 
     Propietario usuario = propietarioMapper.toEntity(propietarioRequest);
+
+    if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
+      usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+    }
 
     // Relacion inversa, setear propietario a cuenta bancaria
     if (usuario.getCuentaBancaria() != null) {

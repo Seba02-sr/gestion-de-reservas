@@ -64,21 +64,21 @@ class PropietarioServiceTest {
 
   @Test
   void getById_DeberiaRetornarDTO() {
-    when(propietarioRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(entidad));
+    when(propietarioRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
     when(propietarioMapper.toResponse(entidad)).thenReturn(response);
-    PropietarioResponse out = propietarioService.getPropietarioById(1L);
+    PropietarioResponse out = propietarioService.getPropietarioById(1);
     assertEquals(1L, out.idHotel());
   }
 
   @Test
   void getById_DeberiaLanzar404_CuandoNoExiste() {
-    when(propietarioRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.empty());
-    assertThrows(EntityNotFoundException.class, () -> propietarioService.getPropietarioById(1L));
+    when(propietarioRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.empty());
+    assertThrows(EntityNotFoundException.class, () -> propietarioService.getPropietarioById(1));
   }
 
   @Test
   void actualizar_DeberiaGuardarYRetornarDTO() {
-    when(propietarioRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(entidad));
+    when(propietarioRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
     doAnswer(
             invocation -> {
               PropietarioRequest req = invocation.getArgument(0);
@@ -91,7 +91,7 @@ class PropietarioServiceTest {
     when(propietarioRepository.save(entidad)).thenReturn(entidad);
     when(propietarioMapper.toResponse(entidad)).thenReturn(response);
 
-    PropietarioResponse out = propietarioService.actualizarPropietario(1L, request);
+    PropietarioResponse out = propietarioService.actualizarPropietario(1, request);
     assertEquals("2222", out.dni());
   }
 

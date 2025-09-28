@@ -2,7 +2,8 @@ package edu.utn.frsf.isi.dan.user.controller;
 
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
-import edu.utn.frsf.isi.dan.user.model.Usuario;
+import edu.utn.frsf.isi.dan.user.dto.UsuarioResponse;
+import edu.utn.frsf.isi.dan.user.mapper.UsuarioMapper;
 import edu.utn.frsf.isi.dan.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
   @Autowired private UserService userService;
+  @Autowired private UsuarioMapper usuarioMapper;
 
   @Operation(
       summary = "Crear usuario huesped",
@@ -53,23 +55,24 @@ public class UserController {
   }
 
   @GetMapping
-  public Page<Usuario> buscarUsuariosPorNombre(
+  public Page<UsuarioResponse> buscarUsuariosPorNombre(
       @RequestParam(required = false) String nombre, Pageable pageable) {
-    if (nombre == null || nombre.isEmpty()) {
-      return userService.buscarPorNombre("", pageable);
-    }
-    return userService.buscarPorNombre(nombre, pageable);
+    var page =
+        (nombre == null || nombre.isEmpty())
+            ? userService.buscarPorNombre("", pageable)
+            : userService.buscarPorNombre(nombre, pageable);
+    return page.map(usuarioMapper::toResponse);
   }
 
   @GetMapping("/dni/{dni}")
-  public ResponseEntity<Usuario> buscarUsuarioPorDni(@PathVariable String dni) {
-    Usuario usuario = userService.buscarPorDniExacto(dni);
+  public ResponseEntity<UsuarioResponse> buscarUsuarioPorDni(@PathVariable String dni) {
+    var usuario = userService.buscarPorDniExacto(dni);
     if (usuario == null) return ResponseEntity.notFound().build();
-    return ResponseEntity.ok(usuario);
+    return ResponseEntity.ok(usuarioMapper.toResponse(usuario));
   }
 
   @GetMapping("/buscar-dni")
-  public Page<Usuario> buscarUsuariosPorDni(@RequestParam String dni, Pageable pageable) {
-    return userService.buscarPorDni(dni, pageable);
+  public Page<UsuarioResponse> buscarUsuariosPorDni(@RequestParam String dni, Pageable pageable) {
+    return userService.buscarPorDni(dni, pageable).map(usuarioMapper::toResponse);
   }
 }
