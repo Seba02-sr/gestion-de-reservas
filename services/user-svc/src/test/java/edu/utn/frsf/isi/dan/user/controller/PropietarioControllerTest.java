@@ -72,17 +72,17 @@ class PropietarioControllerTest {
 
   @Test
   void obtenerPorId_DebeRetornar200() throws Exception {
-    when(propietarioService.getPropietarioById(1L)).thenReturn(response);
+    when(propietarioService.getPropietarioById(1)).thenReturn(response);
     mockMvc
         .perform(get("/propietarios/1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
-    verify(propietarioService, times(1)).getPropietarioById(1L);
+    verify(propietarioService, times(1)).getPropietarioById(1);
   }
 
   @Test
   void actualizar_DebeRetornar200() throws Exception {
-    when(propietarioService.actualizarPropietario(eq(1L), any(PropietarioRequest.class)))
+    when(propietarioService.actualizarPropietario(eq(1), any(PropietarioRequest.class)))
         .thenReturn(response);
     mockMvc
         .perform(
@@ -92,7 +92,7 @@ class PropietarioControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
     verify(propietarioService, times(1))
-        .actualizarPropietario(eq(1L), any(PropietarioRequest.class));
+        .actualizarPropietario(eq(1), any(PropietarioRequest.class));
   }
 
   @Test

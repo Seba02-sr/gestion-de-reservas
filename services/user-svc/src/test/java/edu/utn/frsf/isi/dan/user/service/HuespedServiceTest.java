@@ -75,21 +75,21 @@ class HuespedServiceTest {
 
   @Test
   void getById_DeberiaRetornarDTO_CuandoExiste() {
-    when(huespedRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(entidad));
+    when(huespedRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
     when(huespedMapper.toResponse(entidad)).thenReturn(response);
-    HuespedResponse out = huespedService.getHuespedById(1L);
+    HuespedResponse out = huespedService.getHuespedById(1);
     assertEquals(1, out.id());
   }
 
   @Test
   void getById_DeberiaLanzar404_CuandoNoExiste() {
-    when(huespedRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.empty());
-    assertThrows(EntityNotFoundException.class, () -> huespedService.getHuespedById(1L));
+    when(huespedRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.empty());
+    assertThrows(EntityNotFoundException.class, () -> huespedService.getHuespedById(1));
   }
 
   @Test
   void actualizar_DeberiaGuardarYRetornarDTO() {
-    when(huespedRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(entidad));
+    when(huespedRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
     doAnswer(
             inv -> {
               // marcar que el mapper aplicó cambios
@@ -103,7 +103,7 @@ class HuespedServiceTest {
     when(huespedRepository.save(entidad)).thenReturn(entidad);
     when(huespedMapper.toResponse(entidad)).thenReturn(response);
 
-    HuespedResponse out = huespedService.actualizarHuesped(1L, request);
+    HuespedResponse out = huespedService.actualizarHuesped(1, request);
     assertEquals("Juan", out.nombre());
     // inversa tarjeta -> huesped seteada
     assertEquals(entidad, entidad.getTarjetaCredito().get(0).getHuesped());
@@ -111,9 +111,9 @@ class HuespedServiceTest {
 
   @Test
   void eliminar_DeberiaHacerSoftDelete() {
-    when(huespedRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(entidad));
+    when(huespedRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
     when(huespedRepository.save(any(Huesped.class))).thenAnswer(inv -> inv.getArgument(0));
-    assertDoesNotThrow(() -> huespedService.eliminarHuesped(1L));
+    assertDoesNotThrow(() -> huespedService.eliminarHuesped(1));
     assertFalse(entidad.getActivo());
     verify(huespedRepository, times(1)).save(entidad);
   }

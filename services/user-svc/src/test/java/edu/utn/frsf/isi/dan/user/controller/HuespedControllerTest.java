@@ -12,6 +12,7 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse;
 import edu.utn.frsf.isi.dan.user.service.HuespedService;
+import edu.utn.frsf.isi.dan.user.service.TarjetaCreditoService;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ class HuespedControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @MockitoBean private HuespedService huespedService;
+  @MockitoBean private TarjetaCreditoService tarjetaCreditoService;
   @Autowired private ObjectMapper objectMapper;
 
   private HuespedRequest request;
@@ -82,17 +84,17 @@ class HuespedControllerTest {
 
   @Test
   void obtenerPorId_DebeRetornar200() throws Exception {
-    when(huespedService.getHuespedById(1L)).thenReturn(response);
+    when(huespedService.getHuespedById(1)).thenReturn(response);
     mockMvc
         .perform(get("/huespedes/1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
-    verify(huespedService, times(1)).getHuespedById(1L);
+    verify(huespedService, times(1)).getHuespedById(1);
   }
 
   @Test
   void actualizar_DebeRetornar200() throws Exception {
-    when(huespedService.actualizarHuesped(eq(1L), any(HuespedRequest.class))).thenReturn(response);
+    when(huespedService.actualizarHuesped(eq(1), any(HuespedRequest.class))).thenReturn(response);
     mockMvc
         .perform(
             put("/huespedes/1")
@@ -100,14 +102,14 @@ class HuespedControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
-    verify(huespedService, times(1)).actualizarHuesped(eq(1L), any(HuespedRequest.class));
+    verify(huespedService, times(1)).actualizarHuesped(eq(1), any(HuespedRequest.class));
   }
 
   @Test
   void eliminar_DebeRetornar204() throws Exception {
-    doNothing().when(huespedService).eliminarHuesped(1L);
+    doNothing().when(huespedService).eliminarHuesped(1);
     mockMvc.perform(delete("/huespedes/1")).andExpect(status().isNoContent());
-    verify(huespedService, times(1)).eliminarHuesped(1L);
+    verify(huespedService, times(1)).eliminarHuesped(1);
   }
 
   @Test

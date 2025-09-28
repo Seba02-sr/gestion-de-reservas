@@ -57,7 +57,7 @@ class TarjetaCreditoControllerTest {
 
   @Test
   void getTarjetaPorId_DebeRetornar200() throws Exception {
-    when(tarjetaCreditoService.getTarjetaById(1L)).thenReturn(response);
+    when(tarjetaCreditoService.getTarjetaById(1)).thenReturn(response);
 
     mockMvc
         .perform(get("/tarjetas/1"))
@@ -65,12 +65,12 @@ class TarjetaCreditoControllerTest {
         .andExpect(jsonPath("$.id").value(1))
         .andExpect(jsonPath("$.numero").value("4111111111111111"));
 
-    verify(tarjetaCreditoService, times(1)).getTarjetaById(1L);
+    verify(tarjetaCreditoService, times(1)).getTarjetaById(1);
   }
 
   @Test
   void updateTarjeta_DebeRetornar200() throws Exception {
-    when(tarjetaCreditoService.updateTarjetaCredito(eq(1L), any(TarjetaCreditoRequest.class)))
+    when(tarjetaCreditoService.updateTarjetaCredito(eq(1), any(TarjetaCreditoRequest.class)))
         .thenReturn(response);
     mockMvc
         .perform(
@@ -80,24 +80,24 @@ class TarjetaCreditoControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
     verify(tarjetaCreditoService, times(1))
-        .updateTarjetaCredito(eq(1L), any(TarjetaCreditoRequest.class));
+        .updateTarjetaCredito(eq(1), any(TarjetaCreditoRequest.class));
   }
 
   @Test
   void setPrincipal_DebeRetornar200() throws Exception {
-    when(tarjetaCreditoService.setTarjetaPrincipal(1L)).thenReturn(response);
+    when(tarjetaCreditoService.setTarjetaPrincipal(1)).thenReturn(response);
 
     mockMvc
         .perform(put("/tarjetas/1/set-principal"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
-    verify(tarjetaCreditoService, times(1)).setTarjetaPrincipal(1L);
+    verify(tarjetaCreditoService, times(1)).setTarjetaPrincipal(1);
   }
 
   @Test
   void deleteTarjeta_DebeRetornar204() throws Exception {
-    doNothing().when(tarjetaCreditoService).deleteTarjetaCredito(1L);
+    doNothing().when(tarjetaCreditoService).deleteTarjetaCredito(1);
     mockMvc.perform(delete("/tarjetas/1")).andExpect(status().isNoContent());
-    verify(tarjetaCreditoService, times(1)).deleteTarjetaCredito(1L);
+    verify(tarjetaCreditoService, times(1)).deleteTarjetaCredito(1);
   }
 }
