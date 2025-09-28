@@ -7,7 +7,9 @@ import edu.utn.frsf.isi.dan.user.model.Huesped;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(config = MapstructConfig.class, uses = {TarjetaCreditoMapper.class})
+@Mapper(
+    config = MapstructConfig.class,
+    uses = {TarjetaCreditoMapper.class})
 public interface HuespedMapper {
 
   /**
