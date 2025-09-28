@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.user.dto;
 
 import org.hibernate.validator.constraints.Length;
 
+import edu.utn.frsf.isi.dan.user.model.Banco;
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
 import jakarta.validation.constraints.Email;
@@ -18,7 +19,7 @@ public record PropietarioRecord(
     @NotBlank(message = "El DNI no puede estar vacío")
     String dni,
     Long idHotel,
-    CuentaBancariaRecord cuentaBancaria
+    CuentaRequest cuentaBancaria
 ) {
     public Propietario toPropietario() {
         Propietario propietario = new Propietario();
@@ -27,12 +28,14 @@ public record PropietarioRecord(
         propietario.setTelefono(this.telefono);
         propietario.setDni(this.dni);
         if (this.cuentaBancaria != null) {
-            CuentaBancaria cuentaBancaria = this.cuentaBancaria.toCuentaBancaria();
-            propietario.setCuentaBancaria(cuentaBancaria);
-            cuentaBancaria.setPropietario(propietario);  // Setear la referencia bidireccional
+            CuentaBancaria cuenta = new CuentaBancaria();
+            cuenta.setNumeroCuenta(this.cuentaBancaria.numeroCuenta());
+            cuenta.setCbu(this.cuentaBancaria.cbu());
+            cuenta.setAlias(this.cuentaBancaria.alias());
+            cuenta.setBanco(Banco.builder().id(this.cuentaBancaria.idBanco()).build());
+            propietario.setCuentaBancaria(cuenta);
+            cuenta.setPropietario(propietario); // referencia bidireccional
         }
-        //CuentaBancaria cuentaBancaria = this.cuentaBancaria.toCuentaBancaria();
-        //propietario.setCuentaBancaria(cuentaBancaria);
         return propietario;
     }
 }
