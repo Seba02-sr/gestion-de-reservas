@@ -6,7 +6,6 @@ import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
-import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,15 +18,9 @@ public class HuespedMapperTest {
   private HuespedMapper huespedMapper;
 
   @BeforeEach
-  void setUp() throws Exception {
+  void setUp() {
     TarjetaCreditoMapper tarjetaMapper = Mappers.getMapper(TarjetaCreditoMapper.class);
-    HuespedMapperImpl impl = new HuespedMapperImpl();
-
-    Field field = HuespedMapperImpl.class.getDeclaredField("tarjetaCreditoMapper");
-    field.setAccessible(true);
-    field.set(impl, tarjetaMapper);
-
-    huespedMapper = impl;
+    huespedMapper = new HuespedMapperImpl(tarjetaMapper);
   }
 
   @Test
