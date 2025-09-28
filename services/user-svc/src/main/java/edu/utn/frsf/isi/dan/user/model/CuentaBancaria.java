@@ -1,5 +1,6 @@
 package edu.utn.frsf.isi.dan.user.model;
 
+import edu.utn.frsf.isi.dan.user.util.AuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,28 +11,32 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "cuentas_bancarias")
 @Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class CuentaBancaria {
+@SuperBuilder
+public class CuentaBancaria extends AuditableEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    @Column(name = "numero_cuenta")
-    private String numeroCuenta;
-    private String cbu;
-    private String alias;
+  @Column(name = "numero_cuenta")
+  private String numeroCuenta;
 
-    @ManyToOne
-    @JoinColumn(name = "banco_id")
-    private Banco banco;
+  private String cbu;
+  private String alias;
 
-    @OneToOne(mappedBy = "cuentaBancaria")
-    private Propietario propietario;
+  @ManyToOne
+  @JoinColumn(name = "banco_id")
+  private Banco banco;
 
+  @OneToOne(mappedBy = "cuentaBancaria")
+  private Propietario propietario;
 }
