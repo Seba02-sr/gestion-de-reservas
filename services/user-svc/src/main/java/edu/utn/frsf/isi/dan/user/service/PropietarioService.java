@@ -71,7 +71,6 @@ public class PropietarioService {
     }
     return propietarioRepository
         .findByIdAndActivoTrue(id)
-        .orElseThrow(
-            () -> new EntityNotFoundException("Propietario no encontrado con ID: " + id));
+        .orElseThrow(() -> new EntityNotFoundException("Propietario no encontrado con ID: " + id));
   }
 }

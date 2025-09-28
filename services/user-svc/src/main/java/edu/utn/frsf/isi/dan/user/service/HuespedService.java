@@ -18,9 +18,7 @@ public class HuespedService {
   @Autowired private HuespedMapper huespedMapper;
 
   public List<HuespedResponse> getAllHuespedes() {
-    return huespedRepository.findByActivoTrue().stream()
-        .map(huespedMapper::toResponse)
-        .toList();
+    return huespedRepository.findByActivoTrue().stream().map(huespedMapper::toResponse).toList();
   }
 
   public HuespedResponse getHuespedById(Long id) {

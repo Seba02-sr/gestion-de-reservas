@@ -44,8 +44,7 @@ public class PropietarioController {
     @ApiResponse(responseCode = "404", description = "Propietario no encontrado")
   })
   @GetMapping("/{id}")
-  public ResponseEntity<PropietarioResponse> getPropietarioById(
-      @PathVariable @Positive Long id) {
+  public ResponseEntity<PropietarioResponse> getPropietarioById(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(propietarioService.getPropietarioById(id));
   }
 
