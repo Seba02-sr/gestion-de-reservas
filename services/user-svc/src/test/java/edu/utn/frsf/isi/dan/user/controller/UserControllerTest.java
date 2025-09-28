@@ -1,11 +1,19 @@
 package edu.utn.frsf.isi.dan.user.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
+import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
+import edu.utn.frsf.isi.dan.user.model.Usuario;
 import edu.utn.frsf.isi.dan.user.service.UserService;
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

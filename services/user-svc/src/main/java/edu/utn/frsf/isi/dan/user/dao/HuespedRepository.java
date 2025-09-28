@@ -9,7 +9,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface HuespedRepository extends JpaRepository<Huesped, Long> {
 
-  List<Huesped> findByNombreContainingIgnoreCase(String nombre);
+  // Búsquedas considerando solo usuarios activos
+  List<Huesped> findByActivoTrue();
 
-  Optional<Huesped> findByDni(String dni);
+  Optional<Huesped> findByIdAndActivoTrue(Long id);
+
+  List<Huesped> findByActivoTrueAndNombreContainingIgnoreCase(String nombre);
+
+  Optional<Huesped> findByActivoTrueAndDni(String dni);
 }
