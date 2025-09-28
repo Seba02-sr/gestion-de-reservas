@@ -2,16 +2,13 @@ package edu.utn.frsf.isi.dan.user.mapper;
 
 import edu.utn.frsf.isi.dan.user.dto.CuentaRequest;
 import edu.utn.frsf.isi.dan.user.dto.CuentaResponse;
+import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.CuentaBancaria;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
 
-@Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING,
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(config = MapstructConfig.class)
 public interface CuentaMapper {
 
   /**

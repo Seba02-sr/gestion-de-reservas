@@ -2,16 +2,13 @@ package edu.utn.frsf.isi.dan.user.mapper;
 
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse;
+import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
 
-@Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING,
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(config = MapstructConfig.class)
 public interface TarjetaCreditoMapper {
   /**
    * Convierte TarjetaCreditoRequest a TarjetaCredito Entity El ID se setea como null

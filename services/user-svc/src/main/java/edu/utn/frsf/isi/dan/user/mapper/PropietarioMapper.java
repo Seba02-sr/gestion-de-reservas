@@ -2,17 +2,13 @@ package edu.utn.frsf.isi.dan.user.mapper;
 
 import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioResponse;
+import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.Propietario;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
 
-@Mapper(
-    componentModel = MappingConstants.ComponentModel.SPRING,
-    uses = CuentaMapper.class,
-    unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(config = MapstructConfig.class, uses = CuentaMapper.class)
 public interface PropietarioMapper {
 
   /**
