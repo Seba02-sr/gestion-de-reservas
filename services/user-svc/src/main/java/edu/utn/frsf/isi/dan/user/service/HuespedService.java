@@ -8,6 +8,7 @@ import edu.utn.frsf.isi.dan.user.model.Huesped;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,16 +18,18 @@ public class HuespedService {
 
   @Autowired private HuespedMapper huespedMapper;
 
+  @Autowired private PasswordEncoder passwordEncoder;
+
   public List<HuespedResponse> getAllHuespedes() {
     return huespedRepository.findByActivoTrue().stream().map(huespedMapper::toResponse).toList();
   }
 
-  public HuespedResponse getHuespedById(Long id) {
+  public HuespedResponse getHuespedById(Integer id) {
     Huesped huesped = getHuespedEntityById(id);
     return huespedMapper.toResponse(huesped);
   }
 
-  public HuespedResponse actualizarHuesped(Long id, HuespedRequest request) {
+  public HuespedResponse actualizarHuesped(Integer id, HuespedRequest request) {
     if (id == null || request == null) {
       throw new IllegalArgumentException("El id del huésped y el DTO no pueden ser nulos");
     }
@@ -34,6 +37,10 @@ public class HuespedService {
     Huesped existente = getHuespedEntityById(id);
     existente.marcarComoModificado();
     huespedMapper.updateEntityFromRequest(request, existente);
+
+    if (existente.getPassword() != null && !existente.getPassword().isBlank()) {
+      existente.setPassword(passwordEncoder.encode(existente.getPassword()));
+    }
 
     // Asegurar relación inversa huesped <- tarjetas
     if (existente.getTarjetaCredito() != null) {
@@ -44,7 +51,7 @@ public class HuespedService {
     return huespedMapper.toResponse(actualizado);
   }
 
-  public void eliminarHuesped(Long id) {
+  public void eliminarHuesped(Integer id) {
     Huesped huesped = getHuespedEntityById(id);
     huesped.marcarComoEliminado();
     huespedRepository.save(huesped);
@@ -63,7 +70,7 @@ public class HuespedService {
         .orElseThrow(() -> new EntityNotFoundException("Huésped no encontrado con DNI: " + dni));
   }
 
-  public Huesped getHuespedEntityById(Long id) {
+  public Huesped getHuespedEntityById(Integer id) {
     if (id == null) {
       throw new IllegalArgumentException("El ID del huésped no puede ser nulo");
     }

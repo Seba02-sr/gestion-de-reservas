@@ -8,6 +8,7 @@ import edu.utn.frsf.isi.dan.user.model.Propietario;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,24 +18,30 @@ public class PropietarioService {
 
   @Autowired private PropietarioMapper propietarioMapper;
 
+  @Autowired private PasswordEncoder passwordEncoder;
+
   public List<PropietarioResponse> getAllPropietarios() {
     return propietarioRepository.findByActivoTrue().stream()
         .map(propietarioMapper::toResponse)
         .toList();
   }
 
-  public PropietarioResponse getPropietarioById(Long id) {
+  public PropietarioResponse getPropietarioById(Integer id) {
     Propietario p = getPropietarioEntityById(id);
     return propietarioMapper.toResponse(p);
   }
 
-  public PropietarioResponse actualizarPropietario(Long id, PropietarioRequest request) {
+  public PropietarioResponse actualizarPropietario(Integer id, PropietarioRequest request) {
     if (id == null || request == null) {
       throw new IllegalArgumentException("El id del propietario y el DTO no pueden ser nulos");
     }
     Propietario existente = getPropietarioEntityById(id);
     existente.marcarComoModificado();
     propietarioMapper.updateEntityFromRequest(request, existente);
+
+    if (existente.getPassword() != null && !existente.getPassword().isBlank()) {
+      existente.setPassword(passwordEncoder.encode(existente.getPassword()));
+    }
 
     // Relación inversa cuenta -> propietario
     if (existente.getCuentaBancaria() != null) {
@@ -65,7 +72,7 @@ public class PropietarioService {
             () -> new EntityNotFoundException("Propietario no encontrado con DNI: " + dni));
   }
 
-  public Propietario getPropietarioEntityById(Long id) {
+  public Propietario getPropietarioEntityById(Integer id) {
     if (id == null) {
       throw new IllegalArgumentException("El ID del propietario no puede ser nulo");
     }
