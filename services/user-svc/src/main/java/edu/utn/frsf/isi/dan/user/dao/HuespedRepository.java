@@ -7,12 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface HuespedRepository extends JpaRepository<Huesped, Long> {
+public interface HuespedRepository extends JpaRepository<Huesped, Integer> {
 
   // Búsquedas considerando solo usuarios activos
   List<Huesped> findByActivoTrue();
 
-  Optional<Huesped> findByIdAndActivoTrue(Long id);
+  Optional<Huesped> findByIdAndActivoTrue(Integer id);
 
   List<Huesped> findByActivoTrueAndNombreContainingIgnoreCase(String nombre);
 

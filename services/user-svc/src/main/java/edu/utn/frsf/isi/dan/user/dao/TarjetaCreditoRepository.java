@@ -6,9 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TarjetaCreditoRepository extends JpaRepository<TarjetaCredito, Long> {
+public interface TarjetaCreditoRepository extends JpaRepository<TarjetaCredito, Integer> {
 
-  List<TarjetaCredito> findByHuespedIdAndIdNot(Integer huespedId, Long id);
+  List<TarjetaCredito> findByHuespedIdAndIdNot(Integer huespedId, Integer id);
 
-  List<TarjetaCredito> findByHuespedId(Long huespedId);
+  List<TarjetaCredito> findByHuespedId(Integer huespedId);
 }
