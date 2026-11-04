@@ -10,19 +10,28 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"nombre\": \"Carla Gómez\",\n  \"email\": \"carla@example.com\",\n  \"telefono\": \"+54 9 342-555-1234\",\n  \"fechaNacimiento\": \"1990-01-01\",\n  \"numeroCC\": \"1234567890123456\",\n  \"nombreTitular\": \"Carla Gómez\",\n  \"fechaVencimientoCC\": \"12/25\",\n  \"cvcCC\": \"123\",\n  \"esPrincipalCC\": true,\n  \"idBanco\": 1\n}"
+          "raw": "{\n  \"nombre\": \"Carla Gómez\",\n  \"email\": \"carla@example.com\",\n  \"telefono\": \"+54 9 342-555-1234\",\n  \"dni\": \"12345678\",\n  \"username\": \"carla\",\n  \"password\": \"secret\",\n  \"fechaNacimiento\": \"1990-01-01\",\n  \"tarjetasCredito\": [\n    {\n      \"numero\": \"5500000000000004\",\n      \"nombreTitular\": \"Carla Gómez\",\n      \"fechaVencimiento\": \"12/2027\",\n      \"cvc\": \"123\",\n      \"esPrincipal\": true,\n      \"idBanco\": 1\n    }\n  ]\n}"
         },
         "url": {
           "raw": "http://localhost:8080/users/huesped",
           "protocol": "http",
-          "host": ["localhost"],
+          "host": [
+            "localhost"
+          ],
           "port": "8080",
-          "path": ["users", "huesped"]
-        }
+          "path": [
+            "users",
+            "huesped"
+          ]
+        },
+        "description": "Debe enviar exactamente UNA tarjeta con esPrincipal=true (0 o 2+ -> 400)."
       }
     },
     {
@@ -30,7 +39,10 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -39,9 +51,14 @@
         "url": {
           "raw": "http://localhost:8080/users/propietario",
           "protocol": "http",
-          "host": ["localhost"],
+          "host": [
+            "localhost"
+          ],
           "port": "8080",
-          "path": ["users", "propietario"]
+          "path": [
+            "users",
+            "propietario"
+          ]
         }
       }
     },
@@ -52,11 +69,18 @@
         "url": {
           "raw": "http://localhost:8080/users?nombre=Carla",
           "protocol": "http",
-          "host": ["localhost"],
+          "host": [
+            "localhost"
+          ],
           "port": "8080",
-          "path": ["users"],
+          "path": [
+            "users"
+          ],
           "query": [
-            { "key": "nombre", "value": "Carla" }
+            {
+              "key": "nombre",
+              "value": "Carla"
+            }
           ]
         }
       }
@@ -68,9 +92,15 @@
         "url": {
           "raw": "http://localhost:8080/users/dni/12345678",
           "protocol": "http",
-          "host": ["localhost"],
+          "host": [
+            "localhost"
+          ],
           "port": "8080",
-          "path": ["users", "dni", "12345678"]
+          "path": [
+            "users",
+            "dni",
+            "12345678"
+          ]
         }
       }
     },
@@ -81,14 +111,322 @@
         "url": {
           "raw": "http://localhost:8080/users/buscar-dni?dni=1234",
           "protocol": "http",
-          "host": ["localhost"],
+          "host": [
+            "localhost"
+          ],
           "port": "8080",
-          "path": ["users", "buscar-dni"],
+          "path": [
+            "users",
+            "buscar-dni"
+          ],
           "query": [
-            { "key": "dni", "value": "1234" }
+            {
+              "key": "dni",
+              "value": "1234"
+            }
           ]
         }
       }
+    },
+    {
+      "name": "Huespedes",
+      "item": [
+        {
+          "name": "Listar huéspedes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener huésped por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar huéspedes por nombre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes/buscar?nombre=Carla",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes",
+                "buscar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar huésped por DNI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes/dni/12345678",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes",
+                "dni",
+                "12345678"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar huésped (parcial: todos los campos opcionales)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carla Gómez\",\n  \"email\": \"carla@example.com\",\n  \"telefono\": \"+54 9 342-555-9999\",\n  \"dni\": \"12345678\",\n  \"fechaNacimiento\": \"1990-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Solo datos de usuario y fecha de nacimiento. Todos los campos son opcionales: por ejemplo {\"telefono\": \"999\"} actualiza solo el teléfono. No modifica password ni tarjetas."
+          }
+        },
+        {
+          "name": "Eliminar huésped (y sus tarjetas en cascada)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar tarjetas de un huésped",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes/1/tarjetas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes",
+                "1",
+                "tarjetas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar tarjeta a huésped (no principal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes/1/tarjetas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes",
+                "1",
+                "tarjetas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": \"4111111111111111\",\n  \"nombreTitular\": \"Carla Gómez\",\n  \"fechaVencimiento\": \"12/2027\",\n  \"cvc\": \"123\",\n  \"esPrincipal\": false,\n  \"idBanco\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Agregar tarjeta a huésped (principal: desmarca la anterior)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/huespedes/1/tarjetas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "huespedes",
+                "1",
+                "tarjetas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": \"5500000000000004\",\n  \"nombreTitular\": \"Carla Gómez\",\n  \"fechaVencimiento\": \"12/2027\",\n  \"cvc\": \"123\",\n  \"esPrincipal\": true,\n  \"idBanco\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tarjetas",
+      "item": [
+        {
+          "name": "Obtener tarjeta por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarjetas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarjetas",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar tarjeta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarjetas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarjetas",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": \"4111111111111111\",\n  \"nombreTitular\": \"Carla Gómez\",\n  \"fechaVencimiento\": \"12/2027\",\n  \"cvc\": \"123\",\n  \"esPrincipal\": false,\n  \"idBanco\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "409 si la tarjeta es la principal y se envía esPrincipal=false: usar set-principal."
+          }
+        },
+        {
+          "name": "Marcar tarjeta como principal",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarjetas/2/set-principal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarjetas",
+                "2",
+                "set-principal"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar tarjeta (409 si es la principal)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarjetas/2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarjetas",
+                "2"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
     }
   ]
 }
