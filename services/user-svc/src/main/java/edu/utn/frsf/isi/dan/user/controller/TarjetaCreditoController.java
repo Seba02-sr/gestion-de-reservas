@@ -8,9 +8,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Validated
 @RestController
 @RequestMapping("/tarjetas")
 public class TarjetaCreditoController {
@@ -42,54 +43,6 @@ public class TarjetaCreditoController {
     return ResponseEntity.ok(tarjetaCreditoService.getTarjetaById(id));
   }
 
-  @Operation(
-      summary = "Obtener todas las tarjetas de un huesped",
-      description = "Devuelve una lista de todas las tarjetas de credito asociadas a un huesped",
-      tags = {"Tarjetas"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Lista de tarjetas encontrada"),
-        @ApiResponse(responseCode = "404", description = "Huesped no encontrado o sin tarjetas"),
-        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
-      })
-  // GET /huespedes/{id}/tarjetas
-  @GetMapping("/huespedes/{huespedId}/tarjetas")
-  public ResponseEntity<List<TarjetaCreditoResponse>> getTarjetasPorHuesped(
-      @PathVariable("huespedId") @Positive Integer huespedId) {
-    return ResponseEntity.ok(tarjetaCreditoService.getTarjetasPorHuesped(huespedId));
-  }
-
-  /*
-   * @Operation(
-   * summary = "Crear una nueva tarjeta para un huesped",
-   * description = "Asocia una nueva tarjeta de credito a un huesped por su ID",
-   * tags = {"Tarjetas"}
-   * )
-   *
-   * @ApiResponses(value = {
-   *
-   * @ApiResponse(responseCode = "201", description =
-   * "Tarjeta creada exitosamente"),
-   *
-   * @ApiResponse(responseCode = "400", description =
-   * "Datos de tarjeta invalidos"),
-   *
-   * @ApiResponse(responseCode = "500", description =
-   * "Error interno del servidor")
-   * })
-   * POST /huespedes/{huespedId}/tarjetas
-   *
-   * @PostMapping("/huespedes/{huespedId}/tarjetas")
-   * public ResponseEntity<TarjetaCreditoResponse> crearTarjetaParaHuesped(
-   *
-   * @PathVariable("huespedId") @Positive Long huespedId, @RequestBody
-   * TarjetaCreditoRequest tarjetaCreditoRequest){
-   * TarjetaCreditoResponse nuevaTarjeta =
-   * tarjetaCreditoService.crearTarjetaParaHuesped(huespedId,
-   * tarjetaCreditoRequest);
-   * return new ResponseEntity<>(nuevaTarjeta, HttpStatus.CREATED);
-   * }
-   */
   @Operation(
       summary = "Eliminar una tarjeta por ID",
       description = "Elimina una tarjeta de credito, no principal, del sistema por su ID",

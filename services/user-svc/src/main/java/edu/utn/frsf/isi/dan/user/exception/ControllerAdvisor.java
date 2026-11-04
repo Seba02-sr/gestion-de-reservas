@@ -33,6 +33,15 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
     return new ResponseEntity<>(exceptionInfo, HttpStatus.NOT_FOUND);
   }
 
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<ExceptionInfo> handleIllegalStateException(
+      IllegalStateException ex, WebRequest request) {
+    ExceptionInfo exceptionInfo =
+        new ExceptionInfo(
+            ex.getMessage(), request.getDescription(false), now(), HttpStatus.CONFLICT.value());
+    return new ResponseEntity<>(exceptionInfo, HttpStatus.CONFLICT);
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ExceptionInfo> handleGeneralException(Exception ex, WebRequest request) {
     ExceptionInfo exceptionInfo =

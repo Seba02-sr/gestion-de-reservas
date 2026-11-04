@@ -2,6 +2,8 @@ package edu.utn.frsf.isi.dan.user.controller;
 
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse;
 import edu.utn.frsf.isi.dan.user.service.HuespedService;
 import edu.utn.frsf.isi.dan.user.service.TarjetaCreditoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,11 +15,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -96,8 +100,21 @@ public class HuespedController {
 
   @Operation(summary = "Listar tarjetas de un huésped")
   @GetMapping("/{id}/tarjetas")
-  public ResponseEntity<java.util.List<edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse>>
-      listarTarjetasPorHuesped(@PathVariable @Positive Integer id) {
+  public ResponseEntity<List<TarjetaCreditoResponse>> listarTarjetasPorHuesped(
+      @PathVariable @Positive Integer id) {
     return ResponseEntity.ok(tarjetaCreditoService.getTarjetasPorHuesped(id));
+  }
+
+  @Operation(summary = "Agregar una tarjeta a un huésped")
+  @ApiResponses({
+    @ApiResponse(responseCode = "201", description = "Tarjeta creada"),
+    @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+    @ApiResponse(responseCode = "404", description = "Huésped no encontrado")
+  })
+  @PostMapping("/{id}/tarjetas")
+  public ResponseEntity<TarjetaCreditoResponse> agregarTarjeta(
+      @PathVariable @Positive Integer id, @RequestBody @Valid TarjetaCreditoRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(tarjetaCreditoService.crearTarjetaParaHuesped(id, request));
   }
 }

@@ -125,4 +125,32 @@ class HuespedControllerTest {
     mockMvc.perform(get("/huespedes/dni/1111")).andExpect(status().isOk());
     verify(huespedService, times(1)).buscarPorDni("1111");
   }
+
+  @Test
+  void agregarTarjeta_DebeRetornar201() throws Exception {
+    TarjetaCreditoRequest tarjeta = request.tarjetasCredito().get(0);
+    TarjetaCreditoResponse creada =
+        TarjetaCreditoResponse.builder().id(11).esPrincipal(true).idBanco(1).build();
+    when(tarjetaCreditoService.crearTarjetaParaHuesped(eq(1), any(TarjetaCreditoRequest.class)))
+        .thenReturn(creada);
+
+    mockMvc
+        .perform(
+            post("/huespedes/1/tarjetas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(tarjeta)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.id").value(11));
+  }
+
+  @Test
+  void agregarTarjeta_BodyInvalido_DebeRetornar400() throws Exception {
+    mockMvc
+        .perform(
+            post("/huespedes/1/tarjetas")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"numero\":\"\"}"))
+        .andExpect(status().isBadRequest());
+    verify(tarjetaCreditoService, never()).crearTarjetaParaHuesped(any(), any());
+  }
 }
