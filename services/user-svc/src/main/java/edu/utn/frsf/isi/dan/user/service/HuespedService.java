@@ -19,7 +19,7 @@ public class HuespedService {
   @Autowired private HuespedMapper huespedMapper;
 
   public List<HuespedResponse> getAllHuespedes() {
-    return huespedRepository.findByActivoTrue().stream().map(huespedMapper::toResponse).toList();
+    return huespedRepository.findAll().stream().map(huespedMapper::toResponse).toList();
   }
 
   public HuespedResponse getHuespedById(Integer id) {
@@ -41,21 +41,25 @@ public class HuespedService {
     return huespedMapper.toResponse(actualizado);
   }
 
+  /**
+   * Borrado físico: las tarjetas se eliminan en cascada por la relación JPA (cascade ALL +
+   * orphanRemoval en Huesped.tarjetaCredito), no por una FK de la base.
+   */
+  @Transactional
   public void eliminarHuesped(Integer id) {
     Huesped huesped = getHuespedEntityById(id);
-    huesped.marcarComoEliminado();
-    huespedRepository.save(huesped);
+    huespedRepository.delete(huesped);
   }
 
   public List<HuespedResponse> buscarPorNombre(String nombre) {
-    return huespedRepository.findByActivoTrueAndNombreContainingIgnoreCase(nombre).stream()
+    return huespedRepository.findByNombreContainingIgnoreCase(nombre).stream()
         .map(huespedMapper::toResponse)
         .toList();
   }
 
   public HuespedResponse buscarPorDni(String dni) {
     return huespedRepository
-        .findByActivoTrueAndDni(dni)
+        .findByDni(dni)
         .map(huespedMapper::toResponse)
         .orElseThrow(() -> new EntityNotFoundException("Huésped no encontrado con DNI: " + dni));
   }
@@ -65,7 +69,7 @@ public class HuespedService {
       throw new IllegalArgumentException("El ID del huésped no puede ser nulo");
     }
     return huespedRepository
-        .findByIdAndActivoTrue(id)
+        .findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Huésped no encontrado con ID: " + id));
   }
 }

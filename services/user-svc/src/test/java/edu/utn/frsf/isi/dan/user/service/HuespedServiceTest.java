@@ -53,7 +53,7 @@ class HuespedServiceTest {
 
   @Test
   void getAll_DeberiaDevolverListaDTO() {
-    when(huespedRepository.findByActivoTrue()).thenReturn(List.of(entidad));
+    when(huespedRepository.findAll()).thenReturn(List.of(entidad));
     when(huespedMapper.toResponse(entidad)).thenReturn(response);
 
     List<HuespedResponse> out = huespedService.getAllHuespedes();
@@ -62,7 +62,7 @@ class HuespedServiceTest {
 
   @Test
   void getById_DeberiaRetornarDTO_CuandoExiste() {
-    when(huespedRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
+    when(huespedRepository.findById(1)).thenReturn(Optional.of(entidad));
     when(huespedMapper.toResponse(entidad)).thenReturn(response);
     HuespedResponse out = huespedService.getHuespedById(1);
     assertEquals(1, out.id());
@@ -70,13 +70,13 @@ class HuespedServiceTest {
 
   @Test
   void getById_DeberiaLanzar404_CuandoNoExiste() {
-    when(huespedRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.empty());
+    when(huespedRepository.findById(1)).thenReturn(Optional.empty());
     assertThrows(EntityNotFoundException.class, () -> huespedService.getHuespedById(1));
   }
 
   @Test
   void actualizar_DeberiaGuardarYRetornarDTO() {
-    when(huespedRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
+    when(huespedRepository.findById(1)).thenReturn(Optional.of(entidad));
     doAnswer(
             inv -> {
               // marcar que el mapper aplicó cambios
@@ -98,18 +98,24 @@ class HuespedServiceTest {
   }
 
   @Test
-  void eliminar_DeberiaHacerSoftDelete() {
-    when(huespedRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
-    when(huespedRepository.save(any(Huesped.class))).thenAnswer(inv -> inv.getArgument(0));
+  void eliminar_DeberiaBorrarFisicamente() {
+    when(huespedRepository.findById(1)).thenReturn(Optional.of(entidad));
     assertDoesNotThrow(() -> huespedService.eliminarHuesped(1));
-    assertFalse(entidad.getActivo());
-    verify(huespedRepository, times(1)).save(entidad);
+    verify(huespedRepository, times(1)).delete(entidad);
+    verify(huespedRepository, never()).save(any(Huesped.class));
+    assertTrue(entidad.getActivo());
+  }
+
+  @Test
+  void eliminar_DeberiaLanzar404_CuandoNoExiste() {
+    when(huespedRepository.findById(1)).thenReturn(Optional.empty());
+    assertThrows(EntityNotFoundException.class, () -> huespedService.eliminarHuesped(1));
+    verify(huespedRepository, never()).delete(any(Huesped.class));
   }
 
   @Test
   void buscarPorNombre_DeberiaRetornarListaDTO() {
-    when(huespedRepository.findByActivoTrueAndNombreContainingIgnoreCase("Ju"))
-        .thenReturn(List.of(entidad));
+    when(huespedRepository.findByNombreContainingIgnoreCase("Ju")).thenReturn(List.of(entidad));
     when(huespedMapper.toResponse(entidad)).thenReturn(response);
     List<HuespedResponse> out = huespedService.buscarPorNombre("Ju");
     assertEquals(1, out.size());
@@ -117,7 +123,7 @@ class HuespedServiceTest {
 
   @Test
   void buscarPorDni_DeberiaRetornarDTO() {
-    when(huespedRepository.findByActivoTrueAndDni("1111")).thenReturn(Optional.of(entidad));
+    when(huespedRepository.findByDni("1111")).thenReturn(Optional.of(entidad));
     when(huespedMapper.toResponse(entidad)).thenReturn(response);
     HuespedResponse out = huespedService.buscarPorDni("1111");
     assertEquals("Juan", out.nombre());

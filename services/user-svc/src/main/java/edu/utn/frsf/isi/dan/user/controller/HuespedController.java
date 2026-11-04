@@ -37,7 +37,7 @@ public class HuespedController {
   @Autowired private HuespedService huespedService;
   @Autowired private TarjetaCreditoService tarjetaCreditoService;
 
-  @Operation(summary = "Listar huéspedes activos")
+  @Operation(summary = "Listar huéspedes")
   @ApiResponses({@ApiResponse(responseCode = "200", description = "Listado obtenido")})
   @GetMapping
   public ResponseEntity<List<HuespedResponse>> getAllHuespedes() {
@@ -65,7 +65,7 @@ public class HuespedController {
     return ResponseEntity.ok(huespedService.actualizarHuesped(id, huespedRequest));
   }
 
-  @Operation(summary = "Eliminar (soft-delete) un huésped")
+  @Operation(summary = "Eliminar un huésped y, en cascada, sus tarjetas")
   @ApiResponses({@ApiResponse(responseCode = "204", description = "Huésped eliminado")})
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> eliminarHuesped(@PathVariable @Positive Integer id) {
@@ -73,7 +73,7 @@ public class HuespedController {
     return ResponseEntity.noContent().build();
   }
 
-  @Operation(summary = "Buscar huéspedes por nombre (activos)")
+  @Operation(summary = "Buscar huéspedes por nombre")
   @ApiResponses({@ApiResponse(responseCode = "200", description = "Búsqueda realizada")})
   @GetMapping("/buscar")
   public ResponseEntity<List<HuespedResponse>> buscarPorNombre(
@@ -81,7 +81,7 @@ public class HuespedController {
     return ResponseEntity.ok(huespedService.buscarPorNombre(nombre));
   }
 
-  @Operation(summary = "Buscar huésped por DNI exacto (activo)")
+  @Operation(summary = "Buscar huésped por DNI exacto")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Huésped encontrado"),
     @ApiResponse(responseCode = "404", description = "Huésped no encontrado")
