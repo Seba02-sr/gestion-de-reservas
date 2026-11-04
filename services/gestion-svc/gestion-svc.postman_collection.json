@@ -379,7 +379,7 @@
                 }
               }
             },
-            "description": "Rige desde hoy sin fecha de fin. Si el tipo ya tenía una tarifa vigente, esa pasa a terminar ayer. Publica ACTUALIZAR_PRECIO si cambia el precio de hoy."
+            "description": "Rige desde hoy. Si el tipo ya tenía una tarifa vigente, esa pasa a terminar ayer. Si hay promociones programadas, la nueva rige hasta el día anterior a la próxima promo y las tarifas que siguen a cada promo pasan al nuevo precio (las promos no se tocan). Publica ACTUALIZAR_PRECIO si cambia el precio de hoy."
           }
         },
         {

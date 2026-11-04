@@ -31,7 +31,10 @@ import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.scheduling.config.CronTask;
 import org.springframework.scheduling.config.ScheduledTask;
 import org.springframework.scheduling.config.ScheduledTaskHolder;
@@ -71,6 +74,7 @@ class TarifasIntegrationTest {
   @Autowired private TipoHabitacionRepository tipoHabitacionRepository;
   @Autowired private PlatformTransactionManager transactionManager;
   @Autowired private ObjectMapper objectMapper;
+  @Autowired private ConfigurableApplicationContext context;
 
   private TipoHabitacion tipo;
 
@@ -219,6 +223,53 @@ class TarifasIntegrationTest {
   }
 
   @Test
+  void tarifaComunConPromoFutura_contraLaBase_repreciaLaPosteriorYNoDejaHuecos() {
+    LocalDate ini = HOY.plusDays(20);
+    LocalDate fin = HOY.plusDays(25);
+    tarifaRepository.save(
+        Tarifa.builder()
+            .nombre("Base")
+            .tipoHabitacion(tipo)
+            .fechaInicio(HOY.minusDays(30))
+            .precioNoche(10000.0)
+            .especial(false)
+            .build());
+    tarifaService.crear(promo(ini, fin, 7000));
+
+    tarifaService.crear(comun(13000));
+
+    List<Tarifa> t = enBase();
+    assertEquals(4, t.size());
+    assertEquals(HOY.minusDays(1), t.get(0).getFechaFin());
+    assertEquals(HOY, t.get(1).getFechaInicio());
+    assertEquals(ini.minusDays(1), t.get(1).getFechaFin());
+    assertEquals(13000.0, t.get(1).getPrecioNoche());
+    assertEquals(7000.0, t.get(2).getPrecioNoche());
+    assertEquals(fin.plusDays(1), t.get(3).getFechaInicio());
+    assertNull(t.get(3).getFechaFin());
+    assertEquals(13000.0, t.get(3).getPrecioNoche());
+    // sin huecos: cada tarifa empieza el día siguiente al fin de la anterior
+    for (int i = 1; i < t.size(); i++) {
+      assertEquals(t.get(i - 1).getFechaFin().plusDays(1), t.get(i).getFechaInicio());
+    }
+    assertEquals(
+        13000.0,
+        tarifaService
+            .obtenerTarifaVigente(tipo.getId(), ini.minusDays(1))
+            .orElseThrow()
+            .getPrecioNoche());
+    assertEquals(
+        7000.0,
+        tarifaService.obtenerTarifaVigente(tipo.getId(), ini).orElseThrow().getPrecioNoche());
+    assertEquals(
+        13000.0,
+        tarifaService
+            .obtenerTarifaVigente(tipo.getId(), fin.plusDays(1))
+            .orElseThrow()
+            .getPrecioNoche());
+  }
+
+  @Test
   void eliminar_laUnicaTarifa_dejaLaBaseIntacta() {
     TarifaResponse unica = tarifaService.crear(comun(10000));
 
@@ -276,6 +327,35 @@ class TarifasIntegrationTest {
     List<HabitacionEvent> mensajes = mensajesDePrecio(1);
     assertEquals(8000.0, mensajes.get(0).getTarifa().getNuevoPrecio());
     assertEquals(tipo.getId(), mensajes.get(0).getTarifa().getTipoHabitacionId());
+  }
+
+  @Test
+  void alArrancar_seEjecutaElMismoChequeoCuandoSePublicaApplicationReadyEvent() throws Exception {
+    tarifaRepository.save(
+        Tarifa.builder()
+            .nombre("Base")
+            .tipoHabitacion(tipo)
+            .fechaInicio(HOY.minusDays(60))
+            .fechaFin(HOY.minusDays(1))
+            .precioNoche(10000.0)
+            .especial(false)
+            .build());
+    tarifaRepository.save(
+        Tarifa.builder()
+            .nombre("Promo")
+            .tipoHabitacion(tipo)
+            .fechaInicio(HOY)
+            .fechaFin(HOY.plusDays(5))
+            .precioNoche(8000.0)
+            .especial(true)
+            .build());
+    reset(rabbitTemplate);
+
+    context.publishEvent(
+        new ApplicationReadyEvent(
+            new SpringApplication(), new String[0], context, java.time.Duration.ZERO));
+
+    assertEquals(8000.0, mensajesDePrecio(1).get(0).getTarifa().getNuevoPrecio());
   }
 
   @Test

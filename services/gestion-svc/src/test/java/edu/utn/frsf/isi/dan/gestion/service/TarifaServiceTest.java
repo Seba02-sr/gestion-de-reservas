@@ -228,14 +228,110 @@ class TarifaServiceTest {
   }
 
   @Test
-  void crearSinFechas_conTarifasFuturas_lanzaIllegalState() {
+  void
+      crearSinFechas_conPromoFutura_laNuevaRigeHastaElDiaAnteriorALaPromoYLaPosteriorPasaAlNuevoPrecio() {
+    conTarifas(
+        tarifa(1, "Base 2026", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 19), 10000, false),
+        tarifa(2, "Promo", LocalDate.of(2026, 12, 20), LocalDate.of(2027, 1, 5), 15000, true),
+        tarifa(3, "Base 2026", LocalDate.of(2027, 1, 6), null, 10000, false));
+
+    TarifaResponse r = tarifaService.crear(comun(12000));
+
+    List<Tarifa> t = ordenadas();
+    assertEquals(4, t.size());
+    // la base anterior termina ayer
+    assertEquals(LocalDate.of(2026, 1, 1), t.get(0).getFechaInicio());
+    assertEquals(LocalDate.of(2026, 11, 3), t.get(0).getFechaFin());
+    // la nueva: desde hoy hasta el día anterior a la próxima promo
+    assertEquals(HOY, t.get(1).getFechaInicio());
+    assertEquals(LocalDate.of(2026, 12, 19), t.get(1).getFechaFin());
+    assertEquals(12000.0, t.get(1).getPrecioNoche());
+    assertFalse(t.get(1).getEspecial());
+    assertEquals(t.get(1).getId(), r.id());
+    assertEquals(LocalDate.of(2026, 12, 19), r.fechaFin());
+    // la promo no se toca
+    assertEquals(LocalDate.of(2026, 12, 20), t.get(2).getFechaInicio());
+    assertEquals(LocalDate.of(2027, 1, 5), t.get(2).getFechaFin());
+    assertEquals(15000.0, t.get(2).getPrecioNoche());
+    assertTrue(t.get(2).getEspecial());
+    // la tarifa posterior a la promo sigue ahí, abierta, pero con el precio nuevo
+    assertEquals(LocalDate.of(2027, 1, 6), t.get(3).getFechaInicio());
+    assertNull(t.get(3).getFechaFin());
+    assertEquals(12000.0, t.get(3).getPrecioNoche());
+    // el precio de hoy cambió (10000 -> 12000)
+    assertEventoPrecio(eventos(1).get(0), 3, 12000.0);
+  }
+
+  @Test
+  void crearSinFechas_conVariasPromosFuturas_repreciaTodasLasTarifasPosterioresAUnaPromo() {
+    conTarifas(
+        tarifa(1, "Base", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 19), 10000, false),
+        tarifa(2, "Promo 1", LocalDate.of(2026, 12, 20), LocalDate.of(2027, 1, 5), 15000, true),
+        tarifa(3, "Base", LocalDate.of(2027, 1, 6), LocalDate.of(2027, 2, 28), 10000, false),
+        tarifa(4, "Promo 2", LocalDate.of(2027, 3, 1), LocalDate.of(2027, 3, 10), 9000, true),
+        tarifa(5, "Base", LocalDate.of(2027, 3, 11), null, 10000, false));
+
+    tarifaService.crear(comun(12000));
+
+    List<Tarifa> t = ordenadas();
+    assertEquals(6, t.size());
+    assertEquals(
+        List.of(10000.0, 12000.0, 15000.0, 12000.0, 9000.0, 12000.0),
+        t.stream().map(Tarifa::getPrecioNoche).toList());
+    // la nueva solo llega hasta la primera promo
+    assertEquals(LocalDate.of(2026, 12, 19), t.get(1).getFechaFin());
+    // las fechas de las posteriores no cambian
+    assertEquals(LocalDate.of(2027, 2, 28), t.get(3).getFechaFin());
+    assertNull(t.get(5).getFechaFin());
+    // ninguna promo cambió
+    assertTrue(t.get(2).getEspecial());
+    assertTrue(t.get(4).getEspecial());
+  }
+
+  @Test
+  void crearSinFechas_conUnaPromoVigenteHoy_laCortaAyerYAbsorbeSuContinuacion() {
+    conTarifas(
+        tarifa(1, "Base", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 10, 31), 10000, false),
+        tarifa(2, "Promo", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 10), 8000, true),
+        tarifa(3, "Base", LocalDate.of(2026, 11, 11), null, 10000, false));
+
+    tarifaService.crear(comun(12000));
+
+    List<Tarifa> t = ordenadas();
+    assertEquals(3, t.size());
+    assertEquals(LocalDate.of(2026, 11, 3), t.get(1).getFechaFin()); // la promo termina ayer
+    assertEquals(HOY, t.get(2).getFechaInicio());
+    assertNull(t.get(2).getFechaFin());
+    assertEquals(12000.0, t.get(2).getPrecioNoche());
+    assertNull(enBase(3)); // la continuación de la promo quedó absorbida por la nueva
+    assertEventoPrecio(eventos(1).get(0), 3, 12000.0);
+  }
+
+  @Test
+  void crearSinFechas_conUnaTarifaFuturaSinPromo_laNuevaLaAbsorbe() {
+    conTarifas(
+        tarifa(1, "Base", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 11, 30), 10000, false),
+        tarifa(2, "Futura", LocalDate.of(2026, 12, 1), null, 11000, false));
+
+    tarifaService.crear(comun(12000));
+
+    List<Tarifa> t = ordenadas();
+    assertEquals(2, t.size());
+    assertEquals(LocalDate.of(2026, 11, 3), t.get(0).getFechaFin());
+    assertEquals(HOY, t.get(1).getFechaInicio());
+    assertNull(t.get(1).getFechaFin());
+  }
+
+  @Test
+  void crearSinFechas_conPromoFutura_conElMismoPrecioDeHoyNoPublicaEvento() {
     conTarifas(
         tarifa(1, "Base", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 19), 10000, false),
         tarifa(2, "Promo", LocalDate.of(2026, 12, 20), LocalDate.of(2027, 1, 5), 15000, true),
         tarifa(3, "Base", LocalDate.of(2027, 1, 6), null, 10000, false));
 
-    assertThrows(IllegalStateException.class, () -> tarifaService.crear(comun(12000)));
-    verify(tarifaRepository, never()).save(any());
+    tarifaService.crear(comun(10000));
+
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
