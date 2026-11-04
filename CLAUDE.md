@@ -71,9 +71,9 @@ Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) s
 
 ### Tarifas (gestion-svc)
 - Solo POST y DELETE. Vigente en una fecha = `fechaInicio <= fecha` y (`fechaFin` null o `fechaFin >= fecha`). `tarifa.fecha_fin` es nullable y la tarifa tiene `nombre` y `especial` (promoción): hace falta recrear el volumen de postgres.
-- Sin fechas: la actual termina ayer y la nueva rige desde hoy. Con fechas (promo): la actual termina el día anterior, se crea la promo y una continuación desde el día siguiente con el precio de la tarifa cortada. No se permiten promos superpuestas ni crear una tarifa común con tarifas futuras (409).
+- Sin fechas: la actual termina ayer y la nueva rige desde hoy. Con fechas (promo): la actual termina el día anterior, se crea la promo y una continuación desde el día siguiente con el precio de la tarifa cortada. No se permiten promos superpuestas (409). Una tarifa común con promos programadas rige hasta el día anterior a la próxima promo, las tarifas posteriores a las promos pasan al nuevo precio y las futuras previas a la próxima promo se absorben.
 - DELETE: 409 si es la única del tipo; si era la vigente (o futura), la anterior extiende su `fechaFin` al de la borrada (sin huecos).
-- "Hoy" sale de un `Clock` con zona `app.zone` (Buenos Aires por defecto). `ACTUALIZAR_PRECIO` (`dan.habitacion.precio`) se publica al cambiar el precio de hoy y, para cambios futuros, lo publica la tarea diaria `TarifaPrecioScheduler` (cron `tarifas.cron-cambio-precio`, por defecto `0 5 0 * * *`).
+- "Hoy" sale de un `Clock` con zona `app.zone` (Buenos Aires por defecto). `ACTUALIZAR_PRECIO` (`dan.habitacion.precio`) se publica al cambiar el precio de hoy y, para cambios futuros, lo publica la tarea diaria `TarifaPrecioScheduler` (cron `tarifas.cron-cambio-precio`, por defecto `0 5 0 * * *`), que además corre una vez al arrancar la aplicación (`ApplicationReadyEvent`).
 
 ## Puertos
 

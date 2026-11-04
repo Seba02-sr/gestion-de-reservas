@@ -25,7 +25,9 @@ public class TarifaController {
   @Operation(
       summary = "Crear una tarifa",
       description =
-          "Sin fechas: tarifa común, rige desde hoy y reemplaza a la actual (que termina ayer). "
+          "Sin fechas: tarifa común, rige desde hoy y reemplaza a la actual (que termina ayer); si hay "
+              + "promociones programadas rige hasta el día anterior a la próxima y las tarifas que "
+              + "siguen a cada promo pasan al nuevo precio. "
               + "Con fechaInicio y fechaFin: tarifa especial/promocional; la actual termina el día "
               + "anterior al inicio y, al terminar la promo, vuelve el precio anterior.")
   @PostMapping

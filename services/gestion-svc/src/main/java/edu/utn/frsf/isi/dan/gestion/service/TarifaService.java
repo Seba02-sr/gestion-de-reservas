@@ -105,7 +105,8 @@ public class TarifaService {
    *
    * <ul>
    *   <li>Sin fechas: la tarifa actual del tipo pasa a terminar ayer y la nueva rige desde hoy sin
-   *       fecha de fin.
+   *       fecha de fin; si hay promociones programadas, rige hasta el día anterior a la próxima y
+   *       las tarifas posteriores a las promos pasan al nuevo precio.
    *   <li>Con inicio y fin: tarifa especial. La tarifa actual termina el día anterior al inicio, se
    *       crea la promoción y se crea otra tarifa (mismo precio que la que se cortó) desde el día
    *       siguiente al fin de la promoción.
@@ -144,13 +145,6 @@ public class TarifaService {
 
   private Tarifa crearComun(
       TarifaRequest request, TipoHabitacion tipo, List<Tarifa> tarifas, LocalDate hoy) {
-    if (tarifas.stream().anyMatch(t -> t.getFechaInicio().isAfter(hoy))) {
-      throw new IllegalStateException(
-          "El tipo de habitación "
-              + tipo.getId()
-              + " tiene tarifas futuras (p. ej. una promoción programada): eliminelas antes de crear una tarifa común");
-    }
-
     Optional<Tarifa> actual = vigenteEn(tarifas, hoy);
     if (actual.isPresent()) {
       Tarifa t = actual.get();
@@ -164,6 +158,34 @@ public class TarifaService {
       }
     }
 
+    // Si hay promociones programadas, la nueva tarifa rige hasta el día anterior a la próxima y las
+    // tarifas que vienen después de cada promoción pasan al nuevo precio. Las promos no se tocan.
+    List<Tarifa> futuras =
+        tarifas.stream()
+            .filter(t -> t.getFechaInicio().isAfter(hoy))
+            .sorted(Comparator.comparing(Tarifa::getFechaInicio))
+            .toList();
+    Optional<Tarifa> proximaPromo =
+        futuras.stream().filter(t -> Boolean.TRUE.equals(t.getEspecial())).findFirst();
+    LocalDate finNueva = proximaPromo.map(p -> p.getFechaInicio().minusDays(1)).orElse(null);
+
+    for (Tarifa futura : futuras) {
+      if (Boolean.TRUE.equals(futura.getEspecial())) {
+        continue;
+      }
+      if (proximaPromo.isPresent()
+          && futura.getFechaInicio().isAfter(proximaPromo.get().getFechaInicio())) {
+        // tarifa posterior a una promo: sigue a la promo pero con el precio nuevo
+        futura.setPrecioNoche(request.precioNoche());
+        futura.setNombre(request.nombre());
+        tarifaRepository.save(futura);
+      } else {
+        // tarifa futura anterior a la próxima promo (o sin promos): la nueva la absorbe
+        tarifaRepository.delete(futura);
+        tarifas.removeIf(x -> x == futura);
+      }
+    }
+
     Tarifa nueva =
         tarifaRepository.save(
             Tarifa.builder()
@@ -171,11 +193,16 @@ public class TarifaService {
                 .tipoHabitacion(tipo)
                 .precioNoche(request.precioNoche())
                 .fechaInicio(hoy)
-                .fechaFin(null)
+                .fechaFin(finNueva)
                 .especial(false)
                 .build());
     tarifas.add(nueva);
-    log.info("Tarifa {} creada para el tipo {} desde {}", nueva.getId(), tipo.getId(), hoy);
+    log.info(
+        "Tarifa {} creada para el tipo {} desde {} hasta {}",
+        nueva.getId(),
+        tipo.getId(),
+        hoy,
+        finNueva);
     return nueva;
   }
 
