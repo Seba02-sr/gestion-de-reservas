@@ -13,15 +13,25 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "reserva")
 public class Reserva {
   @Id private String _id;
-  private String idHabitacion;
-  private Long hotelId;
+
+  /** Id de la habitación en gestion-svc. */
+  private Long habitacionId;
+
+  private Integer hotelId;
   private Instant createdAt;
+
+  /** Primer día de la estadía, a las 00:00 de America/Argentina/Buenos_Aires. */
   private Instant checkIn;
+
+  /** Día de salida; null en las reservas abiertas (CERRADA). */
   private Instant checkOut;
+
   private Double precioNoche;
   private Double precioTotal;
-  private String status;
+
+  /** null en las reservas BLOQUEADA y CERRADA (no tienen huésped). */
   private Huesped huesped;
+
   private List<Pago> pago;
   private Review clientReview;
   private Review hostReview;

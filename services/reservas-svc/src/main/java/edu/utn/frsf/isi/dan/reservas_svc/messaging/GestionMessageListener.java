@@ -35,19 +35,19 @@ public class GestionMessageListener {
   public void receiveMessage(
       String payload, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) {
     try {
-      log.debug("[RabbitMQ] Mensaje recibido: {}" + payload);
+      log.debug("[RabbitMQ] Mensaje recibido: {}", payload);
       HabitacionEvent habitacionEvent = objectMapper.readValue(payload, HabitacionEvent.class);
       log.info("Evento recibido: {}", habitacionEvent);
       // Aquí puedes procesar el evento recibido
       habitacionService.handleEvent(habitacionEvent);
       channel.basicAck(deliveryTag, false);
     } catch (Exception e) {
-      log.error("Error procesando mensaje: {}", e.getMessage());
+      log.error("Error procesando mensaje: {}", e.getMessage(), e);
       // No hago nada: el mensaje NO se reentrega ni se requeuea
       try {
         channel.basicReject(deliveryTag, false);
       } catch (IOException e1) {
-        log.error("Error rechazando mensaje: {}", e.getMessage());
+        log.error("Error rechazando mensaje: {}", e1.getMessage(), e1);
       }
     }
   }

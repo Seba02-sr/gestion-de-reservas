@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.geo.GeoJsonPoint; // Spring Data 3.0+
-import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
-import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 
 @Data
 @NoArgsConstructor
@@ -18,6 +16,10 @@ public class Hotel {
   private Integer categoria;
   private String domicilio;
 
-  @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2DSPHERE)
-  private GeoJsonPoint ubicacion; // <-- NUEVO campo geoespacial
+  /**
+   * Punto GeoJSON con coordenadas [longitud, latitud] (x = longitud, y = latitud). El índice
+   * 2dsphere sobre {@code hotel.ubicacion} se crea explícitamente al arrancar ({@code
+   * MongoIndexInitializer}).
+   */
+  private GeoJsonPoint ubicacion;
 }

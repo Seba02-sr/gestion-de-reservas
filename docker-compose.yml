@@ -198,6 +198,8 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: default
+      # Solo para pruebas: fija "hoy" (yyyy-MM-dd). Vacío = fecha real. Ver CLAUDE.md
+      APP_FECHA_ACTUAL: ${APP_FECHA_ACTUAL:-}
 
   gestion-svc:
     build:
