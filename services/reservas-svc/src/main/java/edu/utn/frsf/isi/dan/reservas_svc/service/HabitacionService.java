@@ -8,6 +8,7 @@ import edu.utn.frsf.isi.dan.shared.HabitacionEvent;
 import edu.utn.frsf.isi.dan.shared.HotelDTO;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -18,6 +19,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 @Service
+@Log4j2
 public class HabitacionService {
   @Autowired private HabitacionRepository habitacionRepository;
 
@@ -56,6 +58,15 @@ public class HabitacionService {
         break;
       case ELIMINAR:
         deleteByHabitacionId(event.getHabitacion().getHabitacionId());
+        break;
+      case CERRAR_HOTEL:
+        // Pendiente (tanda de reservas-svc): crear una reserva CERRADA por cada habitación
+        // (checkIn = fechaCierre, checkOut = null). Por ahora solo se confirma el mensaje.
+        log.info(
+            "CERRAR_HOTEL recibido para hotel {} ({} habitaciones, desde {}); sin procesar todavía",
+            event.getHotelId(),
+            event.getHabitacionIds() == null ? 0 : event.getHabitacionIds().size(),
+            event.getFechaCierre());
         break;
       default:
         throw new IllegalArgumentException("Tipo de evento desconocido: " + event.getTipoEvento());
