@@ -64,6 +64,11 @@ El compose raíz **no monta `infra/mysql/initdb`** en el servicio `mysql` (solo 
 ### initdb y volúmenes (PostgreSQL y demás bases que sí montan initdb)
 Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) solo se ejecutan cuando el volumen de la base está vacío. **Si cambia un script de initdb hay que recrear el volumen**: `docker compose down -v` (borra todo) o borrar solo el volumen de esa base (`docker volume ls` → `docker volume rm <proyecto>_postgres_data`, `..._mysql_data`, `..._mongo_data`).
 
+### PostgreSQL (gestion-svc) y mensajería de habitaciones
+- `infra/postgres/initdb/01_schema.sql` **sí** se monta y gestion-svc corre con `ddl-auto=none`: la columna `habitacion.disponible` y la restricción `UNIQUE (id_hotel, numero)` (`uq_habitacion_hotel_numero`) solo existen si se recrea el volumen (`docker compose down -v` o `docker volume rm <proyecto>_postgres_data`).
+- gestion-svc publica en el exchange topic `dan.exchange` con routing key `dan.habitacion.<accion>` (`crear`, `actualizar`, `eliminar`, `cerrar-hotel`); reservas-svc escucha la cola `habitacion.topic` (binding `dan.habitacion.#`, ver `infra/rabbitmq/definitions.json`). Propiedades: `rabbitmq.exchange` y `rabbitmq.routingkey.prefix`.
+- Los mensajes se envían **después del commit** (`@TransactionalEventListener(AFTER_COMMIT)` en `HabitacionEventPublisher`); si la transacción hace rollback no sale nada. Eventos: `CREAR`/`ACTUALIZAR_DATOS`/`ELIMINAR` (alta, modificación y baja de habitación), `ACTUALIZAR_DATOS` por cada habitación cuando cambia el hotel o sus amenities, y `CERRAR_HOTEL` (un mensaje con `hotelId`, `habitacionIds` y `fechaCierre`; reservas-svc por ahora solo lo registra: falta crear las reservas CERRADA).
+
 ## Puertos
 
 | Servicio | Puerto host |
