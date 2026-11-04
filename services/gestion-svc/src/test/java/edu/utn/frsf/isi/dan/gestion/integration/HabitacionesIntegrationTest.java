@@ -82,8 +82,8 @@ class HabitacionesIntegrationTest {
     hotelRepository.deleteAll();
     tipoHabitacionRepository.deleteAll();
 
-    doble = tipoHabitacionRepository.save(new TipoHabitacion(3, "DOBLE", "Doble una cama", 2));
-    single = tipoHabitacionRepository.save(new TipoHabitacion(1, "SINGLE", "Single", 1));
+    doble = tipoHabitacionRepository.save(new TipoHabitacion(null, "DOBLE", "Doble una cama", 2));
+    single = tipoHabitacionRepository.save(new TipoHabitacion(null, "SINGLE", "Single", 1));
 
     Hotel nuevo =
         Hotel.builder()
