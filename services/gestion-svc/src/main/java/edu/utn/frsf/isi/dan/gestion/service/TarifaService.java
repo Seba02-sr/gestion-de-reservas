@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.gestion.service;
 
 import edu.utn.frsf.isi.dan.gestion.dao.TarifaRepository;
 import edu.utn.frsf.isi.dan.gestion.model.Tarifa;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,5 +26,13 @@ public class TarifaService {
 
   public List<Tarifa> findAll() {
     return tarifaRepository.findAll();
+  }
+
+  /**
+   * Tarifa vigente hoy para un tipo de habitación: inicio <= hoy y (fin null o fin >= hoy). Si hay
+   * más de una, la de inicio más reciente.
+   */
+  public Optional<Tarifa> obtenerTarifaVigente(Integer tipoHabitacionId) {
+    return tarifaRepository.findVigentes(tipoHabitacionId, LocalDate.now()).stream().findFirst();
   }
 }

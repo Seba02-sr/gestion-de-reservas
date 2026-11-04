@@ -1,22 +1,32 @@
 package edu.utn.frsf.isi.dan.gestion.service;
 
+import edu.utn.frsf.isi.dan.gestion.dao.HabitacionRepository;
 import edu.utn.frsf.isi.dan.gestion.dao.HotelRepository;
 import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelResponse;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
+import edu.utn.frsf.isi.dan.gestion.dto.HotelUpdateRequest;
 import edu.utn.frsf.isi.dan.gestion.mapper.AmenityHotelMapper;
 import edu.utn.frsf.isi.dan.gestion.mapper.HotelMapper;
+import edu.utn.frsf.isi.dan.gestion.messaging.HabitacionEventFactory;
+import edu.utn.frsf.isi.dan.gestion.messaging.HabitacionEventoPublicado;
 import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.model.AmenityHotel;
+import edu.utn.frsf.isi.dan.gestion.model.Habitacion;
 import edu.utn.frsf.isi.dan.gestion.model.Hotel;
+import edu.utn.frsf.isi.dan.shared.TipoEvento;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,9 +37,15 @@ public class HotelService {
 
   @Autowired private HotelRepository hotelRepository;
 
+  @Autowired private HabitacionRepository habitacionRepository;
+
   @Autowired private HotelMapper hotelMapper;
 
   @Autowired private AmenityHotelMapper amenityHotelMapper;
+
+  @Autowired private HabitacionEventFactory eventFactory;
+
+  @Autowired private ApplicationEventPublisher eventPublisher;
 
   /**
    * El mapper ya se encarga de: 1- Inicializar habitaciones y amenities como listas vacías
@@ -60,55 +76,43 @@ public class HotelService {
   }
 
   /**
-   * Actualiza un hotel existente con los datos permitidos. Solo se pueden actualizar la categoría,
-   * el teléfono y el correo de contacto.
+   * Obtiene un hotel por su id.
+   *
+   * @throws EntityNotFoundException si el hotel no existe
+   */
+  public HotelResponse obtenerHotel(Integer id) {
+    return hotelMapper.toResponse(getHotelOrThrow(id));
+  }
+
+  /**
+   * Actualiza un hotel existente. Solo se pueden actualizar la categoría, el teléfono y el correo
+   * de contacto. Reservas-svc se entera a través de un evento ACTUALIZAR_DATOS por cada habitación
+   * del hotel (se envía después del commit).
    *
    * @param id Identificador del hotel a actualizar.
-   * @param hotelRequest Datos a actualizar.
+   * @param request Datos a actualizar.
    * @return HotelResponse con los datos actualizados.
    */
   @Transactional
-  public HotelResponse actualizarHotel(Integer id, HotelRequest hotelRequest) {
-    if (hotelRequest == null) {
+  public HotelResponse actualizarHotel(Integer id, HotelUpdateRequest request) {
+    if (request == null) {
       log.warn("Se intentó actualizar un hotel con una solicitud nula");
       throw new IllegalArgumentException("La solicitud no puede ser nula");
     }
 
     log.info("Iniciando actualización del hotel con ID {}", id);
 
-    Optional<Hotel> optionalHotel = hotelRepository.findById(id);
-    if (optionalHotel.isEmpty()) {
-      log.warn("No se encontró un hotel con ID {}", id);
-      throw new IllegalArgumentException("El hotel con el ID especificado no existe");
-    }
+    Hotel hotelExistente = getHotelOrThrow(id);
+    hotelMapper.updateEntityFromRequest(request, hotelExistente);
 
-    try {
-      Hotel hotelExistente = optionalHotel.get();
-      // Verificar campos que NO pueden ser modificados
-      if (!hotelExistente.getNombre().equals(hotelRequest.nombre())
-          || !hotelExistente.getCuit().equals(hotelRequest.cuit())
-          || !hotelExistente.getDomicilio().equals(hotelRequest.domicilio())
-          || !hotelExistente.getLatitud().equals(hotelRequest.latitud())
-          || !hotelExistente.getLongitud().equals(hotelRequest.longitud())) {
-        log.warn("Intento de modificar campos no permitidos en el hotel con ID {}", id);
-        throw new IllegalArgumentException(
-            "Solo se pueden modificar la categoría, el teléfono y el correo de contacto");
-      }
-
-      hotelExistente.setCategoria(hotelRequest.categoria());
-      hotelExistente.setTelefono(hotelRequest.telefono());
-      hotelExistente.setCorreoContacto(hotelRequest.correoContacto());
-
-      Hotel hotelActualizado = hotelRepository.save(hotelExistente);
-      return hotelMapper.toResponse(hotelActualizado);
-    } catch (Exception e) {
-      log.error("Error al actualizar el hotel: {}", e.getMessage(), e);
-      throw e;
-    }
+    Hotel hotelActualizado = hotelRepository.save(hotelExistente);
+    publicarActualizacionDeHabitaciones(hotelExistente);
+    return hotelMapper.toResponse(hotelActualizado);
   }
 
   /**
-   * Agrega uno o más amenities a un hotel existente.
+   * Agrega uno o más amenities a un hotel existente. Las que el hotel ya tiene (o repetidas dentro
+   * del mismo pedido) se ignoran.
    *
    * @param id Identificador del hotel al que se agregarán los amenities.
    * @param amenityRequests Lista de AmenityHotelRequest a agregar.
@@ -123,29 +127,33 @@ public class HotelService {
 
     log.info("Iniciando la adición de amenities al hotel con ID {}", id);
 
-    Optional<Hotel> optionalHotel = hotelRepository.findById(id);
-    if (optionalHotel.isEmpty()) {
-      log.warn("No se encontró un hotel con ID {}", id);
-      throw new IllegalArgumentException("El hotel con el ID especificado no existe");
-    }
-
-    try {
-      Hotel hotelExistente = optionalHotel.get();
-      List<AmenityHotel> amenityHotels = hotelExistente.getAmenities();
-
-      for (AmenityHotelRequest request : amenityRequests) {
-        AmenityHotel amenityHotel = amenityHotelMapper.toEntity(request);
-        amenityHotel.setHotel(hotelExistente);
-        amenityHotels.add(amenityHotel);
-      }
-
+    Hotel hotelExistente = getHotelOrThrow(id);
+    List<AmenityHotel> amenityHotels = hotelExistente.getAmenities();
+    if (amenityHotels == null) {
+      amenityHotels = new ArrayList<>();
       hotelExistente.setAmenities(amenityHotels);
-      Hotel hotelActualizado = hotelRepository.save(hotelExistente);
-      return hotelMapper.toResponse(hotelActualizado);
-    } catch (Exception e) {
-      log.error("Error al agregar amenities al hotel: {}", e.getMessage(), e);
-      throw e;
     }
+
+    Set<Amenity> yaPresentes = new HashSet<>();
+    amenityHotels.forEach(ah -> yaPresentes.add(ah.getAmenity()));
+
+    boolean huboCambios = false;
+    for (AmenityHotelRequest request : amenityRequests) {
+      if (!yaPresentes.add(request.amenity())) {
+        log.debug("El hotel {} ya tiene la amenity {}; se ignora", id, request.amenity());
+        continue;
+      }
+      AmenityHotel amenityHotel = amenityHotelMapper.toEntity(request);
+      amenityHotel.setHotel(hotelExistente);
+      amenityHotels.add(amenityHotel);
+      huboCambios = true;
+    }
+
+    Hotel hotelActualizado = hotelRepository.save(hotelExistente);
+    if (huboCambios) {
+      publicarActualizacionDeHabitaciones(hotelExistente);
+    }
+    return hotelMapper.toResponse(hotelActualizado);
   }
 
   /**
@@ -163,41 +171,34 @@ public class HotelService {
 
     log.info("Iniciando eliminación del amenity con ID {} del hotel con ID {}", amenityId, id);
 
-    try {
-      Optional<Hotel> optionalHotel = hotelRepository.findById(id);
-      if (optionalHotel.isEmpty()) {
-        log.warn("No se encontró un hotel con ID {}", id);
-        throw new IllegalArgumentException("El hotel con el ID especificado no existe");
+    Hotel hotelExistente = getHotelOrThrow(id);
+    AmenityHotel amenityHotelAEliminar = null;
+    for (AmenityHotel ah : hotelExistente.getAmenities()) {
+      if (ah.getId().equals(amenityId)) {
+        amenityHotelAEliminar = ah;
+        break;
       }
-
-      Hotel hotelExistente = optionalHotel.get();
-      AmenityHotel amenityHotelAEliminar = null;
-      for (AmenityHotel ah : hotelExistente.getAmenities()) {
-        if (ah.getId().equals(amenityId)) {
-          amenityHotelAEliminar = ah;
-          break;
-        }
-      }
-      if (amenityHotelAEliminar == null) {
-        log.warn("No se encontró un amenity con ID {} en el hotel con ID {}", amenityId, id);
-        throw new IllegalArgumentException(
-            "El amenity con el ID especificado no existe en el hotel");
-      }
-
-      hotelExistente.getAmenities().remove(amenityHotelAEliminar);
-      hotelRepository.save(hotelExistente);
-      log.info("Amenity con ID {} eliminado del hotel con ID {}", amenityId, id);
-    } catch (Exception e) {
-      log.error("Error al eliminar el amenity: {}", e.getMessage(), e);
-      throw e;
     }
+    if (amenityHotelAEliminar == null) {
+      log.warn("No se encontró un amenity con ID {} en el hotel con ID {}", amenityId, id);
+      throw new EntityNotFoundException(
+          "El amenity con ID " + amenityId + " no existe en el hotel " + id);
+    }
+
+    hotelExistente.getAmenities().remove(amenityHotelAEliminar);
+    hotelRepository.save(hotelExistente);
+    log.info("Amenity con ID {} eliminado del hotel con ID {}", amenityId, id);
+    publicarActualizacionDeHabitaciones(hotelExistente);
   }
 
   /**
-   * Marca un hotel como cerrado.
+   * Cierra un hotel: lo marca como cerrado, deja todas sus habitaciones no disponibles y notifica a
+   * reservas-svc (un evento CERRAR_HOTEL con las habitaciones, enviado después del commit) para que
+   * cree una reserva CERRADA por habitación.
    *
    * @param id Identificador del hotel a cerrar.
    * @return HotelResponse con los datos actualizados.
+   * @throws IllegalStateException si el hotel ya estaba cerrado
    */
   @Transactional
   public HotelResponse cerrarHotel(Integer id) {
@@ -208,31 +209,24 @@ public class HotelService {
 
     log.info("Iniciando el cierre del hotel con ID {}", id);
 
-    try {
-      Optional<Hotel> optionalHotel = hotelRepository.findById(id);
-      if (optionalHotel.isEmpty()) {
-        log.warn("No se encontró un hotel con ID {}", id);
-        throw new IllegalArgumentException("El hotel con el ID especificado no existe");
-      }
-
-      Hotel hotelExistente = optionalHotel.get();
-      hotelExistente.setCerrado(true);
-
-      Hotel hotelActualizado = hotelRepository.save(hotelExistente);
-      log.info("Hotel con ID {} marcado como cerrado", id);
-
-      /*
-       * Falta agregar la siguiente lógica:
-       * Marcar como no disponible todas las habitaciones del hotel
-       * Se envia un mensaje a reservas-svc que el hotel cierra
-       * Se crea una reserva del tipo CERRADO, para todas las habitaciones con fecha de inicio de hoy y fecha final null
-       */
-
-      return hotelMapper.toResponse(hotelActualizado);
-    } catch (Exception e) {
-      log.error("Error al cerrar el hotel: {}", e.getMessage(), e);
-      throw e;
+    Hotel hotelExistente = getHotelOrThrow(id);
+    if (Boolean.TRUE.equals(hotelExistente.getCerrado())) {
+      throw new IllegalStateException("El hotel con ID " + id + " ya está cerrado");
     }
+    hotelExistente.setCerrado(true);
+
+    List<Habitacion> habitaciones = habitacionRepository.findByHotelId(id);
+    habitaciones.forEach(h -> h.setDisponible(false));
+    habitacionRepository.saveAll(habitaciones);
+
+    Hotel hotelActualizado = hotelRepository.save(hotelExistente);
+    log.info("Hotel con ID {} marcado como cerrado ({} habitaciones)", id, habitaciones.size());
+
+    eventPublisher.publishEvent(
+        new HabitacionEventoPublicado(
+            eventFactory.cerrarHotel(hotelActualizado, habitaciones, LocalDate.now())));
+
+    return hotelMapper.toResponse(hotelActualizado);
   }
 
   /**
@@ -304,12 +298,32 @@ public class HotelService {
    * @return
    */
   public List<AmenityHotelResponse> listarAmenities(Integer hotelId) {
-    Optional<Hotel> optionalHotel = hotelRepository.findById(hotelId);
-    if (optionalHotel.isEmpty()) {
-      log.warn("No se encontró un hotel con ID {}", hotelId);
-      throw new IllegalArgumentException("El hotel con el ID especificado no existe");
-    }
-    Hotel hotel = optionalHotel.get();
+    Hotel hotel = getHotelOrThrow(hotelId);
     return hotel.getAmenities().stream().map(amenityHotelMapper::toResponse).toList();
+  }
+
+  private Hotel getHotelOrThrow(Integer id) {
+    if (id == null) {
+      throw new IllegalArgumentException("El ID del hotel no puede ser nulo");
+    }
+    return hotelRepository
+        .findById(id)
+        .orElseThrow(
+            () -> {
+              log.warn("No se encontró un hotel con ID {}", id);
+              return new EntityNotFoundException("No existe un hotel con ID " + id);
+            });
+  }
+
+  /**
+   * Publica un ACTUALIZAR_DATOS (con el DTO completo) por cada habitación del hotel para que
+   * reservas-svc refresque su copia del hotel y de las amenities. Se envían después del commit.
+   */
+  private void publicarActualizacionDeHabitaciones(Hotel hotel) {
+    for (Habitacion habitacion : habitacionRepository.findByHotelId(hotel.getId())) {
+      eventPublisher.publishEvent(
+          new HabitacionEventoPublicado(
+              eventFactory.evento(habitacion, hotel, TipoEvento.ACTUALIZAR_DATOS)));
+    }
   }
 }

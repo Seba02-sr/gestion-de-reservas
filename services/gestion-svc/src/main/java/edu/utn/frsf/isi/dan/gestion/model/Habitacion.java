@@ -17,6 +17,10 @@ public class Habitacion {
   private Integer numero;
   private Integer piso;
 
+  @Builder.Default
+  @Column(nullable = false)
+  private Boolean disponible = true;
+
   @ManyToOne
   @JoinColumn(name = "id_tipo")
   private TipoHabitacion tipoHabitacion;

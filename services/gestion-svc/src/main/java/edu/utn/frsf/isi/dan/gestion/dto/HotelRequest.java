@@ -19,10 +19,12 @@ public record HotelRequest(
         @Length(min = 5, message = "El domicilio no puede tener menos de 5 caracteres")
         String domicilio,
     @NotNull(message = "La latitud no puede ser nula")
-        @DecimalMin(value = "0.0", inclusive = true, message = "La latitud mínima es 0")
+        @DecimalMin(value = "-90.0", message = "La latitud mínima es -90")
+        @DecimalMax(value = "90.0", message = "La latitud máxima es 90")
         Double latitud,
     @NotNull(message = "La longitud no puede ser nula")
-        @DecimalMin(value = "0.0", inclusive = true, message = "La longitud mínima es 0")
+        @DecimalMin(value = "-180.0", message = "La longitud mínima es -180")
+        @DecimalMax(value = "180.0", message = "La longitud máxima es 180")
         Double longitud,
     @NotBlank(message = "El teléfono no puede estar vacío") String telefono,
     @NotBlank(message = "El correo de contacto no puede estar vacío")

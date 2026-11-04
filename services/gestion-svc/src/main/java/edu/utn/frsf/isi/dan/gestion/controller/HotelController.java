@@ -4,6 +4,7 @@ import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.AmenityHotelResponse;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
+import edu.utn.frsf.isi.dan.gestion.dto.HotelUpdateRequest;
 import edu.utn.frsf.isi.dan.gestion.model.Amenity;
 import edu.utn.frsf.isi.dan.gestion.service.HotelService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,8 +15,10 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Validated
 @RestController
 @RequestMapping("/hoteles")
 @Tag(name = "Hotel", description = "Operaciones para la gestión de hoteles")
@@ -47,8 +50,21 @@ public class HotelController {
       })
   @PutMapping("/{id}")
   public ResponseEntity<HotelResponse> actualizarHotel(
-      @PathVariable Integer id, @Valid @RequestBody HotelRequest hotelRequest) {
+      @PathVariable Integer id, @Valid @RequestBody HotelUpdateRequest hotelRequest) {
     return new ResponseEntity<>(hotelService.actualizarHotel(id, hotelRequest), HttpStatus.OK);
+  }
+
+  @Operation(
+      summary = "Obtener un hotel por id",
+      description = "Devuelve los datos de un hotel (lo consume reservas-svc).",
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Hotel encontrado"),
+        @ApiResponse(responseCode = "404", description = "Hotel no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+      })
+  @GetMapping("/{id}")
+  public ResponseEntity<HotelResponse> obtenerHotel(@PathVariable Integer id) {
+    return new ResponseEntity<>(hotelService.obtenerHotel(id), HttpStatus.OK);
   }
 
   @Operation(
@@ -62,7 +78,7 @@ public class HotelController {
       })
   @PutMapping("/{id}/amenities")
   public ResponseEntity<HotelResponse> agregarAmenities(
-      @PathVariable Integer id, @RequestBody List<AmenityHotelRequest> amenityRequests) {
+      @PathVariable Integer id, @RequestBody List<@Valid AmenityHotelRequest> amenityRequests) {
     return new ResponseEntity<>(hotelService.agregarAmenities(id, amenityRequests), HttpStatus.OK);
   }
 
@@ -84,11 +100,14 @@ public class HotelController {
 
   @Operation(
       summary = "Cerrar un hotel",
-      description = "Permite marcar un hotel como cerrado.",
+      description =
+          "Marca el hotel como cerrado, deja sus habitaciones no disponibles y notifica a"
+              + " reservas-svc para que las cierre. Un hotel cerrado no admite habitaciones nuevas.",
       responses = {
         @ApiResponse(responseCode = "200", description = "Hotel cerrado correctamente"),
         @ApiResponse(responseCode = "400", description = "Error al cerrar el hotel"),
         @ApiResponse(responseCode = "404", description = "Hotel no encontrado"),
+        @ApiResponse(responseCode = "409", description = "El hotel ya estaba cerrado"),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
       })
   @PutMapping("/{id}/cerrar")

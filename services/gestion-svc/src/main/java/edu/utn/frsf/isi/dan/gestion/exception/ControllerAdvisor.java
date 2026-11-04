@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.gestion.exception;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -34,6 +35,29 @@ public class ControllerAdvisor {
             String.valueOf(System.currentTimeMillis()),
             HttpStatus.NOT_FOUND.value());
     return new ResponseEntity<>(exceptionInfo, HttpStatus.NOT_FOUND);
+  }
+
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<ExceptionInfo> handleIllegalStateException(
+      IllegalStateException ex, WebRequest request) {
+    return conflict(ex.getMessage(), request);
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ExceptionInfo> handleDataIntegrityViolation(
+      DataIntegrityViolationException ex, WebRequest request) {
+    // p. ej. UNIQUE (id_hotel, numero) de habitacion ante dos altas concurrentes
+    return conflict("La operación viola una restricción de integridad de datos", request);
+  }
+
+  private ResponseEntity<ExceptionInfo> conflict(String message, WebRequest request) {
+    ExceptionInfo exceptionInfo =
+        new ExceptionInfo(
+            message,
+            request.getDescription(false),
+            String.valueOf(System.currentTimeMillis()),
+            HttpStatus.CONFLICT.value());
+    return new ResponseEntity<>(exceptionInfo, HttpStatus.CONFLICT);
   }
 
   @ExceptionHandler(Exception.class)

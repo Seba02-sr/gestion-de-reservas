@@ -66,8 +66,20 @@ CREATE TABLE IF NOT EXISTS tp_dan.habitacion (
     numero integer NOT NULL,
     piso integer NOT NULL,
     id_tipo integer NOT NULL REFERENCES tp_dan.tipo_habitacion(id),
-    id_hotel integer NOT NULL REFERENCES tp_dan.hotel(id)
+    id_hotel integer NOT NULL REFERENCES tp_dan.hotel(id),
+    disponible boolean NOT NULL DEFAULT true,
+    CONSTRAINT uq_habitacion_hotel_numero UNIQUE (id_hotel, numero)
 );
+
+-- Idempotente: para bases creadas con una versión anterior del script
+ALTER TABLE tp_dan.habitacion ADD COLUMN IF NOT EXISTS disponible boolean NOT NULL DEFAULT true;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_habitacion_hotel_numero') THEN
+        ALTER TABLE tp_dan.habitacion
+            ADD CONSTRAINT uq_habitacion_hotel_numero UNIQUE (id_hotel, numero);
+    END IF;
+END$$;
 
 -- Secuencia para amenity_hotel_id_seq
 DO $$

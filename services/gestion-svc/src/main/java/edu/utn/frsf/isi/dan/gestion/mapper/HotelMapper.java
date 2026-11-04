@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.gestion.mapper;
 
 import edu.utn.frsf.isi.dan.gestion.dto.HotelRequest;
 import edu.utn.frsf.isi.dan.gestion.dto.HotelResponse;
+import edu.utn.frsf.isi.dan.gestion.dto.HotelUpdateRequest;
 import edu.utn.frsf.isi.dan.gestion.model.Hotel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -36,11 +37,20 @@ public interface HotelMapper {
   HotelResponse toResponse(Hotel hotel);
 
   /**
-   * Actualiza untidad existente con datos del request. Utilizado para operaciones de UPDATE
+   * Actualiza un hotel existente. Solo se pueden editar categoría, teléfono y correo de contacto
+   * (los demás datos del hotel no cambian).
    *
    * @param request
    * @param hotel
    */
   @Mapping(target = "id", ignore = true)
-  void updateEntityFromRequest(HotelRequest request, @MappingTarget Hotel hotel);
+  @Mapping(target = "nombre", ignore = true)
+  @Mapping(target = "cuit", ignore = true)
+  @Mapping(target = "domicilio", ignore = true)
+  @Mapping(target = "latitud", ignore = true)
+  @Mapping(target = "longitud", ignore = true)
+  @Mapping(target = "cerrado", ignore = true)
+  @Mapping(target = "habitaciones", ignore = true)
+  @Mapping(target = "amenities", ignore = true)
+  void updateEntityFromRequest(HotelUpdateRequest request, @MappingTarget Hotel hotel);
 }
