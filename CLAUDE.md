@@ -75,6 +75,17 @@ Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) s
 - DELETE: 409 si es la única del tipo; si era la vigente (o futura), la anterior extiende su `fechaFin` al de la borrada (sin huecos).
 - "Hoy" sale de un `Clock` con zona `app.zone` (Buenos Aires por defecto). `ACTUALIZAR_PRECIO` (`dan.habitacion.precio`) se publica al cambiar el precio de hoy y, para cambios futuros, lo publica la tarea diaria `TarifaPrecioScheduler` (cron `tarifas.cron-cambio-precio`, por defecto `0 5 0 * * *`), que además corre una vez al arrancar la aplicación (`ApplicationReadyEvent`).
 
+### reservas-svc (MongoDB): estados, índices y fecha simulada
+- Decisiones de diseño (regla de pagos, disponibilidad, atomicidad): ver la sección "reservas-svc — decisiones de diseño" del README. Estados: RESERVADA → CONFIRMADA (≥ 1 pago, slide 14) → FINALIZADA/ADEUDADA; CANCELADA solo sin pagos; BLOQUEADA (`POST /reservas/bloqueos`); CERRADA (evento `CERRAR_HOTEL`).
+- La colección `habitacion` es réplica de solo lectura por HTTP. Índices creados al arrancar (`MongoIndexInitializer`, `reservas.crear-indices`): `2dsphere` en `hotel.ubicacion` y único en `habitacionId`. `hotel.ubicacion` es `[longitud, latitud]`. Las habitaciones replicadas antes de este arreglo pueden tener las coordenadas invertidas hasta su próximo `ACTUALIZAR_DATOS` (en desarrollo: vaciar la colección `habitacion`).
+- Los tests de integración usan Testcontainers (`mongo:7`, cliente 1.21.4 por Docker 29) y se saltean si no hay Docker.
+- **Simular la fecha de hoy** (`app.fecha-actual`, vacía = fecha real; variable `APP_FECHA_ACTUAL` en el compose). Sirve para probar en Swagger lo que solo vale después del check-out (`review-cliente`, finalizar):
+  1. Con la fecha real: crear la reserva (`POST /reservas`, check-in ≥ hoy) y pagar.
+  2. Recrear reservas-svc con una fecha posterior al check-out. Bash: `APP_FECHA_ACTUAL=2027-01-15 docker compose up -d reservas-svc`. PowerShell: `$env:APP_FECHA_ACTUAL="2027-01-15"; docker compose up -d reservas-svc`. (También se puede poner `APP_FECHA_ACTUAL=...` en `.env`.) El log muestra un WARN "FECHA SIMULADA".
+  3. Probar `PUT /reservas/{id}/review-cliente` y `PATCH /reservas/{id}/estado` con `FINALIZADA`.
+  4. Volver a la fecha real: recrear el servicio sin la variable (`Remove-Item Env:APP_FECHA_ACTUAL` / `unset APP_FECHA_ACTUAL`, y sacarla de `.env`; luego `docker compose up -d reservas-svc`).
+  Con la fecha simulada el reloj queda fijo ese día a las 12:00; no uses la fecha simulada en un entorno real.
+
 ## Puertos
 
 | Servicio | Puerto host |
