@@ -51,10 +51,9 @@ public class HabitacionService {
             event.getHabitacion().getHabitacionId(), mapFromHabitacion(event.getHabitacion()));
         break;
       case ACTUALIZAR_PRECIO:
-        // TODO implementar por el alumno
-        // en este caso el atributo TarifaDTO tiene
-        // el ID de los tipos de habitaciones que van a tener un nuevo precio y el nuevo precio
-        // event.getTarifa()
+        // TarifaDTO trae el tipo de habitación y su nuevo precio por noche
+        actualizarPrecioPorTipo(
+            event.getTarifa().getTipoHabitacionId(), event.getTarifa().getNuevoPrecio());
         break;
       case ELIMINAR:
         deleteByHabitacionId(event.getHabitacion().getHabitacionId());
@@ -79,6 +78,8 @@ public class HabitacionService {
         .precioNoche(dto.getPrecioNoche())
         .capacidad(dto.getCapacidad())
         .amenities(dto.getAmenities())
+        .idTipoHabitacion(dto.getTipoHabitacionId())
+        .tipoHabitacion(dto.getTipoHabitacion())
         .hotel(mapFromDto(dto.getHotel()))
         .build();
   }
@@ -108,7 +109,13 @@ public class HabitacionService {
         new Update()
             .set("precioNoche", nuevaHabitacion.getPrecioNoche())
             .set("capacidad", nuevaHabitacion.getCapacidad())
-            .set("amenities", nuevaHabitacion.getAmenities());
+            .set("amenities", nuevaHabitacion.getAmenities())
+            .set("idTipoHabitacion", nuevaHabitacion.getIdTipoHabitacion())
+            .set("tipoHabitacion", nuevaHabitacion.getTipoHabitacion());
+    if (nuevaHabitacion.getHotel() != null) {
+      // el hotel (datos y ubicación) también se refresca cuando cambia en gestion-svc
+      update.set("hotel", nuevaHabitacion.getHotel());
+    }
     Habitacion actualizada =
         mongoTemplate.findAndModify(
             query, update, FindAndModifyOptions.options().returnNew(true), Habitacion.class);
@@ -117,6 +124,23 @@ public class HabitacionService {
           "No se encontró la habitación con habitacionId: " + habitacionId);
     }
     return actualizada;
+  }
+
+  /** Actualiza el precioNoche de todas las habitaciones de un tipo de habitación. */
+  public void actualizarPrecioPorTipo(Integer tipoHabitacionId, Double nuevoPrecio) {
+    if (tipoHabitacionId == null || nuevoPrecio == null) {
+      throw new IllegalArgumentException(
+          "ACTUALIZAR_PRECIO requiere tipoHabitacionId y nuevoPrecio");
+    }
+    Query query = new Query(Criteria.where("idTipoHabitacion").is(tipoHabitacionId));
+    var resultado =
+        mongoTemplate.updateMulti(
+            query, new Update().set("precioNoche", nuevoPrecio), Habitacion.class);
+    log.info(
+        "Precio {} aplicado a {} habitación(es) del tipo {}",
+        nuevoPrecio,
+        resultado.getModifiedCount(),
+        tipoHabitacionId);
   }
 
   public void deleteByHabitacionId(Long habitacionId) {

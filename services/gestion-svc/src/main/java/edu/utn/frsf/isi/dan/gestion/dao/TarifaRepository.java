@@ -19,4 +19,12 @@ public interface TarifaRepository extends JpaRepository<Tarifa, Integer> {
       "select t from Tarifa t where t.tipoHabitacion.id = :tipoId and t.fechaInicio <= :fecha "
           + "and (t.fechaFin is null or t.fechaFin >= :fecha) order by t.fechaInicio desc")
   List<Tarifa> findVigentes(@Param("tipoId") Integer tipoId, @Param("fecha") LocalDate fecha);
+
+  /** Todas las tarifas del tipo, de la más antigua a la más nueva. */
+  List<Tarifa> findByTipoHabitacionIdOrderByFechaInicioAsc(Integer tipoHabitacionId);
+
+  /** Tarifas que empiezan a regir exactamente en {@code fechaInicio}. */
+  List<Tarifa> findByFechaInicio(LocalDate fechaInicio);
+
+  boolean existsByTipoHabitacionId(Integer tipoHabitacionId);
 }

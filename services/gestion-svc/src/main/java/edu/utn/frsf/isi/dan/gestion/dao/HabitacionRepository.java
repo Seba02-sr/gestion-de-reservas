@@ -12,6 +12,8 @@ public interface HabitacionRepository
 
   List<Habitacion> findByHotelId(Integer hotelId);
 
+  boolean existsByTipoHabitacionId(Integer tipoHabitacionId);
+
   boolean existsByHotelIdAndNumero(Integer hotelId, Integer numero);
 
   boolean existsByHotelIdAndNumeroAndIdNot(Integer hotelId, Integer numero, Integer id);
