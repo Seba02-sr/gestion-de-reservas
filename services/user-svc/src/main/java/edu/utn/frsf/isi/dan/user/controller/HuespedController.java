@@ -1,7 +1,7 @@
 package edu.utn.frsf.isi.dan.user.controller;
 
-import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedUpdateRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse;
 import edu.utn.frsf.isi.dan.user.service.HuespedService;
@@ -54,14 +54,14 @@ public class HuespedController {
     return ResponseEntity.ok(huespedService.getHuespedById(id));
   }
 
-  @Operation(summary = "Actualizar datos de un huésped")
+  @Operation(summary = "Actualizar datos de usuario y fecha de nacimiento de un huésped")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Huésped actualizado"),
     @ApiResponse(responseCode = "404", description = "Huésped no encontrado")
   })
   @PutMapping("/{id}")
   public ResponseEntity<HuespedResponse> actualizarHuesped(
-      @PathVariable @Positive Integer id, @RequestBody @Valid HuespedRequest huespedRequest) {
+      @PathVariable @Positive Integer id, @RequestBody @Valid HuespedUpdateRequest huespedRequest) {
     return ResponseEntity.ok(huespedService.actualizarHuesped(id, huespedRequest));
   }
 

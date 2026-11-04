@@ -1,15 +1,15 @@
 package edu.utn.frsf.isi.dan.user.service;
 
 import edu.utn.frsf.isi.dan.user.dao.HuespedRepository;
-import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedUpdateRequest;
 import edu.utn.frsf.isi.dan.user.mapper.HuespedMapper;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class HuespedService {
@@ -17,8 +17,6 @@ public class HuespedService {
   @Autowired private HuespedRepository huespedRepository;
 
   @Autowired private HuespedMapper huespedMapper;
-
-  @Autowired private PasswordEncoder passwordEncoder;
 
   public List<HuespedResponse> getAllHuespedes() {
     return huespedRepository.findByActivoTrue().stream().map(huespedMapper::toResponse).toList();
@@ -29,7 +27,8 @@ public class HuespedService {
     return huespedMapper.toResponse(huesped);
   }
 
-  public HuespedResponse actualizarHuesped(Integer id, HuespedRequest request) {
+  @Transactional
+  public HuespedResponse actualizarHuesped(Integer id, HuespedUpdateRequest request) {
     if (id == null || request == null) {
       throw new IllegalArgumentException("El id del huésped y el DTO no pueden ser nulos");
     }
@@ -37,15 +36,6 @@ public class HuespedService {
     Huesped existente = getHuespedEntityById(id);
     existente.marcarComoModificado();
     huespedMapper.updateEntityFromRequest(request, existente);
-
-    if (existente.getPassword() != null && !existente.getPassword().isBlank()) {
-      existente.setPassword(passwordEncoder.encode(existente.getPassword()));
-    }
-
-    // Asegurar relación inversa huesped <- tarjetas
-    if (existente.getTarjetaCredito() != null) {
-      existente.getTarjetaCredito().forEach(t -> t.setHuesped(existente));
-    }
 
     Huesped actualizado = huespedRepository.save(existente);
     return huespedMapper.toResponse(actualizado);

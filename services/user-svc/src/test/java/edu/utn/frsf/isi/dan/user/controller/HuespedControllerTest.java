@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedUpdateRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse;
 import edu.utn.frsf.isi.dan.user.service.HuespedService;
@@ -94,15 +95,48 @@ class HuespedControllerTest {
 
   @Test
   void actualizar_DebeRetornar200() throws Exception {
-    when(huespedService.actualizarHuesped(eq(1), any(HuespedRequest.class))).thenReturn(response);
+    HuespedUpdateRequest update =
+        HuespedUpdateRequest.builder()
+            .nombre("Juan")
+            .email("juan@example.com")
+            .telefono("123")
+            .dni("1111")
+            .fechaNacimiento(LocalDate.of(1990, 1, 1))
+            .build();
+    when(huespedService.actualizarHuesped(eq(1), any(HuespedUpdateRequest.class)))
+        .thenReturn(response);
     mockMvc
         .perform(
             put("/huespedes/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(update)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1));
-    verify(huespedService, times(1)).actualizarHuesped(eq(1), any(HuespedRequest.class));
+    verify(huespedService, times(1)).actualizarHuesped(eq(1), any(HuespedUpdateRequest.class));
+  }
+
+  @Test
+  void actualizar_SoloTelefono_DebeRetornar200() throws Exception {
+    when(huespedService.actualizarHuesped(eq(1), any(HuespedUpdateRequest.class)))
+        .thenReturn(response);
+    mockMvc
+        .perform(
+            put("/huespedes/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"telefono\":\"999\"}"))
+        .andExpect(status().isOk());
+    verify(huespedService, times(1)).actualizarHuesped(eq(1), any(HuespedUpdateRequest.class));
+  }
+
+  @Test
+  void actualizar_EmailInvalido_DebeRetornar400() throws Exception {
+    mockMvc
+        .perform(
+            put("/huespedes/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"no-es-un-email\"}"))
+        .andExpect(status().isBadRequest());
+    verify(huespedService, never()).actualizarHuesped(any(), any());
   }
 
   @Test

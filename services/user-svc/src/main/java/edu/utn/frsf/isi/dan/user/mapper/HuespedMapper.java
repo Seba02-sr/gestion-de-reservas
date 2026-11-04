@@ -2,6 +2,7 @@ package edu.utn.frsf.isi.dan.user.mapper;
 
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedUpdateRequest;
 import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import org.mapstruct.Mapper;
@@ -32,13 +33,17 @@ public interface HuespedMapper {
   HuespedResponse toResponse(Huesped huesped);
 
   /**
-   * Actualiza untidad existente con datos del request. Utilizado para operaciones de UPDATE
-   *
-   * @param request
-   * @param huesped
+   * Actualiza datos de usuario y fecha de nacimiento de un huésped existente. No toca password,
+   * username ni tarjetas; los campos null del request se ignoran (MapstructConfig).
    */
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "tarjetaCredito", source = "tarjetasCredito")
+  @Mapping(target = "username", ignore = true)
+  @Mapping(target = "password", ignore = true)
+  @Mapping(target = "tarjetaCredito", ignore = true)
+  @Mapping(target = "activo", ignore = true)
+  @Mapping(target = "fechaRegistro", ignore = true)
+  @Mapping(target = "fechaEliminado", ignore = true)
+  @Mapping(target = "fechaModificado", ignore = true)
   void updateEntityFromRequest(
-      HuespedRequest request, @org.mapstruct.MappingTarget Huesped huesped);
+      HuespedUpdateRequest request, @org.mapstruct.MappingTarget Huesped huesped);
 }
