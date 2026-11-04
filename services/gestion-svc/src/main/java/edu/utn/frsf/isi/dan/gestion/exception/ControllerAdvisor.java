@@ -5,10 +5,13 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class ControllerAdvisor {
@@ -58,6 +61,45 @@ public class ControllerAdvisor {
             String.valueOf(System.currentTimeMillis()),
             HttpStatus.CONFLICT.value());
     return new ResponseEntity<>(exceptionInfo, HttpStatus.CONFLICT);
+  }
+
+  /** JSON mal formado o con un valor que no se puede convertir (p. ej. una fecha inválida). */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ExceptionInfo> handleMessageNotReadable(
+      HttpMessageNotReadableException ex, WebRequest request) {
+    ExceptionInfo exceptionInfo =
+        new ExceptionInfo(
+            "El cuerpo de la solicitud no es válido (JSON mal formado o formato de dato incorrecto)",
+            request.getDescription(false),
+            String.valueOf(System.currentTimeMillis()),
+            HttpStatus.BAD_REQUEST.value());
+    return new ResponseEntity<>(exceptionInfo, HttpStatus.BAD_REQUEST);
+  }
+
+  /** Un parámetro o variable de la URL con tipo incorrecto (p. ej. fecha=hola). */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ExceptionInfo> handleTypeMismatch(
+      MethodArgumentTypeMismatchException ex, WebRequest request) {
+    ExceptionInfo exceptionInfo =
+        new ExceptionInfo(
+            "El parámetro '" + ex.getName() + "' tiene un formato inválido",
+            request.getDescription(false),
+            String.valueOf(System.currentTimeMillis()),
+            HttpStatus.BAD_REQUEST.value());
+    return new ResponseEntity<>(exceptionInfo, HttpStatus.BAD_REQUEST);
+  }
+
+  /** Por ejemplo PUT sobre /tarifas: las tarifas no se modifican. */
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<ExceptionInfo> handleMethodNotSupported(
+      HttpRequestMethodNotSupportedException ex, WebRequest request) {
+    ExceptionInfo exceptionInfo =
+        new ExceptionInfo(
+            ex.getMessage(),
+            request.getDescription(false),
+            String.valueOf(System.currentTimeMillis()),
+            HttpStatus.METHOD_NOT_ALLOWED.value());
+    return new ResponseEntity<>(exceptionInfo, HttpStatus.METHOD_NOT_ALLOWED);
   }
 
   @ExceptionHandler(Exception.class)
