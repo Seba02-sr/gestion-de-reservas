@@ -33,8 +33,8 @@ class PropietarioServiceTest {
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
-    entidad = Propietario.builder().idHotel(1L).build();
-    response = PropietarioResponse.builder().id(1).idHotel(1L).dni("2222").build();
+    entidad = Propietario.builder().idHotel(1).build();
+    response = PropietarioResponse.builder().id(1).idHotel(1).dni("2222").build();
     request =
         PropietarioRequest.builder()
             .nombre("Prop")
@@ -43,7 +43,7 @@ class PropietarioServiceTest {
             .dni("2222")
             .username("prop")
             .password("pwd")
-            .idHotel(1L)
+            .idHotel(1)
             .cuentaBancaria(
                 CuentaRequest.builder()
                     .numeroCuenta("0001")
@@ -67,7 +67,7 @@ class PropietarioServiceTest {
     when(propietarioRepository.findByIdAndActivoTrue(1)).thenReturn(Optional.of(entidad));
     when(propietarioMapper.toResponse(entidad)).thenReturn(response);
     PropietarioResponse out = propietarioService.getPropietarioById(1);
-    assertEquals(1L, out.idHotel());
+    assertEquals(1, out.idHotel());
   }
 
   @Test

@@ -16,5 +16,5 @@ public record PropietarioResponse(
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS") LocalDateTime fechaRegistro,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS") LocalDateTime fechaEliminado,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS") LocalDateTime fechaModificado,
-    Long idHotel,
+    Integer idHotel,
     CuentaResponse cuentaBancaria) {}

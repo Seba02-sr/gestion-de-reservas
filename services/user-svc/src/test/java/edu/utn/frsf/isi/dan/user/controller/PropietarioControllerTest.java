@@ -43,7 +43,7 @@ class PropietarioControllerTest {
             .dni("2222")
             .username("prop")
             .password("secret")
-            .idHotel(1L)
+            .idHotel(1)
             .cuentaBancaria(
                 CuentaRequest.builder()
                     .numeroCuenta("0001")
@@ -58,7 +58,7 @@ class PropietarioControllerTest {
             .id(1)
             .nombre("Propietario")
             .dni("2222")
-            .idHotel(1L)
+            .idHotel(1)
             .cuentaBancaria(CuentaResponse.builder().id(10).numeroCuenta("0001").idBanco(1).build())
             .build();
   }
@@ -93,6 +93,28 @@ class PropietarioControllerTest {
         .andExpect(jsonPath("$.id").value(1));
     verify(propietarioService, times(1))
         .actualizarPropietario(eq(1), any(PropietarioRequest.class));
+  }
+
+  @Test
+  void actualizar_SinIdHotel_DebeRetornar200() throws Exception {
+    PropietarioRequest sinHotel =
+        PropietarioRequest.builder()
+            .nombre("Propietario")
+            .email("p@example.com")
+            .telefono("123")
+            .dni("2222")
+            .username("prop")
+            .password("secret")
+            .cuentaBancaria(request.cuentaBancaria())
+            .build();
+    when(propietarioService.actualizarPropietario(eq(1), any(PropietarioRequest.class)))
+        .thenReturn(response);
+    mockMvc
+        .perform(
+            put("/propietarios/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sinHotel)))
+        .andExpect(status().isOk());
   }
 
   @Test
