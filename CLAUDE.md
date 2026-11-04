@@ -69,6 +69,12 @@ Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) s
 - gestion-svc publica en el exchange topic `dan.exchange` con routing key `dan.habitacion.<accion>` (`crear`, `actualizar`, `eliminar`, `cerrar-hotel`); reservas-svc escucha la cola `habitacion.topic` (binding `dan.habitacion.#`, ver `infra/rabbitmq/definitions.json`). Propiedades: `rabbitmq.exchange` y `rabbitmq.routingkey.prefix`.
 - Los mensajes se envían **después del commit** (`@TransactionalEventListener(AFTER_COMMIT)` en `HabitacionEventPublisher`); si la transacción hace rollback no sale nada. Eventos: `CREAR`/`ACTUALIZAR_DATOS`/`ELIMINAR` (alta, modificación y baja de habitación), `ACTUALIZAR_DATOS` por cada habitación cuando cambia el hotel o sus amenities, y `CERRAR_HOTEL` (un mensaje con `hotelId`, `habitacionIds` y `fechaCierre`; reservas-svc por ahora solo lo registra: falta crear las reservas CERRADA).
 
+### Tarifas (gestion-svc)
+- Solo POST y DELETE. Vigente en una fecha = `fechaInicio <= fecha` y (`fechaFin` null o `fechaFin >= fecha`). `tarifa.fecha_fin` es nullable y la tarifa tiene `nombre` y `especial` (promoción): hace falta recrear el volumen de postgres.
+- Sin fechas: la actual termina ayer y la nueva rige desde hoy. Con fechas (promo): la actual termina el día anterior, se crea la promo y una continuación desde el día siguiente con el precio de la tarifa cortada. No se permiten promos superpuestas ni crear una tarifa común con tarifas futuras (409).
+- DELETE: 409 si es la única del tipo; si era la vigente (o futura), la anterior extiende su `fechaFin` al de la borrada (sin huecos).
+- "Hoy" sale de un `Clock` con zona `app.zone` (Buenos Aires por defecto). `ACTUALIZAR_PRECIO` (`dan.habitacion.precio`) se publica al cambiar el precio de hoy y, para cambios futuros, lo publica la tarea diaria `TarifaPrecioScheduler` (cron `tarifas.cron-cambio-precio`, por defecto `0 5 0 * * *`).
+
 ## Puertos
 
 | Servicio | Puerto host |
