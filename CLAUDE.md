@@ -58,7 +58,10 @@ Tests de un servicio: `./mvnw -pl services/gestion-svc test`.
 
 > **Windows/OneDrive:** el repo está dentro de OneDrive y a veces `clean` falla con "Failed to delete ...\target\classes\..." por un lock (OneDrive o el language server de Java). Solución: borrar los `target/` a mano y reintentar.
 
-### initdb y volúmenes
+### MySQL (user-svc): el esquema lo crea Hibernate
+El compose raíz **no monta `infra/mysql/initdb`** en el servicio `mysql` (solo el volumen `mysql_data`), así que las tablas las crea Hibernate con `spring.jpa.hibernate.ddl-auto=update`. `infra/mysql/initdb/01_schema.sql` es solo referencia (alineado con las entidades) y su `ON DELETE CASCADE` **no existe** en la base real: el borrado de un huésped elimina sus tarjetas únicamente por el cascade JPA (`Huesped.tarjetaCredito`: `cascade = ALL` + `orphanRemoval`), verificado en `HuespedBorradoCascadaTest` (H2). No hay que depender de FKs de la base para esa regla.
+
+### initdb y volúmenes (PostgreSQL y demás bases que sí montan initdb)
 Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) solo se ejecutan cuando el volumen de la base está vacío. **Si cambia un script de initdb hay que recrear el volumen**: `docker compose down -v` (borra todo) o borrar solo el volumen de esa base (`docker volume ls` → `docker volume rm <proyecto>_postgres_data`, `..._mysql_data`, `..._mongo_data`).
 
 ## Puertos
