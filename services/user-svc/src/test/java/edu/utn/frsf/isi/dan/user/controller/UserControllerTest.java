@@ -93,6 +93,18 @@ class UserControllerTest {
   }
 
   @Test
+  void crearHuesped_SinExactamenteUnaPrincipal_DebeRetornar400() throws Exception {
+    when(userService.crearUsuarioHuesped(any()))
+        .thenThrow(new IllegalArgumentException("exactamente una tarjeta principal"));
+    mockMvc
+        .perform(
+            post("/users/huesped")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(huespedRequest)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void crearPropietario_DebeRetornar201() throws Exception {
     when(userService.crearUsuarioPropietario(any()))
         .thenReturn(new edu.utn.frsf.isi.dan.user.model.Propietario());

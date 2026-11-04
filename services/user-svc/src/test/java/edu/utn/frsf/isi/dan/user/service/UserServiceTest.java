@@ -90,6 +90,38 @@ class UserServiceTest {
   }
 
   @Test
+  void crearUsuarioHuesped_DeberiaFallar_CuandoNoHayTarjetaPrincipal() {
+    Huesped entidad =
+        Huesped.builder()
+            .tarjetaCredito(
+                new java.util.ArrayList<>(
+                    List.of(TarjetaCredito.builder().id(1).esPrincipal(false).build())))
+            .build();
+    when(huespedMapper.toEntity(huespedRequest)).thenReturn(entidad);
+
+    assertThrows(
+        IllegalArgumentException.class, () -> userService.crearUsuarioHuesped(huespedRequest));
+    verify(usuarioRepository, never()).save(any());
+  }
+
+  @Test
+  void crearUsuarioHuesped_DeberiaFallar_CuandoHayDosTarjetasPrincipales() {
+    Huesped entidad =
+        Huesped.builder()
+            .tarjetaCredito(
+                new java.util.ArrayList<>(
+                    List.of(
+                        TarjetaCredito.builder().id(1).esPrincipal(true).build(),
+                        TarjetaCredito.builder().id(2).esPrincipal(true).build())))
+            .build();
+    when(huespedMapper.toEntity(huespedRequest)).thenReturn(entidad);
+
+    assertThrows(
+        IllegalArgumentException.class, () -> userService.crearUsuarioHuesped(huespedRequest));
+    verify(usuarioRepository, never()).save(any());
+  }
+
+  @Test
   void crearUsuarioHuesped_DeberiaFallar_CuandoRequestInvalido() {
     assertThrows(IllegalArgumentException.class, () -> userService.crearUsuarioHuesped(null));
     HuespedRequest sinTarjetas =
