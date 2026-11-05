@@ -22,6 +22,7 @@ Aplicación distribuida con microservicios (Spring Boot) y frontend moderno. Mon
 - Editar `COMPOSE_PROFILES` según necesidad:
   - Todo (frontend dev + infra + microservicios):
     - `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway` (Eureka arranca solo, junto con cualquier servicio)
+  - Con observabilidad (OpenTelemetry + Prometheus + Loki + Tempo + Grafana): agregar el perfil `observability`. Necesita **≥ 6 GB de RAM** asignados a Docker Desktop (ver `CLAUDE.md`, "Observabilidad"). Para generar tráfico de prueba: `.\scripts\generar-trafico.ps1`
   - Solo frontend dev: `COMPOSE_PROFILES=frontend`
   - Solo un servicio (con su infra mínima):
     - user-svc: `COMPOSE_PROFILES=frontend,user`
@@ -42,6 +43,7 @@ docker compose up -d --build
 - Frontend prod: `http://localhost:5173` (perfil `prod`)
 - Swagger unificado (todos los servicios): `http://localhost:8080/swagger-ui.html`
 - Eureka (servicios registrados): `http://localhost:8761`
+- Observabilidad (perfil `observability`): Grafana `http://localhost:3000` (admin / admin), Prometheus `http://localhost:9090`
 - user-svc, reservas-svc y gestion-svc no publican puerto en el host (se pueden escalar con `docker compose up -d --scale gestion-svc=3`); se llega a ellos por el gateway: `/users/**`, `/reservas/**`, `/gestion/**`
 
 - MySQL: `localhost:3306`
@@ -240,6 +242,9 @@ Usa feat para funcionalidades nuevas, fix para correcciones.
 
 ### TP Etapa 03 (API Gateway)
 - Rutas y filtros del gateway: [ETAPA03.md](./ETAPA03.md) y [PRACTICA_03.pdf](PRACTICA_03.pdf). Tabla de URLs por gateway en `CLAUDE.md`.
+
+### TP Etapa 05 (Observabilidad)
+- Descripción de la cátedra: [ETAPA05-OBSERVABILIDAD.md](./ETAPA05-OBSERVABILIDAD.md). Lo implementado en este repo (con las correcciones a esa versión: propiedades de Spring Boot, puertos de Tempo, Loki con OTLP nativo, Prometheus con Eureka, actuator mínimo) está en `CLAUDE.md`, sección "Observabilidad (Etapa 5)".
 
 ### TP Etapa 04 (Eureka + OpenFeign)
 - Service discovery, escalado y comunicación sincrónica: [ETAPA04.md](./ETAPA04.md) y [ETAPA04-IMPL.md](./ETAPA04-IMPL.md) (versión de la cátedra). Lo implementado en este repo está en `CLAUDE.md` (secciones "Eureka y escalado" y "Comunicación sincrónica entre servicios").
