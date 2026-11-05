@@ -21,15 +21,15 @@ Aplicación distribuida con microservicios (Spring Boot) y frontend moderno. Mon
 - Copiar ejemplo: `cp .env.example .env`
 - Editar `COMPOSE_PROFILES` según necesidad:
   - Todo (frontend dev + infra + microservicios):
-    - `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion`
+    - `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway` (Eureka arranca solo, junto con cualquier servicio)
   - Solo frontend dev: `COMPOSE_PROFILES=frontend`
   - Solo un servicio (con su infra mínima):
     - user-svc: `COMPOSE_PROFILES=frontend,user`
     - reservas-svc: `COMPOSE_PROFILES=frontend,reservas`
     - gestion-svc: `COMPOSE_PROFILES=frontend,gestion`
   - Frontend producción (Nginx):
-    - `COMPOSE_PROFILES=prod,infra,user,reservas,gestion`
-  - Con API Gateway (único punto de entrada en 8080): agregar el perfil `gateway`, ej. `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway`
+    - `COMPOSE_PROFILES=prod,infra,user,reservas,gestion,gateway`
+  - Sin `gateway` no hay punto de entrada: los servicios ya no publican puertos en el host (Etapa 4), así que para usarlos siempre se incluye `gateway`.
 
 4) Levantar con Docker Compose
 ```bash
@@ -40,9 +40,9 @@ docker compose up -d --build
 - API Gateway: `http://localhost:8080` (perfil `gateway`; ver tabla de URLs en `CLAUDE.md` y `ETAPA03.md`)
 - Frontend dev: `http://localhost:5173`
 - Frontend prod: `http://localhost:5173` (perfil `prod`)
-- user-svc: `http://localhost:8081`
-- reservas-svc: `http://localhost:8082`
-- gestion-svc: `http://localhost:8083`
+- Swagger unificado (todos los servicios): `http://localhost:8080/swagger-ui.html`
+- Eureka (servicios registrados): `http://localhost:8761`
+- user-svc, reservas-svc y gestion-svc no publican puerto en el host (se pueden escalar con `docker compose up -d --scale gestion-svc=3`); se llega a ellos por el gateway: `/users/**`, `/reservas/**`, `/gestion/**`
 
 - MySQL: `localhost:3306`
   - Base: `users`
@@ -70,10 +70,37 @@ docker compose down -v
 
 ---
 
-<<<<<<< Updated upstream
+Documentación detallada (wiki)
+- Estructura de carpetas e infraestructura: ver `docs/estructura.md`
+- Arquitectura y modelo de datos: ver `docs/arquitectura.md`
+- Guías de trabajo, convenciones y herramientas: ver `docs/guias.md`
+
+## Login con Google (beta)
+
+Backend (user-svc):
+- Configurar el Client ID de Google como variable de entorno `GOOGLE_CLIENT_ID` (ya referenciado en `docker-compose.yml`).
+- Alternativa: editar `services/user-svc/src/main/resources/application.properties` y setear `google.oauth.clientId`.
+- Endpoint (por el API Gateway, user-svc ya no publica puerto en el host): `POST http://localhost:8080/users/auth/google` con cuerpo JSON `{ "credential": "<ID_TOKEN>" }`.
+- CORS se configura solo en el gateway (`GATEWAY_CORS_ORIGINS`, por defecto `http://localhost:5173,http://localhost:5174`).
+
+Frontend (Vite):
+- Definir `GOOGLE_CLIENT_ID` en el `.env` de la raíz (`cp .env.example .env`); el compose se lo pasa al front como `VITE_GOOGLE_CLIENT_ID`. El front llama al gateway (`VITE_API_URL`, por defecto `http://localhost:8080`).
+- El front corre en `http://localhost:5173`: ese origen debe estar autorizado en Google Cloud Console (Credenciales).
+- Se agregó el script de Google Identity Services y un botón en el `Header`.
+- Al autenticarse, se guarda el usuario en `localStorage` con clave `user`.
+
+Notas:
+- Esta integración verifica el ID Token de Google y crea el usuario (tipo Huesped) si no existe.
+- Aún no emite JWT propio ni protege endpoints; eso puede sumarse en una etapa siguiente.
+
+---
+
 ## reservas-svc — decisiones de diseño
 
-Servicio de reservas sobre MongoDB (`http://localhost:8082`, Swagger en `/swagger-ui/index.html`). La
+Servicio de reservas sobre MongoDB. Se accede por el API Gateway (`http://localhost:8080/reservas/...`) y su
+Swagger está en el Swagger unificado (`http://localhost:8080/swagger-ui.html`, elegir `reservas-svc`); el servicio
+ya no publica el puerto 8082 en el host. Los paths de esta sección son los del servicio: por el gateway llevan
+el prefijo `/reservas` (p. ej. `PATCH /reservas/reservas/{id}/estado`). La
 colección `habitacion` es una **réplica** que se actualiza solo con los mensajes de RabbitMQ de
 gestion-svc (la fuente de verdad); por HTTP las habitaciones son de solo lectura.
 
@@ -127,6 +154,9 @@ existentes de un hotel que cierra no se cancelan automáticamente.
 Los check-in/check-out son días (`yyyy-MM-dd`) y se guardan como la medianoche de ese día en
 `America/Argentina/Buenos_Aires` (`app.zone`). "Hoy" sale de un `Clock`; para probar a mano se puede
 simular la fecha con `APP_FECHA_ACTUAL` (ver CLAUDE.md).
+
+### Llamadas a otros servicios (Etapa 4)
+`POST /reservas` valida contra las fuentes de verdad por OpenFeign antes de tomar el cupo: el huésped en user-svc (404 si no existe; se guardan su nombre y email) y la disponibilidad de la habitación en gestion-svc (409 si no está disponible). Si alguno no responde, tarda más que el timeout o su circuit breaker (Resilience4j) está abierto, la respuesta es **503** con un mensaje claro. Detalle y trade-offs en `CLAUDE.md`.
 
 ### Geo
 `hotel.ubicacion` es un punto GeoJSON `[longitud, latitud]` (x = longitud, y = latitud) con índice
@@ -207,25 +237,9 @@ Usa feat para funcionalidades nuevas, fix para correcciones.
 ### TP Etapa 02
 - Tareas necesarias para completar el servicio gestion-svc y reservas-svc [ETAPA02.md](./ETAPA02.md).
 - Descripción paso a paso de las acciones a realizar [PRACTICA_02.pdf](PRACTICA_02.pdf)
-=======
-Documentación detallada (wiki)
-- Estructura de carpetas e infraestructura: ver `docs/estructura.md`
-- Arquitectura y modelo de datos: ver `docs/arquitectura.md`
-- Guías de trabajo, convenciones y herramientas: ver `docs/guias.md`
 
-## Login con Google (beta)
+### TP Etapa 03 (API Gateway)
+- Rutas y filtros del gateway: [ETAPA03.md](./ETAPA03.md) y [PRACTICA_03.pdf](PRACTICA_03.pdf). Tabla de URLs por gateway en `CLAUDE.md`.
 
-Backend (user-svc):
-- Configurar el Client ID de Google como variable de entorno `GOOGLE_CLIENT_ID` (ya referenciado en `docker-compose.yml`).
-- Alternativa: editar `services/user-svc/src/main/resources/application.properties` y setear `google.oauth.clientId`.
-- Endpoint: `POST http://localhost:8081/auth/google` con cuerpo JSON `{ "credential": "<ID_TOKEN>" }`.
-
-Frontend (Vite):
-- Copiar `frontend/.env.example` a `frontend/.env` y completar `VITE_GOOGLE_CLIENT_ID`.
-- Se agregó el script de Google Identity Services y un botón en el `Header`.
-- Al autenticarse, se guarda el usuario en `localStorage` con clave `user`.
-
-Notas:
-- Esta integración verifica el ID Token de Google y crea el usuario (tipo Huesped) si no existe.
-- Aún no emite JWT propio ni protege endpoints; eso puede sumarse en una etapa siguiente.
->>>>>>> Stashed changes
+### TP Etapa 04 (Eureka + OpenFeign)
+- Service discovery, escalado y comunicación sincrónica: [ETAPA04.md](./ETAPA04.md) y [ETAPA04-IMPL.md](./ETAPA04-IMPL.md) (versión de la cátedra). Lo implementado en este repo está en `CLAUDE.md` (secciones "Eureka y escalado" y "Comunicación sincrónica entre servicios").
