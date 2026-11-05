@@ -37,9 +37,8 @@ class TarjetaCreditoControllerTest {
     response =
         TarjetaCreditoResponse.builder()
             .id(1)
-            .numero("4111111111111111")
+            .numero("**** **** **** 1111")
             .nombreTitular("Juan Perez")
-            .cvc("123")
             .fechaVencimiento("12/25")
             .esPrincipal(false)
             .idBanco(1)
@@ -63,7 +62,9 @@ class TarjetaCreditoControllerTest {
         .perform(get("/tarjetas/1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(1))
-        .andExpect(jsonPath("$.numero").value("4111111111111111"));
+        .andExpect(jsonPath("$.numero").value("**** **** **** 1111"))
+        // el CVC no forma parte de la respuesta
+        .andExpect(jsonPath("$.cvc").doesNotExist());
 
     verify(tarjetaCreditoService, times(1)).getTarjetaById(1);
   }

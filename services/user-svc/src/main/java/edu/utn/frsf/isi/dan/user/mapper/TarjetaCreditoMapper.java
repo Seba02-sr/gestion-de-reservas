@@ -4,11 +4,12 @@ import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse;
 import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
+import edu.utn.frsf.isi.dan.user.util.TarjetaMascara;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper(config = MapstructConfig.class)
+@Mapper(config = MapstructConfig.class, imports = TarjetaMascara.class)
 public interface TarjetaCreditoMapper {
   /**
    * Convierte TarjetaCreditoRequest a TarjetaCredito Entity El ID se setea como null
@@ -30,6 +31,9 @@ public interface TarjetaCreditoMapper {
    * @return
    */
   @Mapping(target = "idBanco", source = "banco.id")
+  @Mapping(
+      target = "numero",
+      expression = "java(TarjetaMascara.enmascarar(tarjetaCredito.getNumero()))")
   TarjetaCreditoResponse toResponse(TarjetaCredito tarjetaCredito);
 
   /**
