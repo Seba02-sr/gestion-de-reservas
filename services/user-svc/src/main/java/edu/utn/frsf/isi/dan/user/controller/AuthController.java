@@ -5,7 +5,6 @@ import edu.utn.frsf.isi.dan.user.dto.GoogleAuthResponse;
 import edu.utn.frsf.isi.dan.user.service.GoogleAuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = {"http://localhost:8080"})
+// CORS: se configura solo en el API Gateway (dan-spring-gateway), no en los servicios.
 public class AuthController {
 
   @Autowired private GoogleAuthService googleAuthService;

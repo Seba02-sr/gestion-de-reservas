@@ -1,13 +1,13 @@
 services:
   # ──────────────────────────────────────────────────────────────────────────────
-  # Frontend (desarrollo): Vite con HMR en 8080
+  # Frontend (desarrollo): Vite con HMR en 5173 (el 8080 es del API Gateway)
   frontend:
     profiles: ["frontend"]
     image: node:20-alpine
     working_dir: /app
     command: sh -c "rm -f package-lock.json && npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
     ports:
-      - "8080:5173"  # http://localhost:8080
+      - "5173:5173"  # http://localhost:5173
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -26,7 +26,7 @@ services:
     image: reservas-arn-frontend:latest
     container_name: reservas-arn-frontend
     ports:
-      - "8080:80" # http://localhost:8080
+      - "5173:80" # http://localhost:5173
     restart: unless-stopped
 
   # ──────────────────────────────────────────────────────────────────────────────
@@ -214,6 +214,31 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: default
+
+  # API Gateway (Spring Cloud Gateway WebMVC): único punto de entrada en http://localhost:8080
+  #   /users/**    -> user-svc:8080      /gestion/** -> gestion-svc:8080      /reservas/** -> reservas-svc:8080
+  # Los nombres user-svc, gestion-svc y reservas-svc los resuelve el DNS de la red de compose.
+  # required: false => no falla si algún perfil de servicio no está activo.
+  gateway:
+    build:
+      context: ./common/dan-spring-gateway
+    container_name: dan-spring-gateway
+    restart: unless-stopped
+    profiles: ["gateway"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      user-svc:
+        condition: service_started
+        required: false
+      reservas-svc:
+        condition: service_started
+        required: false
+      gestion-svc:
+        condition: service_started
+        required: false
     environment:
       SPRING_PROFILES_ACTIVE: default
 

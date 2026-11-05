@@ -24,7 +24,9 @@ const GoogleLoginButton: React.FC<Props> = ({ onSuccess, onError }) => {
           client_id: clientId,
           callback: async (response: any) => {
             try {
-              const res = await fetch('http://localhost:8081/auth/google', {
+              // Todo pasa por el API Gateway: /users/** -> user-svc (StripPrefix=1)
+              const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
+              const res = await fetch(`${apiUrl}/users/auth/google`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ credential: response.credential }),

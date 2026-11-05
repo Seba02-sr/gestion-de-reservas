@@ -29,6 +29,7 @@ Aplicación distribuida con microservicios (Spring Boot) y frontend moderno. Mon
     - gestion-svc: `COMPOSE_PROFILES=frontend,gestion`
   - Frontend producción (Nginx):
     - `COMPOSE_PROFILES=prod,infra,user,reservas,gestion`
+  - Con API Gateway (único punto de entrada en 8080): agregar el perfil `gateway`, ej. `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway`
 
 4) Levantar con Docker Compose
 ```bash
@@ -36,8 +37,9 @@ docker compose up -d --build
 ```
 
 5) URLs y credenciales
-- Frontend dev: `http://localhost:8080`
-- Frontend prod: `http://localhost:8080` (perfil `prod`)
+- API Gateway: `http://localhost:8080` (perfil `gateway`; ver tabla de URLs en `CLAUDE.md` y `ETAPA03.md`)
+- Frontend dev: `http://localhost:5173`
+- Frontend prod: `http://localhost:5173` (perfil `prod`)
 - user-svc: `http://localhost:8081`
 - reservas-svc: `http://localhost:8082`
 - gestion-svc: `http://localhost:8083`
