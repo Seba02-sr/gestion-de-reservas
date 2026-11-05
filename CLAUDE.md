@@ -9,9 +9,11 @@ Monorepo Maven multi-módulo (Spring Boot, Java 21) + frontend.
 ```
 pom.xml                      # parent (tp2025)
 common/dan-common-lib/       # librería compartida (DTOs/eventos de mensajería)
-services/user-svc/           # usuarios (MySQL)            -> 8081
-services/reservas-svc/       # reservas (MongoDB)          -> 8082
-services/gestion-svc/        # hoteles/habitaciones/tarifas (PostgreSQL) -> 8083
+common/dan-spring-gateway/   # API Gateway (Spring Cloud Gateway WebMVC)  -> 8080
+common/dan-eureka-server/    # Service discovery (Eureka Server)            -> 8761
+services/user-svc/           # usuarios (MySQL)            -> 8080 interno
+services/reservas-svc/       # reservas (MongoDB)          -> 8080 interno
+services/gestion-svc/        # hoteles/habitaciones/tarifas (PostgreSQL) -> 8080 interno
 frontend/                    # React + Vite
 infra/                       # configs montadas por docker (mysql, postgres/initdb, pgadmin, phpmyadmin, rabbitmq)
 docker-compose.yml           # compose que se usa (raíz)
@@ -52,7 +54,7 @@ docker compose up -d --build         # levanta lo que digan los profiles
 docker compose down                  # o `down -v` para borrar volúmenes
 ```
 
-Profiles del compose raíz: `frontend`, `prod`, `infra`, `user`, `reservas`, `gestion`, `gateway`. Ej. todo: `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway`.
+Profiles del compose raíz: `frontend`, `prod`, `infra`, `eureka`, `user`, `reservas`, `gestion`, `gateway` (Eureka arranca solo con cualquiera de los de servicio). Ej. todo: `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway`.
 
 Tests de un servicio: `./mvnw -pl services/gestion-svc test`.
 
@@ -90,17 +92,16 @@ Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) s
 
 | Servicio | Puerto host |
 |---|---|
-| user-svc | 8081 |
-| reservas-svc | 8082 |
-| gestion-svc | 8083 |
-| API Gateway | 8080 |
+| API Gateway (único punto de entrada + Swagger unificado) | 8080 |
+| Eureka (dashboard) | 8761 |
+| user-svc / reservas-svc / gestion-svc | sin puerto en el host (8080 interno): se llega por el gateway |
 | Frontend (dev/prod) | 5173 |
 | MySQL / phpMyAdmin | 3306 / 6080 |
 | PostgreSQL / pgAdmin | 5432 / 6081 |
 | MongoDB / Mongo Express | 27017 / 6091 |
 | RabbitMQ / consola | 5672 / 15672 (admin/admin) |
 
-(Dentro de docker los servicios escuchan en 8080. Eureka (8761) aún no está integrado.)
+(Dentro de docker los servicios escuchan en 8080. Desde la Etapa 4 no se publican en el host para poder escalarlos; ver "Eureka y escalado".)
 
 ## API Gateway (Etapa 3)
 
@@ -125,9 +126,34 @@ Como los controllers no se renombraron, `UserController` (`/users`) y `ReservaCo
 | reservas-svc | `GET /reservas/habitaciones/disponibles`, `GET /reservas/habitaciones/{habitacionId}` (solo GET) |
 
 - **CORS**: se configura **solo en el gateway** (`CorsConfig`, propiedad `gateway.cors.allowed-origins` / env `GATEWAY_CORS_ORIGINS`, por defecto `http://localhost:5173,http://localhost:5174`). Los servicios no deben usar `@CrossOrigin`: el gateway reenvía el header `Origin` y se rechazaría (403) o se duplicarían los headers. El frontend llama al gateway (`VITE_API_URL`, por defecto `http://localhost:8080`). El login con Google necesita `http://localhost:5173` como origen autorizado en Google Cloud Console.
-- **Swagger**: cada servicio mantiene el suyo en su puerto directo (8081/8082/8083). **Limitación**: no se ve por el gateway (`/gestion/swagger-ui/...` carga la UI pero esta pide `/v3/api-docs` en la raíz y el prefijo se pierde con `StripPrefix`); resolverlo exigiría configurar `springdoc` por servicio y no se hizo.
+- **Swagger unificado** (Etapa 4): `http://localhost:8080/swagger-ui.html`, con un desplegable por servicio. El gateway pide cada documento OpenAPI por sus propias rutas (`/users/v3/api-docs`, `/gestion/v3/api-docs`, `/reservas/v3/api-docs`; propiedades `springdoc.swagger-ui.urls[n]`) y cada servicio declara en su OpenAPI el servidor `/users`, `/gestion` o `/reservas` (`OpenApiConfig`, propiedad `openapi.server-url`; vacía = sin servidor, para correr un servicio suelto) para que "Try it out" pase por el gateway. Los puertos 8081-8083 ya no se publican.
 - Postman: `common/dan-spring-gateway/gateway.postman_collection.json` (variable `gatewayUrl`).
 - Referencia de la cátedra: `ETAPA03.md`, `PRACTICA_03.pdf` (rama `catedra/feature/tp03`; no se hace merge porque pisaría la Etapa 2). También tienen un perfil `reactivo` (WebFlux) que acá no se usa.
+
+## Eureka y escalado (Etapa 4)
+
+- **Eureka Server** (`common/dan-eureka-server`, 8761, dashboard `http://localhost:8761`). Los 4 clientes (user, gestion, reservas y el gateway) se registran con el **perfil de Spring `eureka`** (`application-eureka.properties`, que el compose activa con `SPRING_PROFILES_ACTIVE=eureka`). Sin ese perfil `eureka.client.enabled=false`: los tests y correr un servicio desde el IDE no necesitan Eureka. Con el perfil, el gateway enruta con `lb://user-svc|gestion-svc|reservas-svc` (+ `StripPrefix=1`); como Spring Boot enlaza una lista indexada desde una sola fuente, el perfil repite las 3 rutas completas.
+- `eureka.server.enable-self-preservation=false` y expulsión cada 5 s son valores **solo de desarrollo** (para ver rápido que una instancia caída desaparece).
+- **`GET /info`** en cada servicio: `{servicio, instancia, ip, hora}`; `instancia` es el `HOSTNAME` del contenedor. Por el gateway: `/users/info`, `/gestion/info`, `/reservas/info`.
+- **Escalar**: `docker compose up -d --scale gestion-svc=3` (los servicios no tienen `container_name` ni puertos fijos; `instance-id` = `<servicio>:<HOSTNAME>`). Llamar varias veces a `http://localhost:8080/gestion/info` y ver que cambian `instancia` e `ip`.
+- Ejecutar un servicio **fuera de docker** (IDE): sin perfil `eureka`; para que reservas-svc llegue a los otros definir `clients.user-svc.url=http://localhost:8081` y `clients.gestion-svc.url=http://localhost:8083` (los puertos que uno elija al correrlos).
+
+### Qué pasa al escalar
+- **Tarea programada**: con 3 réplicas de gestion-svc, `TarifaPrecioScheduler` se ejecuta **3 veces** a las 00:05 (cada réplica tiene su propio `@Scheduled`) y también 3 veces al arrancar (`ApplicationReadyEvent` en cada una), publicando `ACTUALIZAR_PRECIO` repetido. Hoy es inofensivo porque el evento es **idempotente** (reservas-svc hace `updateMulti` por tipo de habitación con el mismo precio), pero es trabajo y mensajes de más, y sería un bug real si la tarea hiciera algo no idempotente (cobrar, enviar mails). En sistemas reales se resuelve con un lock distribuido (**ShedLock**: una tabla/clave en la base; solo la réplica que toma el lock ejecuta esa corrida), una elección de líder (Kubernetes lease, ZooKeeper, Spring Integration), sacando la tarea a un único proceso (CronJob, instancia "scheduler" dedicada) o haciendo la tarea idempotente y deduplicando. **No está implementado**: queda documentado como limitación del escalado.
+- **RabbitMQ**: si reservas-svc corre con varias réplicas, todas escuchan la misma cola `habitacion.topic` (patrón **competing consumers**): el broker reparte los mensajes entre los consumidores y **cada mensaje lo procesa una sola réplica** (si una cae sin confirmar, se reentrega a otra). Funciona bien acá porque todas comparten la **misma base MongoDB**: da igual cuál procese el evento, el resultado queda visible para todas (y `CREAR`/`CERRAR_HOTEL` son idempotentes). Matices: se pierde el orden global entre mensajes (dos eventos de la misma habitación podrían procesarse en paralelo en réplicas distintas) y, si cada réplica necesitara recibir **todos** los mensajes (por ejemplo para una caché propia en memoria), haría falta una cola por réplica (fan-out), no una compartida.
+
+## Comunicación sincrónica entre servicios (OpenFeign) — reservas-svc
+
+`POST /reservas` valida contra las fuentes de verdad **antes** de tomar el cupo de la habitación:
+1. `UserServiceClient` → `GET /huespedes/{id}` de user-svc: si no existe → **404** "No existe el huésped N"; se guardan `nombreApellido` y `email` en la reserva (visibles como `nombreHuesped`/`emailHuesped`).
+2. `GestionServiceClient` → `GET /habitaciones/{id}/disponible` de gestion-svc: `false` → **409**.
+- **Por qué además de la réplica local**: la réplica de habitaciones es eventualmente consistente (RabbitMQ); si un `CERRAR_HOTEL` aún no llegó, reservas ofrecería una habitación cerrada. Preguntar a la fuente de verdad cierra esa ventana en el momento de reservar. **Costo**: acoplamiento temporal (si gestion cae no se puede reservar), una llamada de red más por reserva y la consulta no es atómica con `tomarCupo`. Las lecturas (búsqueda, GET) siguen usando solo la réplica.
+- **Fallos → 503, nunca 500**: `ServiciosRemotos` traduce cualquier fallo (no responde, timeout, 5xx, sin instancias, circuito abierto) a `ServicioNoDisponibleException` → **503** con mensaje claro; un 404 remoto es un 404 de negocio. Timeouts Feign: conexión 2 s, lectura 3 s (`spring.cloud.openfeign.client.config.default.*`).
+- **Circuit breaker (Resilience4j)**: `spring.cloud.openfeign.circuitbreaker.enabled=true`; se abre si falla ≥ 50 % de las últimas 10 llamadas (mínimo 5), 10 s abierto y luego half-open con 2 llamadas de prueba. Con el circuito abierto se responde 503 al instante sin llamar al servicio. Los 404 no cuentan como fallo.
+- Tests: `ReservaServiceTest` (clients mockeados), `UserServiceClientIntegrationTest` / `GestionServiceClientIntegrationTest` / `CircuitBreakerIntegrationTest` (WireMock: éxito, 404, 500, conexión cortada, timeout, servicio caído, apertura y recuperación del circuito).
+
+## Datos sensibles de tarjetas (user-svc)
+`TarjetaCreditoResponse` **no incluye el CVC** y devuelve el `numero` enmascarado (`**** **** **** 0004`, `TarjetaMascara`, aplicado en `TarjetaCreditoMapper.toResponse`). El request sigue aceptando `cvc`.
 
 ## Convención de commits
 
@@ -182,4 +208,4 @@ Ramas de trabajo actuales: `development` (base), `feature/completar-tp` (prepara
 - Una habitación está disponible si **no** tiene reservas con `ingreso <= fechaSalidaPedida` y `salida >= fechaIngresoPedida` (solapamiento).
 
 ## Etapas posteriores (cátedra, aún no integradas)
-Referencia en `catedra/feature/tp03` (Spring Cloud Gateway), `tp04` (Eureka + OpenFeign: reservas-svc valida el huésped contra user-svc) y `tp05` (observabilidad con OpenTelemetry/Loki/Tempo/Prometheus/Grafana, contiene tp03 y tp04). Docs: ETAPA03.md, ETAPA04.md, ETAPA04-IMPL.md, ETAPA05-OBSERVABILIDAD.md.
+Referencia en `catedra/feature/tp03` (Spring Cloud Gateway, ya integrado), `tp04` (Eureka + OpenFeign, ya integrado; docs en `ETAPA04.md` y `ETAPA04-IMPL.md`) y `tp05` (observabilidad con OpenTelemetry/Loki/Tempo/Prometheus/Grafana, contiene tp03 y tp04). Docs: ETAPA03.md, ETAPA04.md, ETAPA04-IMPL.md, ETAPA05-OBSERVABILIDAD.md.
