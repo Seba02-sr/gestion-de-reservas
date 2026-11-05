@@ -20,6 +20,9 @@
         <java.version>21</java.version>
         <spring-boot.version>3.5.16</spring-boot.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <!-- Boot 3.5.16 gestiona opentelemetry 1.49.0; la instrumentación que corresponde a ese SDK es la 2.15.x
+             (la 2.16.0-alpha trae el SDK 1.50.0 y mezclaría versiones de io.opentelemetry) -->
+        <opentelemetry-instrumentation.version>2.15.0-alpha</opentelemetry-instrumentation.version>
     </properties>
 
     <dependencies>
