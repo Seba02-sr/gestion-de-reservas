@@ -52,7 +52,7 @@ docker compose up -d --build         # levanta lo que digan los profiles
 docker compose down                  # o `down -v` para borrar volúmenes
 ```
 
-Profiles del compose raíz: `frontend`, `prod`, `infra`, `user`, `reservas`, `gestion`. Ej. todo: `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion`.
+Profiles del compose raíz: `frontend`, `prod`, `infra`, `user`, `reservas`, `gestion`, `gateway`. Ej. todo: `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway`.
 
 Tests de un servicio: `./mvnw -pl services/gestion-svc test`.
 
@@ -93,13 +93,41 @@ Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) s
 | user-svc | 8081 |
 | reservas-svc | 8082 |
 | gestion-svc | 8083 |
-| Frontend (dev/prod) | 8080 |
+| API Gateway | 8080 |
+| Frontend (dev/prod) | 5173 |
 | MySQL / phpMyAdmin | 3306 / 6080 |
 | PostgreSQL / pgAdmin | 5432 / 6081 |
 | MongoDB / Mongo Express | 27017 / 6091 |
 | RabbitMQ / consola | 5672 / 15672 (admin/admin) |
 
-(Dentro de docker los servicios escuchan en 8080. En la cátedra, el gateway ocupa el 8080 y Eureka el 8761; aún no están integrados acá.)
+(Dentro de docker los servicios escuchan en 8080. Eureka (8761) aún no está integrado.)
+
+## API Gateway (Etapa 3)
+
+`common/dan-spring-gateway`: Spring Cloud Gateway Server **WebMVC** (servlet), Spring Boot 3.5.x + Spring Cloud 2025.0.0. Perfil de compose `gateway`, puerto 8080. Cada ruta = `id` + `uri` (DNS de docker) + `predicate` (`Path`) + `filter` (`StripPrefix=1`), en `application.properties`. Los URIs se pueden pisar con `USER_SVC_URL`, `GESTION_SVC_URL`, `RESERVAS_SVC_URL` (útil para correr el gateway fuera de docker).
+
+| Prefijo | Destino | Ejemplo por el gateway → lo que recibe el servicio |
+|---|---|---|
+| `/users/**` | user-svc | `/users/huespedes` → `/huespedes` |
+| `/gestion/**` | gestion-svc | `/gestion/hoteles` → `/hoteles` |
+| `/reservas/**` | reservas-svc | `/reservas/habitaciones/disponibles` → `/habitaciones/disponibles` |
+
+Como los controllers no se renombraron, `UserController` (`/users`) y `ReservaController` (`/reservas`) quedan con el segmento repetido: `/users/users/...` y `/reservas/reservas/...`.
+
+| Servicio | Endpoint (por el gateway) |
+|---|---|
+| user-svc | `GET /users/huespedes`, `GET /users/huespedes/{id}`, `PUT/DELETE /users/huespedes/{id}`, `GET /users/huespedes/buscar`, `GET/POST /users/huespedes/{id}/tarjetas` |
+| user-svc | **`POST /users/users/huesped`** (alta de huésped; `POST /users/huespedes` no existe), `POST /users/users/propietario`, `GET /users/users`, `GET /users/users/dni/{dni}`, `GET /users/users/buscar-dni` |
+| user-svc | `/users/propietarios`, `/users/tarjetas`, `/users/bancos`, `POST /users/auth/google` |
+| gestion-svc | `GET /gestion/hoteles`, `POST /gestion/hoteles/registrar`, `GET /gestion/hoteles/consultar`, `/gestion/hoteles/{id}` |
+| gestion-svc | `/gestion/habitaciones`, `/gestion/tarifas` (solo POST/DELETE), `/gestion/tipos-habitacion` |
+| reservas-svc | `POST /reservas/reservas`, `GET /reservas/reservas?idHuesped=`, `GET /reservas/reservas/{id}`, `POST /reservas/reservas/{id}/pagos`, `PATCH /reservas/reservas/{id}/estado`, `PUT /reservas/reservas/{id}/review-cliente`, `PUT /reservas/reservas/{id}/review-dueno`, `POST /reservas/reservas/bloqueos` |
+| reservas-svc | `GET /reservas/habitaciones/disponibles`, `GET /reservas/habitaciones/{habitacionId}` (solo GET) |
+
+- **CORS**: se configura **solo en el gateway** (`CorsConfig`, propiedad `gateway.cors.allowed-origins` / env `GATEWAY_CORS_ORIGINS`, por defecto `http://localhost:5173,http://localhost:5174`). Los servicios no deben usar `@CrossOrigin`: el gateway reenvía el header `Origin` y se rechazaría (403) o se duplicarían los headers. El frontend llama al gateway (`VITE_API_URL`, por defecto `http://localhost:8080`). El login con Google necesita `http://localhost:5173` como origen autorizado en Google Cloud Console.
+- **Swagger**: cada servicio mantiene el suyo en su puerto directo (8081/8082/8083). **Limitación**: no se ve por el gateway (`/gestion/swagger-ui/...` carga la UI pero esta pide `/v3/api-docs` en la raíz y el prefijo se pierde con `StripPrefix`); resolverlo exigiría configurar `springdoc` por servicio y no se hizo.
+- Postman: `common/dan-spring-gateway/gateway.postman_collection.json` (variable `gatewayUrl`).
+- Referencia de la cátedra: `ETAPA03.md`, `PRACTICA_03.pdf` (rama `catedra/feature/tp03`; no se hace merge porque pisaría la Etapa 2). También tienen un perfil `reactivo` (WebFlux) que acá no se usa.
 
 ## Convención de commits
 
