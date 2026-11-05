@@ -100,4 +100,33 @@ class TarjetaCreditoControllerTest {
     mockMvc.perform(delete("/tarjetas/1")).andExpect(status().isNoContent());
     verify(tarjetaCreditoService, times(1)).deleteTarjetaCredito(1);
   }
+
+  @Test
+  void deleteTarjetaPrincipal_DebeRetornar409() throws Exception {
+    doThrow(new IllegalStateException("No se puede eliminar la tarjeta principal"))
+        .when(tarjetaCreditoService)
+        .deleteTarjetaCredito(1);
+    mockMvc
+        .perform(delete("/tarjetas/1"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message").value("No se puede eliminar la tarjeta principal"));
+  }
+
+  @Test
+  void deleteTarjeta_IdNegativo_DebeRetornar400() throws Exception {
+    mockMvc.perform(delete("/tarjetas/-1")).andExpect(status().isBadRequest());
+    verify(tarjetaCreditoService, never()).deleteTarjetaCredito(any());
+  }
+
+  @Test
+  void updateTarjetaPrincipalConEsPrincipalFalse_DebeRetornar409() throws Exception {
+    when(tarjetaCreditoService.updateTarjetaCredito(eq(1), any(TarjetaCreditoRequest.class)))
+        .thenThrow(new IllegalStateException("No se puede quitar la marca de principal"));
+    mockMvc
+        .perform(
+            put("/tarjetas/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isConflict());
+  }
 }

@@ -24,11 +24,16 @@ public class Hotel {
   private String telefono;
   private String correoContacto;
   private Integer categoria;
+  private Boolean cerrado;
 
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "hotel")
   @JsonIgnore
   private List<Habitacion> habitaciones;
 
-  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "hotel")
+  @OneToMany(
+      cascade = CascadeType.ALL,
+      fetch = FetchType.LAZY,
+      mappedBy = "hotel",
+      orphanRemoval = true)
   private List<AmenityHotel> amenities;
 }

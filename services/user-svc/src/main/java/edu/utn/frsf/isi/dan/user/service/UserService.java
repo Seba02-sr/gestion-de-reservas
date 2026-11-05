@@ -44,6 +44,11 @@ public class UserService {
 
     Huesped usuario = huespedMapper.toEntity(huespedRequest);
 
+    if (!usuario.tieneSoloUnaTarjetaPrincipal()) {
+      throw new IllegalArgumentException(
+          "El huésped debe tener exactamente una tarjeta de crédito principal");
+    }
+
     if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
       usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
     }

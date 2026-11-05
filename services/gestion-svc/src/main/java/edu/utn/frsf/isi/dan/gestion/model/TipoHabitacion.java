@@ -10,7 +10,10 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class TipoHabitacion {
-  @Id private Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
+
   private String nombre;
   private String descripcion;
   private Integer capacidad;

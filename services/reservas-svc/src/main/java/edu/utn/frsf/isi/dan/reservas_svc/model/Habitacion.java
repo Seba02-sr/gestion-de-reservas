@@ -6,6 +6,11 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+/**
+ * Réplica local de una habitación de gestion-svc (la fuente de verdad). Se mantiene solo con los
+ * mensajes de RabbitMQ; lleva embebida la lista de reservas para resolver la disponibilidad con una
+ * única consulta (y una única operación atómica al reservar).
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,7 +18,16 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "habitacion")
 public class Habitacion {
   @Id private String id;
+
+  /** Id de la habitación en gestion-svc. */
   private Long habitacionId;
+
+  private Integer numero;
+  private Integer piso;
+
+  /** null se interpreta como disponible. */
+  private Boolean disponible;
+
   private Integer capacidad;
   private Double precioNoche;
   private List<String> amenities;
@@ -27,9 +41,12 @@ public class Habitacion {
   @AllArgsConstructor
   @Builder
   public static class ReservaSimple {
-    private String _id;
+    private String reservaId;
     private Instant checkIn;
+
+    /** null = abierta (CERRADA, BLOQUEADA sin fin). */
     private Instant checkOut;
+
     private Double precioTotal;
     private EstadoReserva estadoReserva;
   }

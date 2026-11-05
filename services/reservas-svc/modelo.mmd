@@ -4,14 +4,12 @@ title: Diagrama de Clases - reservas-svc model
 classDiagram
     class Reserva {
         String _id
-        String idHabitacion
-        Long hotelId
+        Long habitacionId
+        Integer hotelId
         Instant createdAt
         Instant checkIn
         Instant checkOut
-        Tarifa tarifaAplicada
-        String status
-        Double precioPorNoche
+        Double precioNoche
         Double precioTotal
         Huesped huesped
         List~Pago~ pago
@@ -28,7 +26,7 @@ classDiagram
     class Review {
         double rating
         String comment
-        String createdAt
+        Instant createdAt
     }
     class Huesped {
         String idUsuario
@@ -37,21 +35,24 @@ classDiagram
     }
     class EstadoReserva {
         <<enum>>
-        CANCELADA
+        RESERVADA
         CONFIRMADA
-        PENDIENTE
+        CANCELADA
         FINALIZADA
-        PAGO_PENDIENTE
+        ADEUDADA
         BLOQUEADA
+        CERRADA
     }
     class Habitacion {
         String _id
         Long habitacionId
-        int capacidad
+        Integer numero
+        Integer piso
+        Boolean disponible
+        Integer capacidad
         Double precioNoche
         int idTipoHabitacion
         String tipoHabitacion
-        Tarifa tarifaBase
         List~String~ amenities
         List~ReservaSimple~ reservas
         Hotel hotel
@@ -64,9 +65,10 @@ classDiagram
         GeoJsonPoint ubicacion
     }
     class ReservaSimple {
-        String _id
+        String reservaId
         Instant checkIn
         Instant checkOut
+        Double precioTotal
         EstadoReserva estadoReserva
     }
     Reserva --> Huesped : huesped

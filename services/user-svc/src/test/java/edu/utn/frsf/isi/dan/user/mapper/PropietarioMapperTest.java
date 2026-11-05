@@ -32,7 +32,7 @@ public class PropietarioMapperTest {
             .dni("12345678")
             .username("propietario")
             .password("password123")
-            .idHotel(Long.valueOf(1))
+            .idHotel(1)
             .cuentaBancaria(CuentaRequest.builder().numeroCuenta("123456789").idBanco(1).build())
             .build();
     Propietario propietario = propietarioMapper.toEntity(request);
@@ -109,7 +109,7 @@ public class PropietarioMapperTest {
             .dni("87654321")
             .username("propietario2")
             .password("newpassword123")
-            .idHotel(Long.valueOf(2))
+            .idHotel(2)
             .cuentaBancaria(CuentaRequest.builder().numeroCuenta("987654321").idBanco(2).build())
             .build();
     propietarioMapper.updateEntityFromRequest(request, propietario);

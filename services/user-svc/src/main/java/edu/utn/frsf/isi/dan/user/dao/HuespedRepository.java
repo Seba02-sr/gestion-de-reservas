@@ -9,12 +9,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface HuespedRepository extends JpaRepository<Huesped, Integer> {
 
-  // Búsquedas considerando solo usuarios activos
-  List<Huesped> findByActivoTrue();
+  // Los huéspedes se borran físicamente (con sus tarjetas por cascade JPA): no hay filtro "activo".
+  List<Huesped> findByNombreContainingIgnoreCase(String nombre);
 
-  Optional<Huesped> findByIdAndActivoTrue(Integer id);
-
-  List<Huesped> findByActivoTrueAndNombreContainingIgnoreCase(String nombre);
-
-  Optional<Huesped> findByActivoTrueAndDni(String dni);
+  Optional<Huesped> findByDni(String dni);
 }

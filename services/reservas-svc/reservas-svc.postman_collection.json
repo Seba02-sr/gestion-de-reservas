@@ -1,167 +1,923 @@
 {
   "info": {
-    "_postman_id": "b1c2d3e4-f5a6-7890-bcde-ef9876543210",
+    "_postman_id": "6dd0a381-2b05-5fe6-8865-64dd22e1255f",
     "name": "Reservas SVC API",
+    "description": "reservas-svc (8082) con un flujo completo que cruza gestion-svc (8083).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// fechas por defecto: check-in dentro de 30 días, check-out 5 noches después",
+          "const dia = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };",
+          "if (!pm.collectionVariables.get('checkIn')) { pm.collectionVariables.set('checkIn', dia(30)); }",
+          "if (!pm.collectionVariables.get('checkOut')) { pm.collectionVariables.set('checkOut', dia(35)); }"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrlGestion",
+      "value": "http://localhost:8083",
+      "type": "string"
+    },
+    {
+      "key": "baseUrlReservas",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "hotelId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "habitacionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reservaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checkIn",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checkOut",
+      "value": "",
+      "type": "string"
+    }
+  ],
   "item": [
     {
-      "name": "Habitaciones - Obtener todas",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8080/habitaciones",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["habitaciones"]
-        }
-      }
-    },
-    {
-      "name": "Habitaciones - Obtener por ID",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8080/habitaciones/999999",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["habitaciones", "999999"]
-        }
-      }
-    },
-    {
-      "name": "Habitaciones - Crear",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"habitacionId\": 999999,\n  \"capacity\": 2,\n  \"baseRate\": { \"amount\": 45000, \"currency\": \"ARS\" },\n  \"amenities\": [\"wifi\", \"tv\", \"aire\"],\n  \"hotel\": {\n    \"_id\": 99999988,\n    \"name\": \"Hotel Buenos Aires\",\n    \"location\": {\n      \"address\": \"Av. Corrientes 1234\",\n      \"city\": \"Buenos Aires\",\n      \"country\": \"Argentina\"\n    }\n  },\n  \"reservas\": []\n}"
+      "name": "Flujo completo (gestion-svc → reservas-svc)",
+      "description": "Ejecutar en orden. Requiere gestion-svc (8083), reservas-svc (8082), RabbitMQ y las bases levantadas (docker compose, COMPOSE_PROFILES=infra,gestion,reservas). Entre un cambio en gestion-svc y su réplica en reservas-svc puede pasar un instante (consistencia eventual): si el paso 5 no encuentra la habitación, esperá 1-2 segundos y reintentá.",
+      "item": [
+        {
+          "name": "1. gestion: crear hotel en Santa Fe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlGestion}}/hoteles/registrar",
+              "host": [
+                "{{baseUrlGestion}}"
+              ],
+              "path": [
+                "hoteles",
+                "registrar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Hotel Castelar\",\n  \"cuit\": \"30444444440\",\n  \"domicilio\": \"Bv. Pellegrini 2500, Santa Fe\",\n  \"latitud\": -31.6333,\n  \"longitud\": -60.7,\n  \"telefono\": \"342-4555000\",\n  \"correoContacto\": \"contacto@castelar.com\",\n  \"categoria\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Latitud y longitud negativas (Santa Fe)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('hotelId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "http://localhost:8080/habitaciones",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["habitaciones"]
-        }
-      }
-    },
-    {
-      "name": "Habitaciones - Actualizar",
-      "request": {
-        "method": "PUT",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"habitacionId\": 999999,\n  \"capacity\": 3,\n  \"baseRate\": { \"amount\": 50000, \"currency\": \"ARS\" },\n  \"amenities\": [\"wifi\", \"tv\", \"aire\", \"frigobar\"],\n  \"hotel\": {\n    \"_id\": 99999988,\n    \"name\": \"Hotel Buenos Aires\",\n    \"location\": {\n      \"address\": \"Av. Corrientes 1234\",\n      \"city\": \"Buenos Aires\",\n      \"country\": \"Argentina\"\n    }\n  },\n  \"reservas\": []\n}"
+        {
+          "name": "2. gestion: agregar amenities al hotel",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlGestion}}/hoteles/{{hotelId}}/amenities",
+              "host": [
+                "{{baseUrlGestion}}"
+              ],
+              "path": [
+                "hoteles",
+                "{{hotelId}}",
+                "amenities"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"amenity\": \"WIFI\"\n  },\n  {\n    \"amenity\": \"PILETA\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "http://localhost:8080/habitaciones/999999",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["habitaciones", "999999"]
-        }
-      }
-    },
-    {
-      "name": "Habitaciones - Eliminar",
-      "request": {
-        "method": "DELETE",
-        "url": {
-          "raw": "http://localhost:8080/habitaciones/999999",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["habitaciones", "999999"]
-        }
-      }
-    },
-    {
-      "name": "Reservas - Obtener todas",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8080/reservas",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["reservas"]
-        }
-      }
-    },
-    {
-      "name": "Reservas - Obtener por ID",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "http://localhost:8080/reservas/1234567890abcdef",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["reservas", "1234567890abcdef"]
-        }
-      }
-    },
-    {
-      "name": "Reservas - Crear",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"habitacionId\": 999999,\n  \"hotelId\": 9999998,\n  \"createdAt\": \"2025-05-31T12:05:00Z\",\n  \"checkIn\": \"2025-06-05\",\n  \"checkOut\": \"2025-06-10\",\n  \"appliedRate\": { \"amount\": 48000, \"currency\": \"ARS\" },\n  \"status\": \"CONFIRMED\",\n  \"guest\": {\n    \"id_usuario\": \"1234556\",\n    \"fullName\": \"Carla Gómez\",\n    \"email\": \"carla@example.com\",\n    \"phone\": \"+54 9 342-555-1234\"\n  },\n  \"payment\": {\n    \"method\": \"CREDIT_CARD\",\n    \"transactionId\": \"txn_123456789\",\n    \"amount\": { \"amount\": 50000, \"currency\": \"ARS\" },\n    \"status\": \"COMPLETED\"\n  },\n  \"clientReview\": null,\n  \"hostReview\": null\n}"
+        {
+          "name": "3. gestion: crear habitación (tipo 3 = DOBLE, capacidad 2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlGestion}}/habitaciones",
+              "host": [
+                "{{baseUrlGestion}}"
+              ],
+              "path": [
+                "habitaciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": 101,\n  \"piso\": 1,\n  \"idTipoHabitacion\": 3,\n  \"idHotel\": {{hotelId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Publica el evento CREAR hacia reservas-svc. (idHotel se completa con la variable hotelId.)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('habitacionId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "http://localhost:8080/reservas",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["reservas"]
-        }
-      }
-    },
-    {
-      "name": "Reservas - Actualizar",
-      "request": {
-        "method": "PUT",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"habitacionId\": 999999,\n  \"hotelId\": 9999998,\n  \"createdAt\": \"2025-05-31T12:05:00Z\",\n  \"checkIn\": \"2025-06-05\",\n  \"checkOut\": \"2025-06-10\",\n  \"appliedRate\": { \"amount\": 48000, \"currency\": \"ARS\" },\n  \"status\": \"PAID\",\n  \"guest\": {\n    \"id_usuario\": \"1234556\",\n    \"fullName\": \"Carla Gómez\",\n    \"email\": \"carla@example.com\",\n    \"phone\": \"+54 9 342-555-1234\"\n  },\n  \"payment\": {\n    \"method\": \"CREDIT_CARD\",\n    \"transactionId\": \"txn_123456789\",\n    \"amount\": { \"amount\": 50000, \"currency\": \"ARS\" },\n    \"status\": \"COMPLETED\"\n  },\n  \"clientReview\": {\n    \"rating\": 4.5,\n    \"comment\": \"Excelente servicio y habitación muy cómoda.\",\n    \"createdAt\": \"2025-06-11T10:00:00Z\"\n  },\n  \"hostReview\": {\n    \"rating\": 4.5,\n    \"comment\": \"Excelente cliente y habitación muy cómoda.\",\n    \"createdAt\": \"2025-06-11T10:00:00Z\"\n  }\n}"
+        {
+          "name": "4. gestion: crear tarifa común para el tipo 3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlGestion}}/tarifas",
+              "host": [
+                "{{baseUrlGestion}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Tarifa base\",\n  \"idTipoHabitacion\": 3,\n  \"precioNoche\": 15000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Publica ACTUALIZAR_PRECIO: reservas-svc actualiza el precioNoche de las habitaciones del tipo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('precioNoche', pm.response.json().precioNoche);"
+                ]
+              }
+            }
+          ]
         },
-        "url": {
-          "raw": "http://localhost:8080/reservas/1234567890abcdef",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["reservas", "1234567890abcdef"]
+        {
+          "name": "5. reservas: la habitación ya está replicada (con precio y ubicación [lng, lat])",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/habitaciones/{{habitacionId}}",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "habitaciones",
+                "{{habitacionId}}"
+              ]
+            },
+            "description": "Si da 404 o precioNoche es null, esperar un instante y reintentar (consistencia eventual)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const h = pm.response.json();",
+                  "pm.test('hotel con latitud y longitud correctas', () => {",
+                  "  pm.expect(h.hotel.latitud).to.eql(-31.6333);",
+                  "  pm.expect(h.hotel.longitud).to.eql(-60.7);",
+                  "});",
+                  "pm.test('tiene precio', () => pm.expect(h.precioNoche).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. reservas: buscar disponibles cerca de Santa Fe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/habitaciones/disponibles?lat=-31.63&lng=-60.70&radioKm=10&checkIn={{checkIn}}&checkOut={{checkOut}}&cantidadHuespedes=2&estrellas=3&amenities=WIFI,PILETA",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "habitaciones",
+                "disponibles"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "-31.63"
+                },
+                {
+                  "key": "lng",
+                  "value": "-60.70"
+                },
+                {
+                  "key": "radioKm",
+                  "value": "10"
+                },
+                {
+                  "key": "checkIn",
+                  "value": "{{checkIn}}"
+                },
+                {
+                  "key": "checkOut",
+                  "value": "{{checkOut}}"
+                },
+                {
+                  "key": "cantidadHuespedes",
+                  "value": "2"
+                },
+                {
+                  "key": "estrellas",
+                  "value": "3"
+                },
+                {
+                  "key": "amenities",
+                  "value": "WIFI,PILETA"
+                }
+              ]
+            },
+            "description": "Filtros combinados: fechas, huéspedes, estrellas, amenities y radio de 10 km."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const id = Number(pm.collectionVariables.get('habitacionId'));",
+                  "pm.test('aparece la habitación', () => pm.expect(pm.response.json().map(h => h.habitacionId)).to.include(id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7. reservas: crear reserva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habitacionId\": {{habitacionId}},\n  \"idHuesped\": 1,\n  \"checkIn\": \"{{checkIn}}\",\n  \"checkOut\": \"{{checkOut}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Queda RESERVADA. precioTotal = noches × precioNoche."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('RESERVADA', () => pm.expect(r.estado).to.eql('RESERVADA'));",
+                  "pm.collectionVariables.set('reservaId', r.id);",
+                  "pm.collectionVariables.set('precioTotal', r.precioTotal);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8. reservas: pagar (primer pago → CONFIRMADA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas/{{reservaId}}/pagos",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"monto\": 1000,\n  \"transactionId\": \"tx-001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('CONFIRMADA', () => pm.expect(r.estado).to.eql('CONFIRMADA'));",
+                  "pm.collectionVariables.set('saldo', r.saldo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9. reservas: pagar el saldo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas/{{reservaId}}/pagos",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"monto\": {{saldo}},\n  \"transactionId\": \"tx-002\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.test('saldo en cero', () => pm.expect(pm.response.json().saldo).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10. reservas: review del dueño",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas/{{reservaId}}/review-dueno",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}",
+                "review-dueno"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comentario\": \"Excelente huésped\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11. reservas: finalizar",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas/{{reservaId}}/estado",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"FINALIZADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Con review del dueño y pago completo queda FINALIZADA; si falta algo, ADEUDADA."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.test('FINALIZADA', () => pm.expect(pm.response.json().estado).to.eql('FINALIZADA'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12. gestion: cerrar el hotel",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlGestion}}/hoteles/{{hotelId}}/cerrar",
+              "host": [
+                "{{baseUrlGestion}}"
+              ],
+              "path": [
+                "hoteles",
+                "{{hotelId}}",
+                "cerrar"
+              ]
+            },
+            "description": "Deja las habitaciones no disponibles y publica CERRAR_HOTEL: reservas-svc crea una reserva CERRADA por habitación."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13. reservas: ya no aparece disponible (esperar 1-2 s si todavía aparece)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/habitaciones/disponibles?lat=-31.63&lng=-60.70&radioKm=10&checkIn={{checkIn}}&checkOut={{checkOut}}&cantidadHuespedes=2&estrellas=3&amenities=WIFI,PILETA",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "habitaciones",
+                "disponibles"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "-31.63"
+                },
+                {
+                  "key": "lng",
+                  "value": "-60.70"
+                },
+                {
+                  "key": "radioKm",
+                  "value": "10"
+                },
+                {
+                  "key": "checkIn",
+                  "value": "{{checkIn}}"
+                },
+                {
+                  "key": "checkOut",
+                  "value": "{{checkOut}}"
+                },
+                {
+                  "key": "cantidadHuespedes",
+                  "value": "2"
+                },
+                {
+                  "key": "estrellas",
+                  "value": "3"
+                },
+                {
+                  "key": "amenities",
+                  "value": "WIFI,PILETA"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const id = Number(pm.collectionVariables.get('habitacionId'));",
+                  "pm.test('ya no aparece', () => pm.expect(pm.response.json().map(h => h.habitacionId)).to.not.include(id));"
+                ]
+              }
+            }
+          ]
         }
-      }
+      ]
     },
     {
-      "name": "Reservas - Eliminar",
-      "request": {
-        "method": "DELETE",
-        "url": {
-          "raw": "http://localhost:8080/reservas/1234567890abcdef",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["reservas", "1234567890abcdef"]
+      "name": "Otras operaciones",
+      "item": [
+        {
+          "name": "Habitaciones - listar réplica",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/habitaciones",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "habitaciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Habitaciones - obtener por id de gestion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/habitaciones/{{habitacionId}}",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "habitaciones",
+                "{{habitacionId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Habitaciones disponibles - solo por fechas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/habitaciones/disponibles?checkIn={{checkIn}}&checkOut={{checkOut}}",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "habitaciones",
+                "disponibles"
+              ],
+              "query": [
+                {
+                  "key": "checkIn",
+                  "value": "{{checkIn}}"
+                },
+                {
+                  "key": "checkOut",
+                  "value": "{{checkOut}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Habitaciones disponibles - por precio y estrellas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/habitaciones/disponibles?precioMin=10000&precioMax=20000&estrellas=4",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "habitaciones",
+                "disponibles"
+              ],
+              "query": [
+                {
+                  "key": "precioMin",
+                  "value": "10000"
+                },
+                {
+                  "key": "precioMax",
+                  "value": "20000"
+                },
+                {
+                  "key": "estrellas",
+                  "value": "4"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Habitaciones disponibles - cerca de un punto (km)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/habitaciones/disponibles?lat=-31.63&lng=-60.70&radioKm=5",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "habitaciones",
+                "disponibles"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "-31.63"
+                },
+                {
+                  "key": "lng",
+                  "value": "-60.70"
+                },
+                {
+                  "key": "radioKm",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Punto GeoJSON [longitud, latitud]; lat y lng van siempre juntas con radioKm."
+          }
+        },
+        {
+          "name": "Reservas - listar por huésped",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas?idHuesped=1",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "idHuesped",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reservas - obtener por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas/{{reservaId}}",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reservas - cancelar (solo sin pagos)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas/{{reservaId}}/estado",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"CANCELADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "409 si la reserva tiene pagos."
+          }
+        },
+        {
+          "name": "Reservas - bloquear una habitación (dueño)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas/bloqueos",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas",
+                "bloqueos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habitacionId\": {{habitacionId}},\n  \"checkIn\": \"{{checkIn}}\",\n  \"checkOut\": \"{{checkOut}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Crea una reserva BLOQUEADA sin huésped ni precio. Para desbloquear: PATCH estado=CANCELADA."
+          }
+        },
+        {
+          "name": "Reservas - review del huésped (después del check-out)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlReservas}}/reservas/{{reservaId}}/review-cliente",
+              "host": [
+                "{{baseUrlReservas}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}",
+                "review-cliente"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4.5,\n  \"comentario\": \"Muy cómodo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "409 hasta que pase el check-out. Para probarlo: recrear reservas-svc con APP_FECHA_ACTUAL posterior (ver CLAUDE.md)."
+          }
         }
-      }
+      ]
     }
   ]
 }

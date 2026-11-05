@@ -16,5 +16,6 @@ public record PropietarioRequest(
     @NotBlank(message = "El DNI no puede estar vacío") String dni,
     @NotBlank(message = "El nombre de usuario es obligatorio") String username,
     @NotBlank(message = "La contraseña no puede estar vacía") String password,
-    @NotNull(message = "El ID del hotel es obligatorio") Long idHotel,
+    // Opcional: en la etapa 1 es null; se asigna luego con el servicio de gestión
+    Integer idHotel,
     @NotNull(message = "La cuenta bancaria es obligatoria") CuentaRequest cuentaBancaria) {}

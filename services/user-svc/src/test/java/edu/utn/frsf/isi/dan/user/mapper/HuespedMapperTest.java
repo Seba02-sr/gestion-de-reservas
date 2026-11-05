@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedUpdateRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
+import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,43 +81,62 @@ public class HuespedMapperTest {
         () -> assertTrue(result.tarjetaCredito().isEmpty()));
   }
 
+  private Huesped huespedExistente() {
+    TarjetaCredito tarjeta = TarjetaCredito.builder().id(5).esPrincipal(true).build();
+    return Huesped.builder()
+        .id(1)
+        .nombre("Juan")
+        .email("juanPerez@gmail.com")
+        .telefono("123456789")
+        .dni("12345678")
+        .username("juanperez")
+        .password("hash")
+        .fechaNacimiento(LocalDate.of(1990, 1, 1))
+        .tarjetaCredito(new ArrayList<>(List.of(tarjeta)))
+        .build();
+  }
+
   @Test
-  void updateEntityFromRequest_DeberiaActualizarCampos_CuandoRequestEsValido() {
-    Huesped huesped =
-        Huesped.builder()
-            .id(1)
-            .nombre("Juan")
-            .email("juanPerez@gmail.com")
-            .telefono("123456789")
-            .dni("12345678")
-            .username("juanperez")
-            .fechaNacimiento(LocalDate.of(1990, 1, 1))
-            .tarjetaCredito(new ArrayList<>())
-            .build();
-    HuespedRequest request =
-        HuespedRequest.builder()
+  void updateEntityFromRequest_DeberiaActualizarDatosSinTocarTarjetasNiPassword() {
+    Huesped huesped = huespedExistente();
+    List<TarjetaCredito> tarjetasOriginales = huesped.getTarjetaCredito();
+    HuespedUpdateRequest request =
+        HuespedUpdateRequest.builder()
             .nombre("Juan Actualizado")
             .email("juan@gmail.com")
             .telefono("987654321")
             .dni("87654321")
-            .username("juanActualizado")
             .fechaNacimiento(LocalDate.of(1992, 2, 2))
-            .tarjetasCredito(
-                List.of(TarjetaCreditoRequest.builder().numero("6543210987654321").build()))
             .build();
 
     huespedMapper.updateEntityFromRequest(request, huesped);
     assertAll(
         "Verificaciones de actualización de Huesped",
-        () -> assertNotNull(huesped),
         () -> assertEquals(1, huesped.getId()),
         () -> assertEquals("Juan Actualizado", huesped.getNombre()),
         () -> assertEquals("juan@gmail.com", huesped.getEmail()),
         () -> assertEquals("987654321", huesped.getTelefono()),
         () -> assertEquals("87654321", huesped.getDni()),
-        () -> assertEquals("juanActualizado", huesped.getUsername()),
         () -> assertEquals(LocalDate.of(1992, 2, 2), huesped.getFechaNacimiento()),
-        () -> assertNotNull(huesped.getTarjetaCredito()),
-        () -> assertFalse(huesped.getTarjetaCredito().isEmpty()));
+        () -> assertEquals("juanperez", huesped.getUsername()),
+        () -> assertEquals("hash", huesped.getPassword()),
+        () -> assertSame(tarjetasOriginales, huesped.getTarjetaCredito()),
+        () -> assertEquals(1, huesped.getTarjetaCredito().size()));
+  }
+
+  @Test
+  void updateEntityFromRequest_SoloTelefono_NoModificaElResto() {
+    Huesped huesped = huespedExistente();
+
+    huespedMapper.updateEntityFromRequest(
+        HuespedUpdateRequest.builder().telefono("555").build(), huesped);
+
+    assertAll(
+        () -> assertEquals("555", huesped.getTelefono()),
+        () -> assertEquals("Juan", huesped.getNombre()),
+        () -> assertEquals("juanPerez@gmail.com", huesped.getEmail()),
+        () -> assertEquals("12345678", huesped.getDni()),
+        () -> assertEquals(LocalDate.of(1990, 1, 1), huesped.getFechaNacimiento()),
+        () -> assertEquals(1, huesped.getTarjetaCredito().size()));
   }
 }

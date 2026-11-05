@@ -6,5 +6,7 @@ public enum EstadoReserva {
   CANCELADA,
   FINALIZADA,
   BLOQUEADA,
-  ADEUDADA
+  ADEUDADA,
+  /** El hotel cerró: la habitación no se ofrece (reserva abierta, sin fecha de salida). */
+  CERRADA
 }

@@ -24,5 +24,5 @@ public class Propietario extends Usuario {
   private CuentaBancaria cuentaBancaria;
 
   @Column(name = "hotel_id")
-  private Long idHotel;
+  private Integer idHotel;
 }

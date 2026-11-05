@@ -3,44 +3,229 @@
     "_postman_id": "gestion-svc-collection-2025",
     "name": "gestion-svc API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección para probar los endpoints CRUD de Hotel, TipoHabitacion, Tarifa y Habitacion."
+    "description": "Colección para probar gestion-svc (puerto host 8083): hoteles, habitaciones, tipos de habitación y tarifas."
   },
   "item": [
     {
       "name": "Hotel",
       "item": [
         {
-          "name": "Crear Hotel",
+          "name": "Registrar hotel",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles/registrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles",
+                "registrar"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Hotel Test\",\n  \"cuit\": \"20123456789\",\n  \"domicilio\": \"Calle 123\",\n  \"latitud\": -31.4167,\n  \"longitud\": -64.1833,\n  \"telefono\": \"3511234567\",\n  \"correoContacto\": \"contacto@hotel.com\",\n  \"categoria\": \"3 estrellas\"\n}"
+              "raw": "{\n  \"nombre\": \"Hotel Castelar\",\n  \"cuit\": \"30444444440\",\n  \"domicilio\": \"Bv. Pellegrini 2500, Santa Fe\",\n  \"latitud\": -31.6333,\n  \"longitud\": -60.7,\n  \"telefono\": \"342-4555000\",\n  \"correoContacto\": \"contacto@castelar.com\",\n  \"categoria\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": { "raw": "http://localhost:8080/hoteles", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["hoteles"] }
+            "description": "Latitud [-90, 90] y longitud [-180, 180] (en Santa Fe ambas son negativas). El CUIT debe ser válido (Mod11)."
           }
         },
         {
-          "name": "Obtener todos los Hoteles",
-          "request": { "method": "GET", "url": { "raw": "http://localhost:8080/hoteles", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["hoteles"] } }
+          "name": "Listar hoteles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles"
+              ]
+            }
+          }
         },
         {
-          "name": "Obtener Hotel por ID",
-          "request": { "method": "GET", "url": { "raw": "http://localhost:8080/hoteles/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["hoteles", "1"] } }
+          "name": "Obtener hotel por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles",
+                "1"
+              ]
+            }
+          }
         },
         {
-          "name": "Actualizar Hotel",
+          "name": "Consultar hoteles con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles/consultar?nombre=Castelar&categoria=4&amenities=WIFI",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles",
+                "consultar"
+              ],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "Castelar"
+                },
+                {
+                  "key": "categoria",
+                  "value": "4"
+                },
+                {
+                  "key": "amenities",
+                  "value": "WIFI"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar hotel (solo categoría, teléfono y correo)",
           "request": {
             "method": "PUT",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Hotel Actualizado\",\n  \"cuit\": \"20123456789\",\n  \"domicilio\": \"Calle 456\",\n  \"latitud\": -31.4167,\n  \"longitud\": -64.1833,\n  \"telefono\": \"3517654321\",\n  \"correoContacto\": \"nuevo@hotel.com\",\n  \"categoria\": \"4 estrellas\"\n}" },
-            "url": { "raw": "http://localhost:8080/hoteles/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["hoteles", "1"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoria\": 5,\n  \"telefono\": \"342-4555999\",\n  \"correoContacto\": \"reservas@castelar.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Publica un ACTUALIZAR_DATOS por cada habitación del hotel (después del commit)."
           }
         },
         {
-          "name": "Eliminar Hotel",
-          "request": { "method": "DELETE", "url": { "raw": "http://localhost:8080/hoteles/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["hoteles", "1"] } }
+          "name": "Agregar amenities a un hotel",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles/1/amenities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles",
+                "1",
+                "amenities"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"amenity\": \"WIFI\"\n  },\n  {\n    \"amenity\": \"PILETA\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Las amenities que el hotel ya tiene se ignoran. Publica ACTUALIZAR_DATOS por habitación."
+          }
+        },
+        {
+          "name": "Listar amenities de un hotel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles/1/amenities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles",
+                "1",
+                "amenities"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quitar una amenity de un hotel",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles/1/amenities/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles",
+                "1",
+                "amenities",
+                "1"
+              ]
+            },
+            "description": "El último segmento es el id del registro amenity_hotel (ver el listado de amenities)."
+          }
+        },
+        {
+          "name": "Cerrar hotel",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hoteles/1/cerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hoteles",
+                "1",
+                "cerrar"
+              ]
+            },
+            "description": "Marca el hotel como cerrado, deja sus habitaciones no disponibles y publica CERRAR_HOTEL. 409 si ya estaba cerrado. Un hotel cerrado no admite habitaciones nuevas."
+          }
         }
       ]
     },
@@ -48,69 +233,308 @@
       "name": "TipoHabitacion",
       "item": [
         {
-          "name": "Crear TipoHabitacion",
+          "name": "Crear tipo de habitación",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"id\": 10,\n  \"nombre\": \"SUITE\",\n  \"descripcion\": \"Suite de lujo\",\n  \"capacidad\": 2\n}" },
-            "url": { "raw": "http://localhost:8080/tipos-habitacion", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tipos-habitacion"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-habitacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-habitacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"SUITE\",\n  \"descripcion\": \"Suite con living\",\n  \"capacidad\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "nombre y descripción no vacíos; capacidad > 0. El id lo genera la base."
           }
         },
         {
-          "name": "Obtener todos los TiposHabitacion",
-          "request": { "method": "GET", "url": { "raw": "http://localhost:8080/tipos-habitacion", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tipos-habitacion"] } }
+          "name": "Listar tipos de habitación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-habitacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-habitacion"
+              ]
+            }
+          }
         },
         {
-          "name": "Obtener TipoHabitacion por ID",
-          "request": { "method": "GET", "url": { "raw": "http://localhost:8080/tipos-habitacion/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tipos-habitacion", "1"] } }
+          "name": "Obtener tipo por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-habitacion/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-habitacion",
+                "1"
+              ]
+            }
+          }
         },
         {
-          "name": "Actualizar TipoHabitacion",
+          "name": "Actualizar tipo de habitación",
           "request": {
             "method": "PUT",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"id\": 10,\n  \"nombre\": \"SUITE ACTUALIZADA\",\n  \"descripcion\": \"Suite de lujo renovada\",\n  \"capacidad\": 3\n}" },
-            "url": { "raw": "http://localhost:8080/tipos-habitacion/10", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tipos-habitacion", "10"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-habitacion/10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-habitacion",
+                "10"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"SUITE JR\",\n  \"descripcion\": \"Suite chica\",\n  \"capacidad\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           }
         },
         {
-          "name": "Eliminar TipoHabitacion",
-          "request": { "method": "DELETE", "url": { "raw": "http://localhost:8080/tipos-habitacion/10", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tipos-habitacion", "10"] } }
+          "name": "Eliminar tipo de habitación",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-habitacion/10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-habitacion",
+                "10"
+              ]
+            },
+            "description": "409 si el tipo tiene habitaciones o tarifas."
+          }
         }
       ]
     },
     {
       "name": "Tarifa",
+      "description": "Las tarifas solo se crean o se eliminan (no hay PUT).",
       "item": [
         {
-          "name": "Crear Tarifa",
+          "name": "1. Crear tarifa común (sin fechas)",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"fechaInicio\": \"2025-06-01\",\n  \"fechaFin\": \"2025-06-10\",\n  \"tipoHabitacion\": {\"id\": 1},\n  \"precioNoche\": 15000.00\n}" },
-            "url": { "raw": "http://localhost:8080/tarifas", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tarifas"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Tarifa base 2026\",\n  \"idTipoHabitacion\": 3,\n  \"precioNoche\": 15000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Rige desde hoy. Si el tipo ya tenía una tarifa vigente, esa pasa a terminar ayer. Si hay promociones programadas, la nueva rige hasta el día anterior a la próxima promo y las tarifas que siguen a cada promo pasan al nuevo precio (las promos no se tocan). Publica ACTUALIZAR_PRECIO si cambia el precio de hoy."
           }
         },
         {
-          "name": "Obtener todas las Tarifas",
-          "request": { "method": "GET", "url": { "raw": "http://localhost:8080/tarifas", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tarifas"] } }
-        },
-        {
-          "name": "Obtener Tarifa por ID",
-          "request": { "method": "GET", "url": { "raw": "http://localhost:8080/tarifas/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tarifas", "1"] } }
-        },
-        {
-          "name": "Actualizar Tarifa",
+          "name": "2. Crear tarifa especial / promoción (con fechas)",
           "request": {
-            "method": "PUT",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"fechaInicio\": \"2025-06-05\",\n  \"fechaFin\": \"2025-06-15\",\n  \"tipoHabitacion\": {\"id\": 1},\n  \"precioNoche\": 18000.00\n}" },
-            "url": { "raw": "http://localhost:8080/tarifas/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tarifas", "1"] }
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Promo verano\",\n  \"idTipoHabitacion\": 3,\n  \"precioNoche\": 11000,\n  \"fechaInicio\": \"2026-12-20\",\n  \"fechaFin\": \"2027-01-05\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "La tarifa actual termina el día anterior al inicio; se crea la promo y otra tarifa desde el día siguiente al fin con el precio de la tarifa que se cortó. 409 si pisa otra promo; 400 si inicio > fin, si el inicio es anterior a hoy o si falta una de las dos fechas."
           }
         },
         {
-          "name": "Eliminar Tarifa",
-          "request": { "method": "DELETE", "url": { "raw": "http://localhost:8080/tarifas/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["tarifas", "1"] } }
+          "name": "3. Listar tarifas de un tipo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas?idTipoHabitacion=3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ],
+              "query": [
+                {
+                  "key": "idTipoHabitacion",
+                  "value": "3"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. Tarifa vigente hoy de un tipo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/vigente?idTipoHabitacion=3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "vigente"
+              ],
+              "query": [
+                {
+                  "key": "idTipoHabitacion",
+                  "value": "3"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. Tarifa vigente de un tipo en una fecha",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/vigente?idTipoHabitacion=3&fecha=2026-12-25",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "vigente"
+              ],
+              "query": [
+                {
+                  "key": "idTipoHabitacion",
+                  "value": "3"
+                },
+                {
+                  "key": "fecha",
+                  "value": "2026-12-25"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener tarifa por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar todas las tarifas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "6. Eliminar tarifa",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "1"
+              ]
+            },
+            "description": "409 si es la única del tipo. Si era la vigente (o una futura) la anterior extiende su fecha de fin hasta donde terminaba la borrada, sin dejar huecos."
+          }
         }
       ]
     },
@@ -118,36 +542,197 @@
       "name": "Habitacion",
       "item": [
         {
-          "name": "Crear Habitacion",
+          "name": "Crear habitación",
           "request": {
             "method": "POST",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"numero\": 101,\n  \"piso\": 1,\n  \"tipoHabitacion\": {\"id\": 1}\n}" },
-            "url": { "raw": "http://localhost:8080/habitaciones", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["habitaciones"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/habitaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "habitaciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": 101,\n  \"piso\": 1,\n  \"idTipoHabitacion\": 3,\n  \"idHotel\": 1,\n  \"disponible\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "numero y piso > 0. 409 si el número ya existe en ese hotel o si el hotel está cerrado."
           }
         },
         {
-          "name": "Obtener todas las Habitaciones",
-          "request": { "method": "GET", "url": { "raw": "http://localhost:8080/habitaciones", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["habitaciones"] } }
+          "name": "Obtener habitación por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/habitaciones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "habitaciones",
+                "1"
+              ]
+            }
+          }
         },
         {
-          "name": "Obtener Habitacion por ID",
-          "request": { "method": "GET", "url": { "raw": "http://localhost:8080/habitaciones/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["habitaciones", "1"] } }
+          "name": "Consultar habitaciones (sin filtros)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/habitaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "habitaciones"
+              ]
+            }
+          }
         },
         {
-          "name": "Actualizar Habitacion",
+          "name": "Consultar habitaciones con filtros combinados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/habitaciones?cantidadHuespedes=2&tipoHabitacionId=3&precioMin=10000&precioMax=20000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "habitaciones"
+              ],
+              "query": [
+                {
+                  "key": "cantidadHuespedes",
+                  "value": "2"
+                },
+                {
+                  "key": "tipoHabitacionId",
+                  "value": "3"
+                },
+                {
+                  "key": "precioMin",
+                  "value": "10000"
+                },
+                {
+                  "key": "precioMax",
+                  "value": "20000"
+                }
+              ]
+            },
+            "description": "Todos los filtros son opcionales y se combinan con AND. El precio se compara contra la tarifa vigente del tipo."
+          }
+        },
+        {
+          "name": "Tarifa vigente de una habitación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/habitaciones/1/tarifa-vigente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "habitaciones",
+                "1",
+                "tarifa-vigente"
+              ]
+            }
+          }
+        },
+        {
+          "name": "¿Está disponible la habitación?",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/habitaciones/1/disponible",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "habitaciones",
+                "1",
+                "disponible"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar habitación",
           "request": {
             "method": "PUT",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": { "mode": "raw", "raw": "{\n  \"numero\": 102,\n  \"piso\": 1,\n  \"tipoHabitacion\": {\"id\": 1}\n}" },
-            "url": { "raw": "http://localhost:8080/habitaciones/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["habitaciones", "1"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/habitaciones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "habitaciones",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": 102,\n  \"piso\": 2,\n  \"idTipoHabitacion\": 3,\n  \"idHotel\": 1,\n  \"disponible\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "El hotel no se puede cambiar. 409 si el número ya lo usa otra habitación del hotel."
           }
         },
         {
-          "name": "Eliminar Habitacion",
-          "request": { "method": "DELETE", "url": { "raw": "http://localhost:8080/habitaciones/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["habitaciones", "1"] } }
+          "name": "Eliminar habitación",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/habitaciones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "habitaciones",
+                "1"
+              ]
+            }
+          }
         }
       ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8083",
+      "type": "string"
     }
   ]
 }

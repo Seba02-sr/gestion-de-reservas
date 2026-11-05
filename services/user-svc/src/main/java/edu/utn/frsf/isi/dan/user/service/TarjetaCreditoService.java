@@ -4,11 +4,13 @@ import edu.utn.frsf.isi.dan.user.dao.TarjetaCreditoRepository;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
 import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse;
 import edu.utn.frsf.isi.dan.user.mapper.TarjetaCreditoMapper;
+import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.TarjetaCredito;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TarjetaCreditoService {
@@ -16,6 +18,8 @@ public class TarjetaCreditoService {
   @Autowired private TarjetaCreditoRepository tarjetaCreditoRepository;
 
   @Autowired private TarjetaCreditoMapper tarjetaCreditoMapper;
+
+  @Autowired private HuespedService huespedService;
 
   public List<TarjetaCreditoResponse> getAllTarjetas() {
     return tarjetaCreditoRepository.findAll().stream()
@@ -41,20 +45,26 @@ public class TarjetaCreditoService {
     return tarjetaCreditoMapper.toResponse(tarjetaCreditoGuardada);
   }
 
-  // public TarjetaCreditoResponse crearTarhetaParaHuesped(Long huespedId, TarjetaCreditoRequest
-  // tarjetaCreditoRequest){
-  //     if (tarjetaCreditoRequest == null){
-  //         throw new IllegalArgumentException("La tarjeta no puede ser nula");
-  //     }
+  @Transactional
+  public TarjetaCreditoResponse crearTarjetaParaHuesped(
+      Integer huespedId, TarjetaCreditoRequest tarjetaCreditoRequest) {
+    if (huespedId == null || tarjetaCreditoRequest == null) {
+      throw new IllegalArgumentException("El id del huésped y la tarjeta no pueden ser nulos");
+    }
 
-  //     TarjetaCredito tarjetaCredito = tarjetaCreditoMapper.toEntity(tarjetaCreditoRequest);
-  //     Huesped huesped = huespedService.buscarHuespedPorId(huespedId);
-  //     tarjetaCredito.setHuesped(huesped);
-  //     tarjetaCreditoRepository.save(tarjetaCredito);
-  //     return tarjetaCreditoMapper.toResponse(tarjetaCredito);
-  //
-  // }
+    Huesped huesped = huespedService.getHuespedEntityById(huespedId);
+    TarjetaCredito tarjetaCredito = tarjetaCreditoMapper.toEntity(tarjetaCreditoRequest);
+    tarjetaCredito.setHuesped(huesped);
 
+    if (tarjetaCredito.isPrincipal()) {
+      desmarcarPrincipales(huespedId, null);
+    }
+
+    TarjetaCredito guardada = tarjetaCreditoRepository.save(tarjetaCredito);
+    return tarjetaCreditoMapper.toResponse(guardada);
+  }
+
+  @Transactional
   public TarjetaCreditoResponse updateTarjetaCredito(
       Integer id, TarjetaCreditoRequest tarjetaCreditoRequest) {
     if (id == null || tarjetaCreditoRequest == null) {
@@ -62,6 +72,18 @@ public class TarjetaCreditoService {
     }
 
     TarjetaCredito tarjetaCreditoExistente = getTarjetaEntityById(id);
+
+    boolean eraPrincipal = tarjetaCreditoExistente.isPrincipal();
+    boolean pidePrincipal = Boolean.TRUE.equals(tarjetaCreditoRequest.esPrincipal());
+    boolean pideNoPrincipal = Boolean.FALSE.equals(tarjetaCreditoRequest.esPrincipal());
+
+    if (eraPrincipal && pideNoPrincipal) {
+      throw new IllegalStateException(
+          "No se puede quitar la marca de principal; usar set-principal sobre otra tarjeta");
+    }
+    if (!eraPrincipal && pidePrincipal && tarjetaCreditoExistente.getHuesped() != null) {
+      desmarcarPrincipales(tarjetaCreditoExistente.getHuesped().getId(), id);
+    }
     tarjetaCreditoMapper.updateEntityFromRequest(tarjetaCreditoRequest, tarjetaCreditoExistente);
     TarjetaCredito tarjetaCreditoActualizada =
         tarjetaCreditoRepository.save(tarjetaCreditoExistente);
@@ -89,14 +111,11 @@ public class TarjetaCreditoService {
         .orElseThrow(() -> new EntityNotFoundException("Tarjeta no encontrada con ID: " + id));
   }
 
+  @Transactional
   public TarjetaCreditoResponse setTarjetaPrincipal(Integer id) {
     TarjetaCredito tarjetaCredito = getTarjetaEntityById(id);
 
-    List<TarjetaCredito> otrasTarjetas =
-        tarjetaCreditoRepository.findByHuespedIdAndIdNot(tarjetaCredito.getHuesped().getId(), id);
-
-    otrasTarjetas.forEach(t -> t.setEsPrincipal(false));
-    tarjetaCreditoRepository.saveAll(otrasTarjetas);
+    desmarcarPrincipales(tarjetaCredito.getHuesped().getId(), id);
 
     tarjetaCredito.setEsPrincipal(true);
     TarjetaCredito tarjetaCreditoGuardada = tarjetaCreditoRepository.save(tarjetaCredito);
@@ -108,5 +127,15 @@ public class TarjetaCreditoService {
     return tarjetaCreditoRepository.findByHuespedId(huespedId).stream()
         .map(tarjetaCreditoMapper::toResponse)
         .toList();
+  }
+
+  /** Desmarca las tarjetas principales del huésped, excepto {@code excluirId} (puede ser null). */
+  private void desmarcarPrincipales(Integer huespedId, Integer excluirId) {
+    List<TarjetaCredito> otras =
+        excluirId == null
+            ? tarjetaCreditoRepository.findByHuespedId(huespedId)
+            : tarjetaCreditoRepository.findByHuespedIdAndIdNot(huespedId, excluirId);
+    otras.forEach(t -> t.setEsPrincipal(false));
+    tarjetaCreditoRepository.saveAll(otras);
   }
 }

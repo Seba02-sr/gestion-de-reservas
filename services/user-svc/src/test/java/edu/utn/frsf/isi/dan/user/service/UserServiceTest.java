@@ -67,7 +67,7 @@ class UserServiceTest {
             .dni("2222")
             .username("prop")
             .password("secret")
-            .idHotel(1L)
+            .idHotel(1)
             .cuentaBancaria(
                 edu.utn.frsf.isi.dan.user.dto.CuentaRequest.builder()
                     .numeroCuenta("123")
@@ -87,6 +87,60 @@ class UserServiceTest {
     Huesped resultado = userService.crearUsuarioHuesped(huespedRequest);
     assertNotNull(resultado);
     assertEquals(resultado, resultado.getTarjetaCredito().get(0).getHuesped());
+  }
+
+  @Test
+  void crearUsuarioHuesped_DeberiaFallar_CuandoNoHayTarjetaPrincipal() {
+    Huesped entidad =
+        Huesped.builder()
+            .tarjetaCredito(
+                new java.util.ArrayList<>(
+                    List.of(TarjetaCredito.builder().id(1).esPrincipal(false).build())))
+            .build();
+    when(huespedMapper.toEntity(huespedRequest)).thenReturn(entidad);
+
+    assertThrows(
+        IllegalArgumentException.class, () -> userService.crearUsuarioHuesped(huespedRequest));
+    verify(usuarioRepository, never()).save(any());
+  }
+
+  @Test
+  void crearUsuarioHuesped_DeberiaFallar_CuandoHayDosTarjetasPrincipales() {
+    Huesped entidad =
+        Huesped.builder()
+            .tarjetaCredito(
+                new java.util.ArrayList<>(
+                    List.of(
+                        TarjetaCredito.builder().id(1).esPrincipal(true).build(),
+                        TarjetaCredito.builder().id(2).esPrincipal(true).build())))
+            .build();
+    when(huespedMapper.toEntity(huespedRequest)).thenReturn(entidad);
+
+    assertThrows(
+        IllegalArgumentException.class, () -> userService.crearUsuarioHuesped(huespedRequest));
+    verify(usuarioRepository, never()).save(any());
+  }
+
+  @Test
+  void crearUsuarioPropietario_ConIdHotelNull_DeberiaGuardar() {
+    PropietarioRequest sinHotel =
+        PropietarioRequest.builder()
+            .nombre("Prop")
+            .email("p@example.com")
+            .telefono("321")
+            .dni("2222")
+            .username("prop")
+            .password("secret")
+            .cuentaBancaria(propietarioRequest.cuentaBancaria())
+            .build();
+    Propietario entidad = Propietario.builder().cuentaBancaria(new CuentaBancaria()).build();
+    when(propietarioMapper.toEntity(sinHotel)).thenReturn(entidad);
+    when(usuarioRepository.save(entidad)).thenAnswer(inv -> inv.getArgument(0));
+
+    Propietario resultado = userService.crearUsuarioPropietario(sinHotel);
+
+    assertNotNull(resultado);
+    assertNull(resultado.getIdHotel());
   }
 
   @Test
@@ -129,7 +183,7 @@ class UserServiceTest {
             .dni("2")
             .username("u")
             .password("p")
-            .idHotel(1L)
+            .idHotel(1)
             .cuentaBancaria(null)
             .build();
     assertThrows(IllegalArgumentException.class, () -> userService.crearUsuarioPropietario(inval));

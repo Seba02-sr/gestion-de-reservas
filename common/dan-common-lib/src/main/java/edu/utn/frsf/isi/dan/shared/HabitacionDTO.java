@@ -12,6 +12,7 @@ public class HabitacionDTO {
   private Long habitacionId;
   private Integer numero;
   private Integer piso;
+  private Boolean disponible;
   private Integer tipoHabitacionId;
   private Integer capacidad;
   private String tipoHabitacion;

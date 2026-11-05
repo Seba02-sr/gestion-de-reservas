@@ -70,7 +70,7 @@ class UserControllerTest {
             .dni("2222")
             .username("prop")
             .password("secret")
-            .idHotel(1L)
+            .idHotel(1)
             .cuentaBancaria(
                 edu.utn.frsf.isi.dan.user.dto.CuentaRequest.builder()
                     .numeroCuenta("123")
@@ -93,6 +93,18 @@ class UserControllerTest {
   }
 
   @Test
+  void crearHuesped_SinExactamenteUnaPrincipal_DebeRetornar400() throws Exception {
+    when(userService.crearUsuarioHuesped(any()))
+        .thenThrow(new IllegalArgumentException("exactamente una tarjeta principal"));
+    mockMvc
+        .perform(
+            post("/users/huesped")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(huespedRequest)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void crearPropietario_DebeRetornar201() throws Exception {
     when(userService.crearUsuarioPropietario(any()))
         .thenReturn(new edu.utn.frsf.isi.dan.user.model.Propietario());
@@ -103,6 +115,28 @@ class UserControllerTest {
                 .content(objectMapper.writeValueAsString(propietarioRequest)))
         .andExpect(status().isCreated());
     verify(userService, times(1)).crearUsuarioPropietario(any());
+  }
+
+  @Test
+  void crearPropietario_SinIdHotel_DebeRetornar201() throws Exception {
+    PropietarioRequest sinHotel =
+        PropietarioRequest.builder()
+            .nombre("Prop")
+            .email("p@example.com")
+            .telefono("321")
+            .dni("2222")
+            .username("prop")
+            .password("secret")
+            .cuentaBancaria(propietarioRequest.cuentaBancaria())
+            .build();
+    when(userService.crearUsuarioPropietario(any()))
+        .thenReturn(new edu.utn.frsf.isi.dan.user.model.Propietario());
+    mockMvc
+        .perform(
+            post("/users/propietario")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(sinHotel)))
+        .andExpect(status().isCreated());
   }
 
   @Test
