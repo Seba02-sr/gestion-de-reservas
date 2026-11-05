@@ -21,6 +21,8 @@ public class RabbitMQConfig {
       final ConnectionFactory connectionFactory, final MessageConverter messageConverter) {
     RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
     rabbitTemplate.setMessageConverter(messageConverter);
+    // propaga el traceparent en los headers del mensaje: reservas-svc continúa la misma traza
+    rabbitTemplate.setObservationEnabled(true);
     return rabbitTemplate;
   }
 }

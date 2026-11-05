@@ -54,7 +54,7 @@ docker compose up -d --build         # levanta lo que digan los profiles
 docker compose down                  # o `down -v` para borrar volúmenes
 ```
 
-Profiles del compose raíz: `frontend`, `prod`, `infra`, `eureka`, `user`, `reservas`, `gestion`, `gateway` (Eureka arranca solo con cualquiera de los de servicio). Ej. todo: `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway`.
+Profiles del compose raíz: `frontend`, `prod`, `infra`, `eureka`, `user`, `reservas`, `gestion`, `gateway`, `observability` (Eureka arranca solo con cualquiera de los de servicio). Ej. todo: `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway,observability`.
 
 Tests de un servicio: `./mvnw -pl services/gestion-svc test`.
 
@@ -94,6 +94,8 @@ Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) s
 |---|---|
 | API Gateway (único punto de entrada + Swagger unificado) | 8080 |
 | Eureka (dashboard) | 8761 |
+| Grafana / Prometheus (profile `observability`) | 3000 / 9090 |
+| OpenTelemetry Collector (OTLP gRPC / HTTP) | 4317 / 4318 |
 | user-svc / reservas-svc / gestion-svc | sin puerto en el host (8080 interno): se llega por el gateway |
 | Frontend (dev/prod) | 5173 |
 | MySQL / phpMyAdmin | 3306 / 6080 |
@@ -127,6 +129,7 @@ Como los controllers no se renombraron, `UserController` (`/users`) y `ReservaCo
 
 - **CORS**: se configura **solo en el gateway** (`CorsConfig`, propiedad `gateway.cors.allowed-origins` / env `GATEWAY_CORS_ORIGINS`, por defecto `http://localhost:5173,http://localhost:5174`). Los servicios no deben usar `@CrossOrigin`: el gateway reenvía el header `Origin` y se rechazaría (403) o se duplicarían los headers. El frontend llama al gateway (`VITE_API_URL`, por defecto `http://localhost:8080`). El login con Google necesita `http://localhost:5173` como origen autorizado en Google Cloud Console.
 - **Swagger unificado** (Etapa 4): `http://localhost:8080/swagger-ui.html`, con un desplegable por servicio. El gateway pide cada documento OpenAPI por sus propias rutas (`/users/v3/api-docs`, `/gestion/v3/api-docs`, `/reservas/v3/api-docs`; propiedades `springdoc.swagger-ui.urls[n]`) y cada servicio declara en su OpenAPI el servidor `/users`, `/gestion` o `/reservas` (`OpenApiConfig`, propiedad `openapi.server-url`; vacía = sin servidor, para correr un servicio suelto) para que "Try it out" pase por el gateway. Los puertos 8081-8083 ya no se publican.
+- **El gateway no enruta el actuator**: cualquier `/<servicio>/actuator/**` (por ejemplo `POST /users/actuator/shutdown`) responde 404 sin llegar al servicio (`ActuatorBlockFilter`, test `GatewayActuatorBlockTest`). Ver "Observabilidad".
 - Postman: `common/dan-spring-gateway/gateway.postman_collection.json` (variable `gatewayUrl`).
 - Referencia de la cátedra: `ETAPA03.md`, `PRACTICA_03.pdf` (rama `catedra/feature/tp03`; no se hace merge porque pisaría la Etapa 2). También tienen un perfil `reactivo` (WebFlux) que acá no se usa.
 
@@ -151,6 +154,32 @@ Como los controllers no se renombraron, `UserController` (`/users`) y `ReservaCo
 - **Fallos → 503, nunca 500**: `ServiciosRemotos` traduce cualquier fallo (no responde, timeout, 5xx, sin instancias, circuito abierto) a `ServicioNoDisponibleException` → **503** con mensaje claro; un 404 remoto es un 404 de negocio. Timeouts Feign: conexión 2 s, lectura 3 s (`spring.cloud.openfeign.client.config.default.*`).
 - **Circuit breaker (Resilience4j)**: `spring.cloud.openfeign.circuitbreaker.enabled=true`; se abre si falla ≥ 50 % de las últimas 10 llamadas (mínimo 5), 10 s abierto y luego half-open con 2 llamadas de prueba. Con el circuito abierto se responde 503 al instante sin llamar al servicio. Los 404 no cuentan como fallo.
 - Tests: `ReservaServiceTest` (clients mockeados), `UserServiceClientIntegrationTest` / `GestionServiceClientIntegrationTest` / `CircuitBreakerIntegrationTest` (WireMock: éxito, 404, 500, conexión cortada, timeout, servicio caído, apertura y recuperación del circuito).
+
+## Observabilidad (Etapa 5)
+
+Profile `observability` del compose raíz: **OpenTelemetry Collector + Tempo + Loki + Prometheus + Grafana** (imágenes con versión fijada, volúmenes `*_data` para no perder datos). Los servicios funcionan igual sin él.
+
+```
+métricas  (PULL):  Prometheus ──scrape cada 15 s──> <ip de cada réplica>:9091/actuator/prometheus
+                   (instancias descubiertas en Eureka: eureka_sd_configs)
+trazas    (PUSH):  servicio ──OTLP/HTTP:4318──> otel-collector ──OTLP/gRPC:4317──> Tempo
+logs      (PUSH):  servicio ──OTLP/HTTP:4318──> otel-collector ──OTLP/HTTP /otlp──> Loki
+Grafana (:3000, admin/admin) lee de Prometheus, Loki y Tempo (datasources provisionados con uid fijo)
+```
+
+- **Cómo levantarlo**: `COMPOSE_PROFILES=infra,eureka,user,reservas,gestion,gateway,observability docker compose up -d --build`. UI: Grafana `http://localhost:3000` (dashboard "DAN — Servicios"), Prometheus `http://localhost:9090`. Loki y Tempo no se publican en el host (se consultan desde Grafana). Para generar datos: `.\scripts\generar-trafico.ps1` (PowerShell).
+- **Qué se corrigió respecto de la implementación de la cátedra** (`ETAPA05-OBSERVABILIDAD.md`, solo referencia): (1) las propiedades `otel.*` son del agente Java y Spring Boot no las lee: acá se usa `management.tracing.*` y `management.otlp.tracing|logging.*` de Boot 3.5; (2) el collector enviaba las trazas a Tempo:3200 (API de consulta): el receptor OTLP es 4317; (3) el exporter `loki` del collector-contrib fue removido: Loki recibe OTLP nativo (`otlphttp` a `/otlp`, esquema v13 + tsdb + metadatos estructurados) y **Promtail ya no hace falta** (los logs salen por OTLP desde un appender de logback; funciona en Docker Desktop/Windows y los logs llevan `trace_id`/`span_id`); (4) Prometheus usa `eureka_sd_configs`, no targets fijos: las réplicas de `--scale` aparecen solas; (5) imágenes fijadas, no `latest`.
+- **Config Spring** (bloque "Observabilidad" de cada `application.properties`): `management.otlp.tracing.endpoint` / `management.otlp.logging.endpoint` (`OTEL_COLLECTOR_URL`, por defecto `http://otel-collector:4318`), `management.tracing.sampling.probability` (`TRACING_SAMPLING`, 1.0 en desarrollo; bajarlo en producción). La exportación está **apagada por defecto** (tests, IDE); el compose la enciende con `MANAGEMENT_OTLP_*_EXPORT_ENABLED=${OTEL_EXPORT_ENABLED:-true}`. Sin collector la app arranca y responde igual y no genera errores en el log; `OTEL_EXPORT_ENABLED=false` en `.env` la apaga del todo. Los logs usan `logback-spring.xml` con `OpenTelemetryAppender` (instalado por `ObservabilityConfig`).
+- **Versiones de OpenTelemetry**: Spring Boot 3.5.16 gestiona el SDK 1.49.0; el appender se fija en `opentelemetry-logback-appender-1.0:2.15.0-alpha` (propiedad `opentelemetry-instrumentation.version` del pom raíz), la línea de instrumentación que usa ese SDK. La 2.16.0-alpha trae el SDK 1.50.0 y mezclaría versiones. Comprobar con `./mvnw dependency:tree -Dincludes=io.opentelemetry`.
+- **Trazas de punta a punta** (propagación W3C `traceparent`): `POST /reservas/reservas` por el gateway = una traza con spans del gateway, reservas-svc, el circuit breaker, las llamadas Feign (a user-svc y gestion-svc, con sus spans de servidor) y los comandos de MongoDB (`MongoObservationCommandListener` registrado en `ObservabilityConfig` de reservas-svc: Boot 3.5 no lo autoconfigura). `POST /gestion/habitaciones` publica en RabbitMQ con observación (`RabbitTemplate.setObservationEnabled(true)`: gestion-svc define su propio `RabbitTemplate`, por lo que la propiedad de Boot no aplica) y reservas-svc consume con `spring.rabbitmq.listener.simple.observation-enabled=true`: el consumo y sus accesos a Mongo continúan **la misma traza**. JPA/JDBC no están instrumentados (no hay spans de SQL).
+- **Resilience4j**: se desactiva el bulkhead de Spring Cloud (`spring.cloud.circuitbreaker.bulkhead.resilience4j.enabled=false`). `resilience4j-micrometer` (necesario para `resilience4j_circuitbreaker_state`) arrastra `resilience4j-bulkhead` y Spring Cloud pasaría a ejecutar cada llamada Feign en OTRO hilo: envolvía las excepciones (el `ignore-exceptions` de los 404 dejaba de funcionar y el circuito se abría con 404) y cortaba el contexto de la traza. Lo detectó `CircuitBreakerIntegrationTest`.
+- **Ruido filtrado**: `ObservabilityConfig` descarta como observaciones los pedidos a `/actuator/**` (scrapes de Prometheus) y los heartbeats al servidor Eureka; si no, llenarían Tempo.
+- **Seguridad del actuator**: los 4 servicios exponen solo `health`, `info` y `prometheus` (`management.endpoints.web.exposure.include`), `shutdown` deshabilitado (`management.endpoint.shutdown.access=none`), `health.show-details=never`. En Docker el actuator escucha en un **puerto de gestión aparte (9091, `MANAGEMENT_SERVER_PORT`)** que no se publica en el host ni enruta el gateway: Prometheus lo lee por la red de Docker. El gateway además corta `/<servicio>/actuator/**` con 404. Tests: `ActuatorExposureTest` (4 módulos) y `GatewayActuatorBlockTest`. Eureka Server (8761) mantiene `health,info` y no se instrumenta.
+- **Eureka con el puerto 9091**: cada instancia registra `homePageUrl` en `:8080` y `statusPageUrl`/`healthCheckUrl` en `http://<ip>:9091/actuator/{info,health}` (verificable en `http://localhost:8761/eureka/apps`). Las IPs de contenedor no son alcanzables desde el navegador del host (tampoco antes, con el 8080): el link del dashboard muestra la URL pero se abre solo desde dentro de la red de Docker. El único healthcheck de actuator en el compose es el de Eureka sobre su propio puerto.
+- **Prometheus**: job `dan-servicios` (`job` = nombre de la app en minúsculas, `instance` = `<servicio>:<id del contenedor>`, `__address__` = `<ip>:9091`); jobs estáticos solo para `prometheus` y `otel-collector:8888`. El puerto 9091 está fijo en `infra/prometheus/prometheus.yml`.
+- **Dashboard** (`infra/grafana/dashboards/dan-servicios.json`, variables `job`/`instance`): instancias vivas, pedidos/seg, latencia p50/p95/media por servicio, errores 5xx por servicio y URI, % 5xx, heap/no-heap/GC/threads/CPU, y **estado del circuit breaker** (cerrado/semiabierto/abierto, tasa de fallos, llamadas rechazadas, llamadas por resultado). Saltos: Loki → Tempo (derived field `trace_id`) y Tempo → Loki (`tracesToLogsV2`, filtra `{service_name=…} | trace_id=…`).
+- **Memoria** (Docker Desktop tiene 7,7 GiB en esta máquina): las JVM llevan tope (`mem_limit` + `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=65|60 -XX:+UseSerialGC -Xss512k`): user/gestion/reservas 512 MiB, gateway y Eureka 384 MiB; collector 256 MiB, Tempo/Loki/Grafana 384 MiB, Prometheus 512 MiB. Medido con todo arriba (18 contenedores, 2 réplicas de gestion-svc, pgAdmin/phpMyAdmin/Mongo Express incluidos): **≈ 3,9 GB**, sin OOM ni reinicios (JVM ~300 MiB c/u, MySQL 431, MongoDB 286, pgAdmin 295, RabbitMQ 209, Loki 190, Tempo 172, Grafana 150, Prometheus 141, collector 81). **Hacen falta ≥ 6 GB asignados a Docker Desktop** (≥ 7 GB si se escala a 3+ réplicas; cada réplica suma ~0,3–0,5 GB). pgAdmin, phpMyAdmin y Mongo Express (profile `infra`, ~0,4 GB) se pueden dejar afuera si falta memoria.
+- **Qué pasa al escalar**: ver "Qué pasa al escalar" (Etapa 4); además, cada réplica aparece como una serie distinta en Prometheus (`instance`) y todas envían sus trazas/logs al mismo collector.
 
 ## Datos sensibles de tarjetas (user-svc)
 `TarjetaCreditoResponse` **no incluye el CVC** y devuelve el `numero` enmascarado (`**** **** **** 0004`, `TarjetaMascara`, aplicado en `TarjetaCreditoMapper.toResponse`). El request sigue aceptando `cvc`.
@@ -208,4 +237,4 @@ Ramas de trabajo actuales: `development` (base), `feature/completar-tp` (prepara
 - Una habitación está disponible si **no** tiene reservas con `ingreso <= fechaSalidaPedida` y `salida >= fechaIngresoPedida` (solapamiento).
 
 ## Etapas posteriores (cátedra, aún no integradas)
-Referencia en `catedra/feature/tp03` (Spring Cloud Gateway, ya integrado), `tp04` (Eureka + OpenFeign, ya integrado; docs en `ETAPA04.md` y `ETAPA04-IMPL.md`) y `tp05` (observabilidad con OpenTelemetry/Loki/Tempo/Prometheus/Grafana, contiene tp03 y tp04). Docs: ETAPA03.md, ETAPA04.md, ETAPA04-IMPL.md, ETAPA05-OBSERVABILIDAD.md.
+Referencia en `catedra/feature/tp03` (Spring Cloud Gateway, ya integrado), `tp04` (Eureka + OpenFeign, ya integrado; docs en `ETAPA04.md` y `ETAPA04-IMPL.md`) y `tp05` (observabilidad con OpenTelemetry/Loki/Tempo/Prometheus/Grafana, ya integrada con correcciones: ver "Observabilidad (Etapa 5)"). Docs: ETAPA03.md, ETAPA04.md, ETAPA04-IMPL.md, ETAPA05-OBSERVABILIDAD.md (esta última describe la implementación de la cátedra, con los errores que acá se corrigieron).

@@ -1,0 +1,34 @@
+# Prometheus: PULL (scrape). Cada 15 s pide /actuator/prometheus a cada instancia.
+# Las instancias se descubren en Eureka (eureka_sd_configs): al escalar (--scale gestion-svc=3)
+# aparecen solas, sin tocar este archivo. Solo lo que tiene nombre fijo va como target estático.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: otel-collector
+    static_configs:
+      - targets: ['otel-collector:8888']
+
+  # user-svc, gestion-svc, reservas-svc y gateway (todas las réplicas registradas en Eureka)
+  - job_name: dan-servicios
+    metrics_path: /actuator/prometheus
+    eureka_sd_configs:
+      - server: http://dan-eureka-server:8761/eureka
+        refresh_interval: 15s
+    relabel_configs:
+      # job = nombre de la aplicación en minúsculas (user-svc, gestion-svc, reservas-svc, gateway)
+      - source_labels: [__meta_eureka_app_name]
+        action: lowercase
+        target_label: job
+      # instance = id de la instancia en Eureka (<servicio>:<id del contenedor>): único por réplica
+      - source_labels: [__meta_eureka_app_instance_id]
+        target_label: instance
+      # El actuator está en el puerto de gestión (9091), que solo existe dentro de la red de Docker.
+      - source_labels: [__meta_eureka_app_instance_ip_addr]
+        target_label: __address__
+        replacement: '$1:9091'
