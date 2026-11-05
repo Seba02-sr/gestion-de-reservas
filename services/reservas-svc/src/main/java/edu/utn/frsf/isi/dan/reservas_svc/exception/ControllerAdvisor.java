@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-/** Traduce las excepciones de negocio a 400 / 404 / 409 (y deja el 500 solo para lo inesperado). */
+/**
+ * Traduce las excepciones de negocio a 400 / 404 / 409 / 503 (y deja el 500 solo para lo
+ * inesperado).
+ */
 @RestControllerAdvice
 @Log4j2
 public class ControllerAdvisor {
@@ -22,6 +25,13 @@ public class ControllerAdvisor {
   public ResponseEntity<ExceptionInfo> handleNoEncontrado(
       RecursoNoEncontradoException ex, WebRequest request) {
     return respuesta(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+  }
+
+  /** user-svc / gestion-svc no responden o su circuito está abierto: 503, no un 500 genérico. */
+  @ExceptionHandler(ServicioNoDisponibleException.class)
+  public ResponseEntity<ExceptionInfo> handleServicioNoDisponible(
+      ServicioNoDisponibleException ex, WebRequest request) {
+    return respuesta(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
   }
 
   @ExceptionHandler({ConflictoException.class, IllegalStateException.class})

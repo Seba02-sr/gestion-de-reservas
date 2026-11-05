@@ -10,6 +10,7 @@ import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaRequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaResponse;
 import edu.utn.frsf.isi.dan.reservas_svc.exception.ConflictoException;
 import edu.utn.frsf.isi.dan.reservas_svc.exception.RecursoNoEncontradoException;
+import edu.utn.frsf.isi.dan.reservas_svc.exception.ServicioNoDisponibleException;
 import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
 import edu.utn.frsf.isi.dan.reservas_svc.service.ReservaService;
 import java.time.LocalDate;
@@ -55,6 +56,32 @@ class ReservaControllerTest {
         .andExpect(jsonPath("$.id").value("r1"))
         .andExpect(jsonPath("$.estado").value("RESERVADA"))
         .andExpect(jsonPath("$.checkIn").value("2026-12-10"));
+  }
+
+  @Test
+  void crear_conHuespedInexistente_devuelve404ConMensaje() throws Exception {
+    when(reservaService.crear(any(ReservaRequest.class)))
+        .thenThrow(new RecursoNoEncontradoException("No existe el huésped 7"));
+
+    mockMvc
+        .perform(post("/reservas").contentType(MediaType.APPLICATION_JSON).content(BODY_VALIDO))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value("No existe el huésped 7"));
+  }
+
+  @Test
+  void crear_conServicioCaido_devuelve503ConMensajeClaro_noUn500() throws Exception {
+    when(reservaService.crear(any(ReservaRequest.class)))
+        .thenThrow(
+            new ServicioNoDisponibleException(
+                "No se pudo validar el huésped 7: user-svc no está disponible. Intente nuevamente.",
+                null));
+
+    mockMvc
+        .perform(post("/reservas").contentType(MediaType.APPLICATION_JSON).content(BODY_VALIDO))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.status").value(503))
+        .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("user-svc")));
   }
 
   @Test

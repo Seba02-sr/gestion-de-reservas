@@ -1,5 +1,7 @@
 package edu.utn.frsf.isi.dan.reservas_svc.service;
 
+import edu.utn.frsf.isi.dan.reservas_svc.client.HuespedInfo;
+import edu.utn.frsf.isi.dan.reservas_svc.client.ServiciosRemotos;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.BloqueoRequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.PagoRequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaRequest;
@@ -48,6 +50,9 @@ public class ReservaService {
 
   @Autowired private Clock clock;
 
+  /** Llamadas a user-svc y gestion-svc (Feign), con sus fallos ya traducidos. */
+  @Autowired private ServiciosRemotos remotos;
+
   // ----------------------------------------------------------------- consultas
 
   public ReservaResponse obtener(String id) {
@@ -77,6 +82,16 @@ public class ReservaService {
       throw new ConflictoException("La habitación no tiene tarifa vigente");
     }
 
+    // Fuentes de verdad, ANTES de tomar el cupo: así un fallo remoto no deja fechas bloqueadas.
+    // 404 si el huésped no existe; 503 si user-svc / gestion-svc no responden.
+    HuespedInfo huesped = remotos.obtenerHuesped(request.idHuesped());
+    if (!remotos.habitacionDisponible(request.habitacionId())) {
+      throw new ConflictoException(
+          "gestion-svc informa que la habitación "
+              + request.habitacionId()
+              + " no está disponible");
+    }
+
     long noches = ReservaPolicy.noches(request.checkIn(), request.checkOut());
     double precioTotal = ReservaPolicy.precioTotal(habitacion.getPrecioNoche(), noches);
     Instant in = Fechas.inicioDelDia(request.checkIn(), clock.getZone());
@@ -92,7 +107,12 @@ public class ReservaService {
             .checkOut(out)
             .precioNoche(habitacion.getPrecioNoche())
             .precioTotal(precioTotal)
-            .huesped(Huesped.builder().idUsuario(String.valueOf(request.idHuesped())).build())
+            .huesped(
+                Huesped.builder()
+                    .idUsuario(String.valueOf(request.idHuesped()))
+                    .nombreApellido(huesped.nombre())
+                    .email(huesped.email())
+                    .build())
             .pago(new ArrayList<>())
             .estadoReserva(EstadoReserva.RESERVADA)
             .build();

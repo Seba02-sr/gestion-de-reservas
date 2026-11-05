@@ -14,6 +14,8 @@ public record ReservaResponse(
     Long habitacionId,
     Integer hotelId,
     String idHuesped,
+    String nombreHuesped,
+    String emailHuesped,
     LocalDate checkIn,
     LocalDate checkOut,
     Instant createdAt,
