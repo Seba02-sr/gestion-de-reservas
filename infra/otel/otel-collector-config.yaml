@@ -1,0 +1,50 @@
+# OpenTelemetry Collector: recibe trazas y logs por OTLP desde los servicios y los reenvía.
+#   servicios --OTLP/HTTP:4318--> collector --OTLP/gRPC--> Tempo (trazas)
+#                                          \--OTLP/HTTP--> Loki   (logs, OTLP nativo de Loki 3)
+# Las métricas NO pasan por acá: Prometheus las raspa directo de cada instancia (pull).
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 180
+    spike_limit_mib: 40
+  batch: {}
+
+exporters:
+  # Trazas -> receptor OTLP de Tempo (4317). OJO: 3200 es la API de consulta, no recibe trazas.
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  # Logs -> Loki con OTLP nativo (el exporter "loki" del collector-contrib fue removido).
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+  # Para depurar: agregarlo a un pipeline
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/tempo]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/loki]
