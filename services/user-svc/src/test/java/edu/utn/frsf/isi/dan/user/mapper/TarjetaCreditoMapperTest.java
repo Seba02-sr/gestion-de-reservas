@@ -63,12 +63,36 @@ public class TarjetaCreditoMapperTest {
         "Verificaciones de TarjetaCreditoResponse",
         () -> assertNotNull(response),
         () -> assertEquals(1, response.id()),
-        () -> assertEquals("1234567890123456", response.numero()),
+        // el número sale enmascarado y el CVC no existe en la respuesta
+        () -> assertEquals("**** **** **** 3456", response.numero()),
         () -> assertEquals("Juan Perez", response.nombreTitular()),
         () -> assertEquals("12/25", response.fechaVencimiento()),
-        () -> assertEquals("123", response.cvc()),
         () -> assertTrue(response.esPrincipal()),
         () -> assertEquals(1, response.idBanco()));
+  }
+
+  @Test
+  void toResponse_ElJsonNoContieneElCvcNiElNumeroCompleto() throws Exception {
+    TarjetaCredito tarjetaCredito =
+        TarjetaCredito.builder()
+            .id(1)
+            .numero("5500000000000004")
+            .nombreTitular("Carla Gomez")
+            .fechaVencimiento("12/2027")
+            .cvc("987")
+            .esPrincipal(true)
+            .banco(Banco.builder().id(1).nombre("Banco Test").build())
+            .build();
+
+    String json =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .findAndRegisterModules()
+            .writeValueAsString(tarjetaCreditoMapper.toResponse(tarjetaCredito));
+
+    assertFalse(json.contains("cvc"), json);
+    assertFalse(json.contains("987"), json);
+    assertFalse(json.contains("5500000000000004"), json);
+    assertTrue(json.contains("**** **** **** 0004"), json);
   }
 
   @Test

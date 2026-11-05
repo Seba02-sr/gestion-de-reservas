@@ -29,6 +29,8 @@ public class ReservasMapper {
         .habitacionId(r.getHabitacionId())
         .hotelId(r.getHotelId())
         .idHuesped(r.getHuesped() != null ? r.getHuesped().getIdUsuario() : null)
+        .nombreHuesped(r.getHuesped() != null ? r.getHuesped().getNombreApellido() : null)
+        .emailHuesped(r.getHuesped() != null ? r.getHuesped().getEmail() : null)
         .checkIn(Fechas.aFecha(r.getCheckIn(), clock.getZone()))
         .checkOut(Fechas.aFecha(r.getCheckOut(), clock.getZone()))
         .createdAt(r.getCreatedAt())

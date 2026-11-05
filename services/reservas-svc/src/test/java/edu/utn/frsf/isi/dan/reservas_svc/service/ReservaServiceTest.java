@@ -5,6 +5,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import edu.utn.frsf.isi.dan.reservas_svc.client.GestionServiceClient;
+import edu.utn.frsf.isi.dan.reservas_svc.client.HuespedInfo;
+import edu.utn.frsf.isi.dan.reservas_svc.client.ServiciosRemotos;
+import edu.utn.frsf.isi.dan.reservas_svc.client.UserServiceClient;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.BloqueoRequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.PagoRequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaRequest;
@@ -12,6 +16,7 @@ import edu.utn.frsf.isi.dan.reservas_svc.dto.ReservaResponse;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.ReviewRequest;
 import edu.utn.frsf.isi.dan.reservas_svc.exception.ConflictoException;
 import edu.utn.frsf.isi.dan.reservas_svc.exception.RecursoNoEncontradoException;
+import edu.utn.frsf.isi.dan.reservas_svc.exception.ServicioNoDisponibleException;
 import edu.utn.frsf.isi.dan.reservas_svc.model.EstadoReserva;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Habitacion;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Habitacion.ReservaSimple;
@@ -21,12 +26,20 @@ import edu.utn.frsf.isi.dan.reservas_svc.model.Reserva;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Review;
 import edu.utn.frsf.isi.dan.reservas_svc.model.Tarifa;
 import edu.utn.frsf.isi.dan.reservas_svc.repository.ReservaRepository;
+import feign.FeignException;
+import feign.Request;
+import feign.RetryableException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import java.net.ConnectException;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +60,8 @@ class ReservaServiceTest {
 
   @Mock private ReservaRepository reservaRepository;
   @Mock private HabitacionService habitacionService;
+  @Mock private UserServiceClient userClient;
+  @Mock private GestionServiceClient gestionClient;
   @Spy private ReservasMapper mapper = new ReservasMapper(reloj(HOY));
   @InjectMocks private ReservaService reservaService;
 
@@ -61,6 +76,13 @@ class ReservaServiceTest {
   @BeforeEach
   void setUp() {
     ReflectionTestUtils.setField(reservaService, "clock", reloj(HOY));
+    // los clients Feign están mockeados; la fachada que traduce sus fallos es la real
+    ReflectionTestUtils.setField(
+        reservaService, "remotos", new ServiciosRemotos(userClient, gestionClient));
+    lenient()
+        .when(userClient.getHuesped(7))
+        .thenReturn(new HuespedInfo(7, "Carla Gómez", "carla@example.com"));
+    lenient().when(gestionClient.habitacionDisponible(10)).thenReturn(true);
     lenient()
         .when(reservaRepository.save(any(Reserva.class)))
         .thenAnswer(inv -> inv.getArgument(0));
@@ -134,6 +156,128 @@ class ReservaServiceTest {
     assertEquals(1, r.hotelId());
     assertEquals(HOY.atTime(12, 0).atZone(ZONA).toInstant(), r.createdAt());
     assertNotNull(r.id());
+  }
+
+  // ----------------------------------------------- crear: huésped y gestion (Feign)
+
+  private static final Request PEDIDO =
+      Request.create(
+          Request.HttpMethod.GET, "http://svc/x", Map.of(), null, StandardCharsets.UTF_8, null);
+
+  private void habitacionLista() {
+    when(habitacionService.findByHabitacionId(10L))
+        .thenReturn(Optional.of(habitacion(15000.0, true)));
+  }
+
+  private ReservaRequest pedidoValido() {
+    return request(LocalDate.of(2026, 12, 10), LocalDate.of(2026, 12, 15));
+  }
+
+  private static RetryableException sinConexion(String mensaje) {
+    return new RetryableException(
+        -1, mensaje, Request.HttpMethod.GET, new ConnectException(), (Long) null, PEDIDO);
+  }
+
+  @Test
+  void crear_guardaNombreYEmailDelHuespedObtenidosDeUserSvc() {
+    habitacionLista();
+    when(habitacionService.tomarCupo(eq(10L), any(ReservaSimple.class), any(), any()))
+        .thenReturn(true);
+
+    ReservaResponse r = reservaService.crear(pedidoValido());
+
+    assertEquals("Carla Gómez", r.nombreHuesped());
+    assertEquals("carla@example.com", r.emailHuesped());
+    ArgumentCaptor<Reserva> guardada = ArgumentCaptor.forClass(Reserva.class);
+    verify(reservaRepository).save(guardada.capture());
+    assertEquals("7", guardada.getValue().getHuesped().getIdUsuario());
+    assertEquals("Carla Gómez", guardada.getValue().getHuesped().getNombreApellido());
+    assertEquals("carla@example.com", guardada.getValue().getHuesped().getEmail());
+  }
+
+  @Test
+  void crear_huespedInexistente_es404ConMensajeClaro_ySinTomarElCupo() {
+    habitacionLista();
+    when(userClient.getHuesped(7))
+        .thenThrow(new FeignException.NotFound("no existe", PEDIDO, null, Map.of()));
+
+    RecursoNoEncontradoException e =
+        assertThrows(
+            RecursoNoEncontradoException.class, () -> reservaService.crear(pedidoValido()));
+
+    assertEquals("No existe el huésped 7", e.getMessage());
+    verify(habitacionService, never()).tomarCupo(any(), any(), any(), any());
+    verify(reservaRepository, never()).save(any());
+  }
+
+  @Test
+  void crear_gestionDiceQueNoEstaDisponible_esConflicto_ySinTomarElCupo() {
+    habitacionLista();
+    when(gestionClient.habitacionDisponible(10)).thenReturn(false);
+
+    ConflictoException e =
+        assertThrows(ConflictoException.class, () -> reservaService.crear(pedidoValido()));
+
+    assertTrue(e.getMessage().contains("gestion-svc"));
+    verify(habitacionService, never()).tomarCupo(any(), any(), any(), any());
+  }
+
+  @Test
+  void crear_habitacionInexistenteEnGestion_es404() {
+    habitacionLista();
+    when(gestionClient.habitacionDisponible(10))
+        .thenThrow(new FeignException.NotFound("no existe", PEDIDO, null, Map.of()));
+
+    assertThrows(RecursoNoEncontradoException.class, () -> reservaService.crear(pedidoValido()));
+    verify(habitacionService, never()).tomarCupo(any(), any(), any(), any());
+  }
+
+  @Test
+  void crear_userSvcCaido_es503_noUn500_ySinTomarElCupo() {
+    habitacionLista();
+    for (RuntimeException falla :
+        List.of(
+            sinConexion("Connection refused"),
+            new FeignException.InternalServerError("boom", PEDIDO, null, Map.of()),
+            new FeignException.ServiceUnavailable("sin instancias", PEDIDO, null, Map.of()),
+            CallNotPermittedException.createCallNotPermittedException(
+                CircuitBreaker.ofDefaults("user")))) {
+      doThrow(falla).when(userClient).getHuesped(7);
+
+      ServicioNoDisponibleException e =
+          assertThrows(
+              ServicioNoDisponibleException.class,
+              () -> reservaService.crear(pedidoValido()),
+              falla.getClass().getSimpleName());
+
+      assertTrue(e.getMessage().contains("user-svc"), e.getMessage());
+    }
+    verify(habitacionService, never()).tomarCupo(any(), any(), any(), any());
+  }
+
+  @Test
+  void crear_gestionSvcCaido_es503() {
+    habitacionLista();
+    when(gestionClient.habitacionDisponible(10)).thenThrow(sinConexion("Read timed out"));
+
+    ServicioNoDisponibleException e =
+        assertThrows(
+            ServicioNoDisponibleException.class, () -> reservaService.crear(pedidoValido()));
+
+    assertTrue(e.getMessage().contains("gestion-svc"), e.getMessage());
+    verify(habitacionService, never()).tomarCupo(any(), any(), any(), any());
+  }
+
+  @Test
+  void crear_conCircuitBreakerElNotFoundLlegaEnvueltoYIgualEs404() {
+    habitacionLista();
+    when(userClient.getHuesped(7))
+        .thenThrow(
+            new org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException(
+                "No fallback available.",
+                new FeignException.NotFound("no existe", PEDIDO, null, Map.of())));
+
+    assertThrows(RecursoNoEncontradoException.class, () -> reservaService.crear(pedidoValido()));
   }
 
   @Test

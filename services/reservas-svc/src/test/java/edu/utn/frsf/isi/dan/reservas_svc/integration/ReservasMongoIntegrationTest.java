@@ -3,6 +3,9 @@ package edu.utn.frsf.isi.dan.reservas_svc.integration;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import edu.utn.frsf.isi.dan.reservas_svc.client.GestionServiceClient;
+import edu.utn.frsf.isi.dan.reservas_svc.client.HuespedInfo;
+import edu.utn.frsf.isi.dan.reservas_svc.client.UserServiceClient;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.BloqueoRequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.BusquedaHabitacionesRequest;
 import edu.utn.frsf.isi.dan.reservas_svc.dto.PagoRequest;
@@ -44,6 +47,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -95,10 +99,19 @@ class ReservasMongoIntegrationTest {
   @Autowired private HabitacionService habitacionService;
   @Autowired private ReservaService reservaService;
 
+  // user-svc y gestion-svc no participan en estas pruebas: se simulan sus respuestas
+  @MockitoBean private UserServiceClient userClient;
+  @MockitoBean private GestionServiceClient gestionClient;
+
   private final AtomicInteger secuencia = new AtomicInteger(1000);
 
   @BeforeEach
   void limpiar() {
+    org.mockito.Mockito.when(userClient.getHuesped(org.mockito.ArgumentMatchers.anyInt()))
+        .thenAnswer(inv -> new HuespedInfo(inv.getArgument(0), "Huésped Test", "test@example.com"));
+    org.mockito.Mockito.when(
+            gestionClient.habitacionDisponible(org.mockito.ArgumentMatchers.anyInt()))
+        .thenReturn(true);
     // se vacían las colecciones sin borrarlas, para conservar los índices creados al arrancar
     mongoTemplate.remove(new Query(), Habitacion.class);
     mongoTemplate.remove(new Query(), Reserva.class);

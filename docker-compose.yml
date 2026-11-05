@@ -165,61 +165,83 @@ services:
         condition: service_healthy
 
   # ──────────────────────────────────────────────────────────────────────────────
+  # Service discovery (Eureka Server). Dashboard: http://localhost:8761
+  # Figura en los perfiles de todos los servicios que se registran en él.
+  dan-eureka-server:
+    build:
+      context: ./common/dan-eureka-server
+    container_name: dan-eureka-server
+    restart: unless-stopped
+    profiles: ["eureka", "user", "reservas", "gestion", "gateway"]
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep -q UP"]
+      interval: 10s
+      retries: 10
+      start_period: 20s
+
   # Microservicios (Spring Boot JAR ya construido en `services/*/target/*.jar`)
+  # Sin container_name ni puertos del host: así se pueden escalar (`docker compose up -d --scale
+  # gestion-svc=3`). Se llega a ellos por el API Gateway (http://localhost:8080) y se registran en Eureka.
   user-svc:
     build:
       context: ./services/user-svc
-    container_name: user-svc
     restart: unless-stopped
     profiles: ["user"]
-    ports:
-      - "8081:8080"
+    expose:
+      - "8080"
     depends_on:
       mysql:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      dan-eureka-server:
+        condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: default
+      SPRING_PROFILES_ACTIVE: eureka
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
 
   reservas-svc:
     build:
       context: ./services/reservas-svc
-    container_name: reservas-svc
     restart: unless-stopped
     profiles: ["reservas"]
-    ports:
-      - "8082:8080"
+    expose:
+      - "8080"
     depends_on:
       mongodb:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      dan-eureka-server:
+        condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: default
+      SPRING_PROFILES_ACTIVE: eureka
       # Solo para pruebas: fija "hoy" (yyyy-MM-dd). Vacío = fecha real. Ver CLAUDE.md
       APP_FECHA_ACTUAL: ${APP_FECHA_ACTUAL:-}
 
   gestion-svc:
     build:
       context: ./services/gestion-svc
-    container_name: gestion-svc
     restart: unless-stopped
     profiles: ["gestion"]
-    ports:
-      - "8083:8080"
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      dan-eureka-server:
+        condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: default
+      SPRING_PROFILES_ACTIVE: eureka
 
   # API Gateway (Spring Cloud Gateway WebMVC): único punto de entrada en http://localhost:8080
   #   /users/**    -> user-svc:8080      /gestion/** -> gestion-svc:8080      /reservas/** -> reservas-svc:8080
-  # Los nombres user-svc, gestion-svc y reservas-svc los resuelve el DNS de la red de compose.
+  # Con el perfil de Spring `eureka` las rutas son lb://user-svc, lb://gestion-svc y lb://reservas-svc:
+  # el gateway le pregunta a Eureka qué instancias hay y reparte entre ellas (soporta --scale).
   # required: false => no falla si algún perfil de servicio no está activo.
   gateway:
     build:
@@ -239,8 +261,10 @@ services:
       gestion-svc:
         condition: service_started
         required: false
+      dan-eureka-server:
+        condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: default
+      SPRING_PROFILES_ACTIVE: eureka
 
 volumes:
   mysql_data:

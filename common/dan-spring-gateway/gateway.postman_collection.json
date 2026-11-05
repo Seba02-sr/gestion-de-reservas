@@ -1,11 +1,14 @@
 {
   "info": {
     "name": "API Gateway (localhost:8080)",
-    "description": "Todas las requests pasan por el API Gateway. Prefijos: /users -> user-svc, /gestion -> gestion-svc, /reservas -> reservas-svc (StripPrefix=1). OJO: UserController y ReservaController tienen el mismo nombre que el prefijo, por eso /users/users/... y /reservas/reservas/...",
+    "description": "Todas las requests pasan por el API Gateway. Prefijos: /users -> user-svc, /gestion -> gestion-svc, /reservas -> reservas-svc (StripPrefix=1). OJO: UserController y ReservaController tienen el mismo nombre que el prefijo, por eso /users/users/... y /reservas/reservas/... Con Eureka, los servicios se descubren por nombre (lb://) y se pueden escalar con docker compose --scale.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "gatewayUrl", "value": "http://localhost:8080" }
+    {
+      "key": "gatewayUrl",
+      "value": "http://localhost:8080"
+    }
   ],
   "item": [
     {
@@ -15,19 +18,59 @@
           "name": "GET huespedes",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{gatewayUrl}}/users/huespedes", "host": ["{{gatewayUrl}}"], "path": ["users", "huespedes"] }
+            "url": {
+              "raw": "{{gatewayUrl}}/users/huespedes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "users",
+                "huespedes"
+              ]
+            }
           }
         },
         {
           "name": "POST alta de huesped (UserController: /users/users/huesped)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Carla Gomez\",\n  \"email\": \"carla@example.com\",\n  \"telefono\": \"+54 9 342-555-1234\",\n  \"dni\": \"12345678\",\n  \"username\": \"carla\",\n  \"password\": \"secret\",\n  \"fechaNacimiento\": \"1990-01-01\",\n  \"tarjetasCredito\": [\n    {\n      \"numero\": \"5500000000000004\",\n      \"nombreTitular\": \"Carla Gomez\",\n      \"fechaVencimiento\": \"12/2027\",\n      \"cvc\": \"123\",\n      \"esPrincipal\": true,\n      \"idBanco\": 1\n    }\n  ]\n}"
             },
-            "url": { "raw": "{{gatewayUrl}}/users/users/huesped", "host": ["{{gatewayUrl}}"], "path": ["users", "users", "huesped"] }
+            "url": {
+              "raw": "{{gatewayUrl}}/users/users/huesped",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "users",
+                "users",
+                "huesped"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET info (qué instancia respondió)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/users/info",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "users",
+                "info"
+              ]
+            }
           }
         }
       ]
@@ -39,19 +82,59 @@
           "name": "GET hoteles",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{gatewayUrl}}/gestion/hoteles", "host": ["{{gatewayUrl}}"], "path": ["gestion", "hoteles"] }
+            "url": {
+              "raw": "{{gatewayUrl}}/gestion/hoteles",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "gestion",
+                "hoteles"
+              ]
+            }
           }
         },
         {
           "name": "POST registrar hotel",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Hotel Castelar\",\n  \"cuit\": \"30444444440\",\n  \"domicilio\": \"Bv. Pellegrini 2500, Santa Fe\",\n  \"latitud\": -31.6333,\n  \"longitud\": -60.7,\n  \"telefono\": \"342-4555000\",\n  \"correoContacto\": \"contacto@castelar.com\",\n  \"categoria\": 4\n}"
             },
-            "url": { "raw": "{{gatewayUrl}}/gestion/hoteles/registrar", "host": ["{{gatewayUrl}}"], "path": ["gestion", "hoteles", "registrar"] }
+            "url": {
+              "raw": "{{gatewayUrl}}/gestion/hoteles/registrar",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "gestion",
+                "hoteles",
+                "registrar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET info (llamar varias veces con --scale gestion-svc=3 para ver el balanceo)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/gestion/info",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "gestion",
+                "info"
+              ]
+            }
           }
         }
       ]
@@ -65,12 +148,27 @@
             "method": "GET",
             "url": {
               "raw": "{{gatewayUrl}}/reservas/habitaciones/disponibles?lat=-31.6333&lng=-60.7&radioKm=5",
-              "host": ["{{gatewayUrl}}"],
-              "path": ["reservas", "habitaciones", "disponibles"],
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "habitaciones",
+                "disponibles"
+              ],
               "query": [
-                { "key": "lat", "value": "-31.6333" },
-                { "key": "lng", "value": "-60.7" },
-                { "key": "radioKm", "value": "5" }
+                {
+                  "key": "lat",
+                  "value": "-31.6333"
+                },
+                {
+                  "key": "lng",
+                  "value": "-60.7"
+                },
+                {
+                  "key": "radioKm",
+                  "value": "5"
+                }
               ]
             }
           }
@@ -79,12 +177,95 @@
           "name": "POST reserva (ReservaController: /reservas/reservas)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"habitacionId\": 1,\n  \"idHuesped\": 1,\n  \"checkIn\": \"2026-12-10\",\n  \"checkOut\": \"2026-12-15\"\n}"
             },
-            "url": { "raw": "{{gatewayUrl}}/reservas/reservas", "host": ["{{gatewayUrl}}"], "path": ["reservas", "reservas"] }
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/reservas",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET info (qué instancia respondió)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/info",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "info"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST reserva con huésped EXISTENTE (201, guarda nombre y email)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/reservas",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "reservas"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habitacionId\": 1,\n  \"idHuesped\": 1,\n  \"checkIn\": \"2026-12-10\",\n  \"checkOut\": \"2026-12-15\"\n}"
+            },
+            "description": "Reemplazar habitacionId por una habitación replicada con tarifa vigente."
+          }
+        },
+        {
+          "name": "POST reserva con huésped INEXISTENTE (404 'No existe el huésped 9999')",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/reservas",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "reservas"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habitacionId\": 1,\n  \"idHuesped\": 9999,\n  \"checkIn\": \"2026-12-10\",\n  \"checkOut\": \"2026-12-15\"\n}"
+            }
           }
         }
       ]
