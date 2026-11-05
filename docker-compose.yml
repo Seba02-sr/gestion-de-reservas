@@ -1,3 +1,19 @@
+# Variables comunes de observabilidad de los servicios Spring (Etapa 5).
+#  - MANAGEMENT_SERVER_PORT: el actuator escucha en 9091, un puerto aparte que no se publica en el host
+#    ni enruta el gateway (Prometheus lo lee por la red de Docker).
+#  - Export OTLP (trazas y logs) hacia el OpenTelemetry Collector: encendido por defecto; si no se
+#    levanta el profile `observability` la app funciona igual. OTEL_EXPORT_ENABLED=false lo apaga.
+x-observabilidad: &observabilidad
+  MANAGEMENT_SERVER_PORT: "9091"
+  MANAGEMENT_OTLP_TRACING_EXPORT_ENABLED: ${OTEL_EXPORT_ENABLED:-true}
+  MANAGEMENT_OTLP_LOGGING_EXPORT_ENABLED: ${OTEL_EXPORT_ENABLED:-true}
+
+# Tope de heap de las JVM (ver "Memoria" en CLAUDE.md). MaxRAMPercentage se calcula sobre mem_limit.
+x-jvm-servicio: &jvm-servicio
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65 -XX:+UseSerialGC -Xss512k"
+x-jvm-liviana: &jvm-liviana
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 -XX:+UseSerialGC -Xss512k"
+
 services:
   # ──────────────────────────────────────────────────────────────────────────────
   # Frontend (desarrollo): Vite con HMR en 5173 (el 8080 es del API Gateway)
@@ -175,6 +191,9 @@ services:
     profiles: ["eureka", "user", "reservas", "gestion", "gateway"]
     ports:
       - "8761:8761"
+    mem_limit: 384m
+    environment:
+      <<: *jvm-liviana
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep -q UP"]
       interval: 10s
@@ -198,7 +217,9 @@ services:
         condition: service_healthy
       dan-eureka-server:
         condition: service_healthy
+    mem_limit: 512m
     environment:
+      <<: [*observabilidad, *jvm-servicio]
       SPRING_PROFILES_ACTIVE: eureka
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
 
@@ -216,7 +237,9 @@ services:
         condition: service_healthy
       dan-eureka-server:
         condition: service_healthy
+    mem_limit: 512m
     environment:
+      <<: [*observabilidad, *jvm-servicio]
       SPRING_PROFILES_ACTIVE: eureka
       # Solo para pruebas: fija "hoy" (yyyy-MM-dd). Vacío = fecha real. Ver CLAUDE.md
       APP_FECHA_ACTUAL: ${APP_FECHA_ACTUAL:-}
@@ -235,7 +258,9 @@ services:
         condition: service_healthy
       dan-eureka-server:
         condition: service_healthy
+    mem_limit: 512m
     environment:
+      <<: [*observabilidad, *jvm-servicio]
       SPRING_PROFILES_ACTIVE: eureka
 
   # API Gateway (Spring Cloud Gateway WebMVC): único punto de entrada en http://localhost:8080
@@ -263,11 +288,119 @@ services:
         required: false
       dan-eureka-server:
         condition: service_healthy
+    mem_limit: 384m
     environment:
+      <<: [*observabilidad, *jvm-liviana]
       SPRING_PROFILES_ACTIVE: eureka
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Observabilidad (Etapa 5) — profile `observability`
+  #   servicios --OTLP--> otel-collector --> Tempo (trazas) / Loki (logs)      (push)
+  #   Prometheus --scrape /actuator/prometheus:9091 (descubre réplicas en Eureka)  (pull)
+  #   Grafana lee de Prometheus, Loki y Tempo.  UI: Grafana :3000, Prometheus :9090
+  # Loki y Tempo no se publican en el host: se consultan desde Grafana.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.164.0
+    container_name: otel-collector
+    restart: unless-stopped
+    profiles: ["observability"]
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./infra/otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC (servicios corriendo fuera de docker)
+      - "4318:4318"   # OTLP HTTP
+    mem_limit: 256m
+    environment:
+      GOMEMLIMIT: 200MiB
+
+  tempo:
+    image: grafana/tempo:2.10.10
+    container_name: tempo
+    restart: unless-stopped
+    profiles: ["observability"]
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./infra/tempo/tempo-config.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    mem_limit: 384m
+    environment:
+      GOMEMLIMIT: 300MiB
+
+  loki:
+    image: grafana/loki:3.6.19
+    container_name: loki
+    restart: unless-stopped
+    profiles: ["observability"]
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    volumes:
+      - ./infra/loki/loki-config.yaml:/etc/loki/loki.yaml:ro
+      - loki_data:/loki
+    mem_limit: 384m
+    environment:
+      GOMEMLIMIT: 300MiB
+
+  prometheus:
+    image: prom/prometheus:v3.13.5
+    container_name: prometheus
+    restart: unless-stopped
+    profiles: ["observability"]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      dan-eureka-server:
+        condition: service_started
+        required: false
+    mem_limit: 512m
+    environment:
+      GOMEMLIMIT: 400MiB
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  grafana:
+    image: grafana/grafana:12.4.14
+    container_name: grafana
+    restart: unless-stopped
+    profiles: ["observability"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}   # solo desarrollo
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GOMEMLIMIT: 300MiB
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
+      tempo:
+        condition: service_started
+    mem_limit: 384m
 
 volumes:
   mysql_data:
   postgres_data:
   mongo_data:
   pgadmin_data:
+  prometheus_data:
+  loki_data:
+  tempo_data:
+  grafana_data:
