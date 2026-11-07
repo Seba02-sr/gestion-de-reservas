@@ -8,7 +8,7 @@
 #   VITE_GOOGLE_CLIENT_ID    -> vacío = sin botón de Google
 
 # ---------------------------------------------------------------- build
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # Dependencias primero (capa cacheable) + cache de npm entre builds
