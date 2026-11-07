@@ -62,3 +62,17 @@ export function SelectIcon({
     </div>
   );
 }
+
+/** Input sin ícono (mismos estilos .rarn-input). */
+export function Input({ className = "", ...rest }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input className={`rarn-input ${className}`} {...rest} />;
+}
+
+/** Select sin ícono (mismos estilos .rarn-select). */
+export function Select({ className = "", children, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select className={`rarn-select ${className}`} {...rest}>
+      {children}
+    </select>
+  );
+}

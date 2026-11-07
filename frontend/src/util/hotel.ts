@@ -1,9 +1,11 @@
-// src/types/hotel.ts
+// Modelo de presentación de un hotel destacado (armado desde HotelResponse + habitaciones)
 export interface Hotel {
   id: number
   nombre: string
   ubicacion: string
+  /** Categoría (estrellas) del hotel */
   rating: number
-  precio: number
+  /** Precio por noche más bajo entre sus habitaciones con tarifa; undefined si no hay */
+  precio?: number
   imagen: string
 }

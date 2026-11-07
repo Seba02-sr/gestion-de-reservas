@@ -311,6 +311,9 @@ public class HabitacionService {
               Fechas.inicioDelDia(f.checkIn(), clock.getZone()),
               Fechas.inicioDelDia(f.checkOut(), clock.getZone())));
     }
+    if (f.hotelId() != null) {
+      criterios.add(Criteria.where("hotel.id").is(f.hotelId()));
+    }
     if (f.cantidadHuespedes() != null) {
       criterios.add(Criteria.where("capacidad").gte(f.cantidadHuespedes()));
     }

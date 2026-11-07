@@ -94,10 +94,9 @@ $huesped = Invoke-Api POST "/users/users/huesped" @{
     tarjetasCredito = @(@{ numero = "5500000000000004"; nombreTitular = "Huesped Trafico"; fechaVencimiento = "12/2027"; cvc = "123"; esPrincipal = $true; idBanco = $idBanco })
 } "POST /users/users/huesped"
 if ($huesped.Codigo -ne 201) { throw "No se pudo crear el huesped: $($huesped.Codigo) $($huesped.Texto)" }
-# el alta responde 201 sin cuerpo: el id se busca por DNI
-$busqueda = Invoke-Api GET "/users/huespedes/dni/$dni" -Etiqueta "GET /users/huespedes/dni/{dni}"
-if ($busqueda.Codigo -ne 200) { throw "No se encontro el huesped por DNI: $($busqueda.Codigo) $($busqueda.Texto)" }
-$idHuesped = $busqueda.Json.id
+# el alta responde 201 con el huesped creado (HuespedResponse) y el header Location
+$idHuesped = $huesped.Json.id
+if (-not $idHuesped) { throw "El alta de huesped no devolvio el id: $($huesped.Texto)" }
 
 # Crear habitacion: gestion-svc guarda y PUBLICA un evento en RabbitMQ; reservas-svc lo consume.
 # En Tempo es UNA traza que continua en reservas-svc.

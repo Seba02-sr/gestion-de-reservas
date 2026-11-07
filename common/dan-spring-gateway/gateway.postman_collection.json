@@ -31,7 +31,7 @@
           }
         },
         {
-          "name": "POST alta de huesped (UserController: /users/users/huesped)",
+          "name": "POST alta de huesped (UserController: /users/users/huesped) -> 201 con el huesped creado y header Location",
           "request": {
             "method": "POST",
             "header": [
@@ -53,6 +53,49 @@
                 "users",
                 "users",
                 "huesped"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST login usuario y contraseña (200 con identidad, 401 si son incorrectos)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"carla\",\n  \"password\": \"secret\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/users/auth/login",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "users",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET bancos (cargados al arrancar user-svc si la tabla está vacía)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/users/bancos",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "users",
+                "bancos"
               ]
             }
           }

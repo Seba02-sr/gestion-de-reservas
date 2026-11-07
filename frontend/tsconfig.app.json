@@ -14,7 +14,7 @@
       "@/*": ["src/*"]
     },
 
-    "types": ["vite/client"]  // mantiene los tipos de Vite
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["src", "src/types/images.d.ts"]
 }

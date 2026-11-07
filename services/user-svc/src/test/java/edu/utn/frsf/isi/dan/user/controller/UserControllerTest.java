@@ -34,6 +34,7 @@ class UserControllerTest {
   @Autowired private MockMvc mockMvc;
   @MockitoBean private UserService userService;
   @MockitoBean private UsuarioMapper usuarioMapper;
+  @MockitoBean private edu.utn.frsf.isi.dan.user.mapper.HuespedMapper huespedMapper;
   @Autowired private ObjectMapper objectMapper;
 
   private HuespedRequest huespedRequest;
@@ -80,15 +81,26 @@ class UserControllerTest {
   }
 
   @Test
-  void crearHuesped_DebeRetornar201() throws Exception {
-    when(userService.crearUsuarioHuesped(any()))
-        .thenReturn(new edu.utn.frsf.isi.dan.user.model.Huesped());
+  void crearHuesped_DebeRetornar201ConElRecursoYLocation() throws Exception {
+    var creado = edu.utn.frsf.isi.dan.user.model.Huesped.builder().id(7).nombre("Juan").build();
+    when(userService.crearUsuarioHuesped(any())).thenReturn(creado);
+    when(huespedMapper.toResponse(creado))
+        .thenReturn(
+            edu.utn.frsf.isi.dan.user.dto.HuespedResponse.builder()
+                .id(7)
+                .nombre("Juan")
+                .username("juan")
+                .build());
     mockMvc
         .perform(
             post("/users/huesped")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(huespedRequest)))
-        .andExpect(status().isCreated());
+        .andExpect(status().isCreated())
+        .andExpect(header().string("Location", "/huespedes/7"))
+        .andExpect(jsonPath("$.id").value(7))
+        .andExpect(jsonPath("$.username").value("juan"))
+        .andExpect(jsonPath("$.password").doesNotExist());
     verify(userService, times(1)).crearUsuarioHuesped(any());
   }
 

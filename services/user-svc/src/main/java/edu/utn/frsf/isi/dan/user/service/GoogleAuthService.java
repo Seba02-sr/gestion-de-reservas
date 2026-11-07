@@ -8,9 +8,9 @@ import com.google.api.client.json.gson.GsonFactory;
 import edu.utn.frsf.isi.dan.user.dao.UsuarioRepository;
 import edu.utn.frsf.isi.dan.user.dto.GoogleAuthRequest;
 import edu.utn.frsf.isi.dan.user.dto.GoogleAuthResponse;
+import edu.utn.frsf.isi.dan.user.exception.GoogleNoConfiguradoException;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
 import edu.utn.frsf.isi.dan.user.model.Usuario;
-import jakarta.annotation.PostConstruct;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,15 +24,15 @@ public class GoogleAuthService {
 
   @Autowired private UsuarioRepository usuarioRepository;
 
-  @PostConstruct
-  public void validateConfig() {
-    if (googleClientId == null || googleClientId.isBlank()) {
-      throw new IllegalStateException(
-          "google.oauth.clientId no está configurado en application.properties");
-    }
+  /** El login con Google es opcional: sin clientId la app arranca y authenticate responde 503. */
+  public boolean estaConfigurado() {
+    return googleClientId != null && !googleClientId.isBlank();
   }
 
   public GoogleAuthResponse authenticate(GoogleAuthRequest request) {
+    if (!estaConfigurado()) {
+      throw new GoogleNoConfiguradoException();
+    }
     try {
       var transport = new NetHttpTransport();
       var jsonFactory = GsonFactory.getDefaultInstance();
