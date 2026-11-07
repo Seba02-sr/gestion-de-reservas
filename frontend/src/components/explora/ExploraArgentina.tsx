@@ -17,7 +17,7 @@ const destinosPopulares: DestinoPopular[] = [
 ];
 
 export default function ExploraArgentina() {
-  const [provinciaSeleccionada, setProvinciaSeleccionada] = useState<string | null>(null);
+  const [, setProvinciaSeleccionada] = useState<string | null>(null);
   const onProvinciaSelect = (provincia: string) => {
     setProvinciaSeleccionada(provincia);
     // TODO: navegación/filtro

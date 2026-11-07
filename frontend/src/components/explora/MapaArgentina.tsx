@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- amCharts se importa dinámicamente y sus objetos de mapa no se tipan acá */
 // src/components/explora/MapaArgentina.tsx
 "use client";
 
