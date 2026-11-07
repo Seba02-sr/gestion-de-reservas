@@ -378,6 +378,14 @@ class HabitacionServiceTest {
   }
 
   @Test
+  void busqueda_porHotel_filtraPorHotelId() {
+    Document q = consulta(BusquedaHabitacionesRequest.builder().hotelId(7).build());
+
+    // el campo id del hotel embebido se persiste como hotel._id
+    assertEquals(7, condicionSobre(q, "hotel._id").get("hotel._id"));
+  }
+
+  @Test
   void busqueda_porCapacidadPrecioEstrellasYAmenities() {
     Document q =
         consulta(

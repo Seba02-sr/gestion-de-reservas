@@ -90,7 +90,8 @@ class HabitacionControllerTest {
                 .param("amenities", "WIFI,PILETA")
                 .param("lat", "-31.63")
                 .param("lng", "-60.70")
-                .param("radioKm", "5"))
+                .param("radioKm", "5")
+                .param("hotelId", "4"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(1));
 
@@ -105,6 +106,7 @@ class HabitacionControllerTest {
     org.junit.jupiter.api.Assertions.assertEquals(-31.63, f.lat());
     org.junit.jupiter.api.Assertions.assertEquals(-60.70, f.lng());
     org.junit.jupiter.api.Assertions.assertEquals(5.0, f.radioKm());
+    org.junit.jupiter.api.Assertions.assertEquals(4, f.hotelId());
   }
 
   @Test
@@ -126,6 +128,8 @@ class HabitacionControllerTest {
           {"lat", "95"},
           {"lng", "-181"},
           {"radioKm", "0"},
+          {"hotelId", "0"},
+          {"hotelId", "-3"},
           {"checkIn", "10-12-2026"}
         }) {
       mockMvc

@@ -340,6 +340,20 @@ class ReservasMongoIntegrationTest {
   }
 
   @Test
+  void busquedaPorHotel_devuelveSoloLasHabitacionesDeEseHotel_yCombinaConOtrosFiltros() {
+    crear(dto(1L, santaFe(), 15000.0, 2, "WIFI"));
+    crear(dto(2L, santaFe(), 30000.0, 4, "WIFI", "PILETA"));
+    crear(dto(3L, buenosAires(), 15000.0, 2, "WIFI"));
+
+    assertEquals(List.of(1L, 2L), buscar(BusquedaHabitacionesRequest.builder().hotelId(1).build()));
+    assertEquals(List.of(3L), buscar(BusquedaHabitacionesRequest.builder().hotelId(2).build()));
+    assertEquals(List.of(), buscar(BusquedaHabitacionesRequest.builder().hotelId(99).build()));
+    assertEquals(
+        List.of(2L),
+        buscar(BusquedaHabitacionesRequest.builder().hotelId(1).cantidadHuespedes(3).build()));
+  }
+
+  @Test
   void busquedaPorFiltros_sinGeo() {
     crear(dto(1L, santaFe(), 15000.0, 2, "WIFI"));
     crear(dto(2L, buenosAires(), 30000.0, 4, "WIFI", "PILETA", "SPA"));
