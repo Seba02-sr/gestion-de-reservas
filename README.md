@@ -28,8 +28,8 @@ Aplicación distribuida con microservicios (Spring Boot) y frontend moderno. Mon
     - user-svc: `COMPOSE_PROFILES=frontend,user`
     - reservas-svc: `COMPOSE_PROFILES=frontend,reservas`
     - gestion-svc: `COMPOSE_PROFILES=frontend,gestion`
-  - Frontend producción (Nginx):
-    - `COMPOSE_PROFILES=prod,infra,user,reservas,gestion,gateway`
+  - Frontend producción (Nginx, proxy `/api` → gateway; excluyente con `frontend`, ambos usan el 5173):
+    - `COMPOSE_PROFILES=prod,infra,user,reservas,gestion,gateway` y `docker compose up -d --build`
   - Sin `gateway` no hay punto de entrada: los servicios ya no publican puertos en el host (Etapa 4), así que para usarlos siempre se incluye `gateway`.
 
 4) Levantar con Docker Compose
@@ -77,19 +77,29 @@ Documentación detallada (wiki)
 - Arquitectura y modelo de datos: ver `docs/arquitectura.md`
 - Guías de trabajo, convenciones y herramientas: ver `docs/guias.md`
 
-## Login con Google (beta)
+## Frontend integrado (ticket 6000)
+
+El front (`/frontend`, React + Vite) usa datos reales, siempre por el gateway. Pantallas: Home (búsqueda y hoteles destacados), `/buscar` (resultados con filtros y orden), `/habitaciones/:id` (detalle y reserva), `/login`, `/registro`, `/mis-reservas` (pagar, cancelar, opinar). Detalle técnico en `CLAUDE.md`, sección "Frontend (ticket 6000)".
+
+- **Dev** (`COMPOSE_PROFILES=frontend,...`): Vite con recarga en `http://localhost:5173`; el navegador llama directo al gateway (`VITE_API_URL`, por defecto `http://localhost:8080`; el gateway permite ese origen por CORS).
+- **Prod** (`COMPOSE_PROFILES=prod,...`): nginx sirve el build y reenvía `/api/**` al gateway por la red de Docker (`VITE_API_URL=/api`): mismo origen, sin CORS.
+- **`VITE_*` se fijan al compilar**, no al ejecutar. En dev se leen al iniciar Vite; en prod hay que reconstruir la imagen (`docker compose build frontend-prod`) si se cambian (`VITE_GOOGLE_CLIENT_ID`, `PROD_VITE_API_URL`).
+- Comandos del front (en `frontend/`): `npm ci`, `npm run dev`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+- Usuarios: se registra un huésped en `/registro` (exige una tarjeta principal; los bancos salen de `GET /users/bancos`, cargados al arrancar user-svc si la tabla está vacía). Login con usuario y contraseña (`POST /users/auth/login`).
+
+## Login con Google (opcional)
+
+Es opcional: **sin `GOOGLE_CLIENT_ID` user-svc arranca igual**, `POST /users/auth/google` responde 503 y el front no muestra el botón. El login con usuario y contraseña funciona siempre.
 
 Backend (user-svc):
-- Configurar el Client ID de Google como variable de entorno `GOOGLE_CLIENT_ID` (ya referenciado en `docker-compose.yml`).
-- Alternativa: editar `services/user-svc/src/main/resources/application.properties` y setear `google.oauth.clientId`.
-- Endpoint (por el API Gateway, user-svc ya no publica puerto en el host): `POST http://localhost:8080/users/auth/google` con cuerpo JSON `{ "credential": "<ID_TOKEN>" }`.
+- Para habilitarlo, configurar el Client ID de Google como variable de entorno `GOOGLE_CLIENT_ID` (ya referenciado en `docker-compose.yml`; alternativa: `google.oauth.clientId` en `application.properties`).
+- Endpoint (por el API Gateway): `POST http://localhost:8080/users/auth/google` con cuerpo JSON `{ "credential": "<ID_TOKEN>" }`.
 - CORS se configura solo en el gateway (`GATEWAY_CORS_ORIGINS`, por defecto `http://localhost:5173,http://localhost:5174`).
 
 Frontend (Vite):
-- Definir `GOOGLE_CLIENT_ID` en el `.env` de la raíz (`cp .env.example .env`); el compose se lo pasa al front como `VITE_GOOGLE_CLIENT_ID`. El front llama al gateway (`VITE_API_URL`, por defecto `http://localhost:8080`).
+- Definir `GOOGLE_CLIENT_ID` y `VITE_GOOGLE_CLIENT_ID` en el `.env` de la raíz (ver `.env.example`). El botón y el script de Google Identity Services solo aparecen/cargan si `VITE_GOOGLE_CLIENT_ID` está definido.
 - El front corre en `http://localhost:5173`: ese origen debe estar autorizado en Google Cloud Console (Credenciales).
-- Se agregó el script de Google Identity Services y un botón en el `Header`.
-- Al autenticarse, se guarda el usuario en `localStorage` con clave `user`.
+- Al autenticarse (Google o usuario/contraseña), `AuthContext` guarda el usuario en `localStorage` con clave `user`. **No hay token**: ver "Seguridad" en `CLAUDE.md` (mejora pendiente).
 
 Notas:
 - Esta integración verifica el ID Token de Google y crea el usuario (tipo Huesped) si no existe.
