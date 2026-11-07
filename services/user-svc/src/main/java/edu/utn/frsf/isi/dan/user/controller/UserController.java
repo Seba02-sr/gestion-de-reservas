@@ -1,8 +1,10 @@
 package edu.utn.frsf.isi.dan.user.controller;
 
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
+import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
 import edu.utn.frsf.isi.dan.user.dto.PropietarioRequest;
 import edu.utn.frsf.isi.dan.user.dto.UsuarioResponse;
+import edu.utn.frsf.isi.dan.user.mapper.HuespedMapper;
 import edu.utn.frsf.isi.dan.user.mapper.UsuarioMapper;
 import edu.utn.frsf.isi.dan.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Tag(name = "User Controller", description = "Operaciones para la gestión de usuarios")
 @RestController
@@ -22,6 +25,7 @@ public class UserController {
 
   @Autowired private UserService userService;
   @Autowired private UsuarioMapper usuarioMapper;
+  @Autowired private HuespedMapper huespedMapper;
 
   @Operation(
       summary = "Crear usuario huesped",
@@ -29,7 +33,8 @@ public class UserController {
       responses = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "201",
-            description = "Usuario huesped creado exitosamente"),
+            description =
+                "Usuario huesped creado: devuelve el HuespedResponse y el header Location"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
             description = "Error en la solicitud"),
@@ -38,10 +43,12 @@ public class UserController {
             description = "Error interno del servidor")
       })
   @PostMapping("/huesped")
-  public ResponseEntity<Void> crearUsuarioHuesped(
+  public ResponseEntity<HuespedResponse> crearUsuarioHuesped(
       @RequestBody @Valid HuespedRequest huespedRecord) {
-    userService.crearUsuarioHuesped(huespedRecord);
-    return new ResponseEntity<>(HttpStatus.CREATED);
+    var creado = userService.crearUsuarioHuesped(huespedRecord);
+    // Location relativo al servicio: por el gateway el recurso queda en /users/huespedes/{id}
+    var location = UriComponentsBuilder.fromPath("/huespedes/{id}").buildAndExpand(creado.getId());
+    return ResponseEntity.created(location.toUri()).body(huespedMapper.toResponse(creado));
   }
 
   @Operation(
