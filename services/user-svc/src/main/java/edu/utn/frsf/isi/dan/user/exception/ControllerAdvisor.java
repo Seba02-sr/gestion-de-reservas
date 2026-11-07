@@ -42,6 +42,27 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
     return new ResponseEntity<>(exceptionInfo, HttpStatus.CONFLICT);
   }
 
+  @ExceptionHandler({CredencialesInvalidasException.class, SecurityException.class})
+  public ResponseEntity<ExceptionInfo> handleNoAutenticado(
+      RuntimeException ex, WebRequest request) {
+    ExceptionInfo exceptionInfo =
+        new ExceptionInfo(
+            ex.getMessage(), request.getDescription(false), now(), HttpStatus.UNAUTHORIZED.value());
+    return new ResponseEntity<>(exceptionInfo, HttpStatus.UNAUTHORIZED);
+  }
+
+  @ExceptionHandler(GoogleNoConfiguradoException.class)
+  public ResponseEntity<ExceptionInfo> handleGoogleNoConfigurado(
+      GoogleNoConfiguradoException ex, WebRequest request) {
+    ExceptionInfo exceptionInfo =
+        new ExceptionInfo(
+            ex.getMessage(),
+            request.getDescription(false),
+            now(),
+            HttpStatus.SERVICE_UNAVAILABLE.value());
+    return new ResponseEntity<>(exceptionInfo, HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ExceptionInfo> handleGeneralException(Exception ex, WebRequest request) {
     ExceptionInfo exceptionInfo =
