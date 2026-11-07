@@ -1,0 +1,2490 @@
+{
+  "info": {
+    "name": "DAN - API Gateway (localhost:8080)",
+    "description": "Única colección del TP: todas las requests pasan por el API Gateway ({{gatewayUrl}}). Prefijos: /users → user-svc, /gestion → gestion-svc, /reservas → reservas-svc (StripPrefix=1). OJO: UserController y ReservaController tienen el mismo nombre que el prefijo, por eso /users/users/... y /reservas/reservas/... Empezar por la carpeta '0. Flujo completo' (usa el usuario demo / demo1234 y los hoteles de demo). Variables de colección: huespedId, hotelId, habitacionId, reservaId (las completan los tests). Las variables *Borrable / *Nuevo hay que completarlas a mano antes de usar los DELETE/PUT que las referencian.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "gatewayUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "huespedId",
+      "value": "1"
+    },
+    {
+      "key": "hotelId",
+      "value": "1"
+    },
+    {
+      "key": "habitacionId",
+      "value": "1"
+    },
+    {
+      "key": "reservaId",
+      "value": ""
+    },
+    {
+      "key": "hotelIdNuevo",
+      "value": ""
+    },
+    {
+      "key": "habitacionIdGestion",
+      "value": ""
+    },
+    {
+      "key": "tarifaId",
+      "value": ""
+    },
+    {
+      "key": "tipoIdNuevo",
+      "value": ""
+    },
+    {
+      "key": "amenityId",
+      "value": "1"
+    },
+    {
+      "key": "huespedIdBorrable",
+      "value": ""
+    },
+    {
+      "key": "tarjetaIdBorrable",
+      "value": ""
+    },
+    {
+      "key": "bancoIdBorrable",
+      "value": ""
+    },
+    {
+      "key": "checkIn",
+      "value": ""
+    },
+    {
+      "key": "checkOut",
+      "value": ""
+    },
+    {
+      "key": "promoDesde",
+      "value": ""
+    },
+    {
+      "key": "promoHasta",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Fechas futuras para reservar y promociones (se recalculan en cada request)",
+          "const f = (d) => { const x = new Date(); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); };",
+          "if (!pm.collectionVariables.get(\"checkIn\")) { pm.collectionVariables.set(\"checkIn\", f(60)); pm.collectionVariables.set(\"checkOut\", f(63)); }",
+          "if (!pm.collectionVariables.get(\"promoDesde\")) { pm.collectionVariables.set(\"promoDesde\", f(30)); pm.collectionVariables.set(\"promoHasta\", f(40)); }"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Flujo completo (datos demo)",
+      "description": "Recorrido de punta a punta con el usuario y los hoteles de demo. Ejecutar en orden (Runner).",
+      "item": [
+        {
+          "name": "1. Login (demo / demo1234)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/users/auth/login",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "users",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo\",\n  \"password\": \"demo1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"huespedId\", pm.response.json().userId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Hoteles (toma el primero abierto)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/gestion/hoteles",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "gestion",
+                "hoteles"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const h = pm.response.json().find(x => !x.cerrado);",
+                  "pm.collectionVariables.set(\"hotelId\", h.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Buscar habitaciones disponibles cerca de Santa Fe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/habitaciones/disponibles?lat=-31.6333&lng=-60.7&radioKm=30&checkIn={{checkIn}}&checkOut={{checkOut}}&cantidadHuespedes=2",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "habitaciones",
+                "disponibles"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "-31.6333"
+                },
+                {
+                  "key": "lng",
+                  "value": "-60.7"
+                },
+                {
+                  "key": "radioKm",
+                  "value": "30"
+                },
+                {
+                  "key": "checkIn",
+                  "value": "{{checkIn}}"
+                },
+                {
+                  "key": "checkOut",
+                  "value": "{{checkOut}}"
+                },
+                {
+                  "key": "cantidadHuespedes",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "Las habitaciones llegan a reservas-svc por RabbitMQ (eventos de gestion-svc). Toma la primera."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const l = pm.response.json();",
+                  "pm.test(\"hay resultados\", () => pm.expect(l.length).to.be.above(0));",
+                  "pm.collectionVariables.set(\"habitacionId\", l[0].habitacionId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Detalle de la habitación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/habitaciones/{{habitacionId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "habitaciones",
+                "{{habitacionId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Reservar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/reservas",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habitacionId\": \"{{habitacionId}}\",\n  \"idHuesped\": \"{{huespedId}}\",\n  \"checkIn\": \"{{checkIn}}\",\n  \"checkOut\": \"{{checkOut}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"reservaId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. Mis reservas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/reservas?idHuesped={{huespedId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "idHuesped",
+                  "value": "{{huespedId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7. Pagar una parte (RESERVADA → CONFIRMADA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/reservas/{{reservaId}}/pagos",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "reservas",
+                "{{reservaId}}",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TARJETA\",\n  \"monto\": 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8. Cancelar con pago (409 esperado)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/reservas/{{reservaId}}/estado",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "reservas",
+                "{{reservaId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"CANCELADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9. Review antes del check-out (409 esperado)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/reservas/{{reservaId}}/review-cliente",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "reservas",
+                "{{reservaId}}",
+                "review-cliente"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comentario\": \"Excelente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Solo vale desde el día del check-out. Para probarlo: APP_FECHA_ACTUAL (ver docs/desarrollo.md)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "user-svc (/users)",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "POST login usuario y contraseña",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/auth/login",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"demo\",\n  \"password\": \"demo1234\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "POST login con Google (503 si no hay GOOGLE_CLIENT_ID)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/auth/google",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "auth",
+                    "google"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"credential\": \"<ID_TOKEN>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alta y búsqueda de usuarios (UserController: /users/users/...)",
+          "item": [
+            {
+              "name": "POST alta de huésped (201 + HuespedResponse + Location)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/users/huesped",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "users",
+                    "huesped"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Carla Gomez\",\n  \"email\": \"carla@example.com\",\n  \"telefono\": \"+54 9 342-555-1234\",\n  \"dni\": \"12345678\",\n  \"username\": \"carla\",\n  \"password\": \"secret\",\n  \"fechaNacimiento\": \"1990-01-01\",\n  \"tarjetasCredito\": [\n    {\n      \"numero\": \"5500000000000004\",\n      \"nombreTitular\": \"Usuario Demo\",\n      \"fechaVencimiento\": \"12/2030\",\n      \"cvc\": \"123\",\n      \"esPrincipal\": true,\n      \"idBanco\": 1\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "POST alta de propietario",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/users/propietario",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "users",
+                    "propietario"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Pedro Propietario\",\n  \"email\": \"pedro@example.com\",\n  \"telefono\": \"123\",\n  \"dni\": \"22222222\",\n  \"username\": \"pedro\",\n  \"password\": \"secret\",\n  \"cuentaBancaria\": {\n    \"numeroCuenta\": \"123456\",\n    \"cbu\": \"0110000000000000000001\",\n    \"alias\": \"pedro.hotel\",\n    \"idBanco\": 1\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET usuarios por nombre",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/users?nombre=Demo",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "users"
+                  ],
+                  "query": [
+                    {
+                      "key": "nombre",
+                      "value": "Demo"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET usuario por DNI exacto",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/users/dni/30111222",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "users",
+                    "dni",
+                    "30111222"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET usuarios por DNI (parcial)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/users/buscar-dni?dni=3011",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "users",
+                    "buscar-dni"
+                  ],
+                  "query": [
+                    {
+                      "key": "dni",
+                      "value": "3011"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Huéspedes",
+          "item": [
+            {
+              "name": "GET huéspedes",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET huésped por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes/{{huespedId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes",
+                    "{{huespedId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT actualizar huésped (datos y fecha de nacimiento)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes/{{huespedId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes",
+                    "{{huespedId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Usuario Demo\",\n  \"email\": \"demo@reservas-demo.example\",\n  \"telefono\": \"+54 342 400-0000\",\n  \"dni\": \"30111222\",\n  \"fechaNacimiento\": \"1990-05-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "DELETE huésped (borra en cascada sus tarjetas)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes/{{huespedIdBorrable}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes",
+                    "{{huespedIdBorrable}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET buscar por nombre",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes/buscar?nombre=Demo",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes",
+                    "buscar"
+                  ],
+                  "query": [
+                    {
+                      "key": "nombre",
+                      "value": "Demo"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET por DNI (path)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes/dni/30111222",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes",
+                    "dni",
+                    "30111222"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET por DNI (query)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes/dni?dni=30111222",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes",
+                    "dni"
+                  ],
+                  "query": [
+                    {
+                      "key": "dni",
+                      "value": "30111222"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET tarjetas del huésped (número enmascarado, sin CVC)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes/{{huespedId}}/tarjetas",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes",
+                    "{{huespedId}}",
+                    "tarjetas"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST agregar tarjeta",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/huespedes/{{huespedId}}/tarjetas",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "huespedes",
+                    "{{huespedId}}",
+                    "tarjetas"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numero\": \"5500000000000004\",\n  \"nombreTitular\": \"Usuario Demo\",\n  \"fechaVencimiento\": \"12/2030\",\n  \"cvc\": \"123\",\n  \"esPrincipal\": false,\n  \"idBanco\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Propietarios (no se pueden borrar)",
+          "item": [
+            {
+              "name": "GET propietarios",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/propietarios",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "propietarios"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET propietario por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/propietarios/1",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "propietarios",
+                    "1"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT actualizar propietario",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/propietarios/1",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "propietarios",
+                    "1"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Pedro Propietario\",\n  \"email\": \"pedro@example.com\",\n  \"telefono\": \"123\",\n  \"dni\": \"22222222\",\n  \"username\": \"pedro\",\n  \"password\": \"secret\",\n  \"cuentaBancaria\": {\n    \"numeroCuenta\": \"123456\",\n    \"cbu\": \"0110000000000000000001\",\n    \"alias\": \"pedro.hotel\",\n    \"idBanco\": 1\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "DELETE propietario (409/400: no permitido)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/propietarios/1",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "propietarios",
+                    "1"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET buscar por nombre",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/propietarios/buscar?nombre=Pedro",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "propietarios",
+                    "buscar"
+                  ],
+                  "query": [
+                    {
+                      "key": "nombre",
+                      "value": "Pedro"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET por DNI (query)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/propietarios/dni?dni=22222222",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "propietarios",
+                    "dni"
+                  ],
+                  "query": [
+                    {
+                      "key": "dni",
+                      "value": "22222222"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET por DNI (path)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/propietarios/dni/22222222",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "propietarios",
+                    "dni",
+                    "22222222"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tarjetas de crédito",
+          "item": [
+            {
+              "name": "GET tarjeta por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/tarjetas/1",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "tarjetas",
+                    "1"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT actualizar tarjeta",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/tarjetas/1",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "tarjetas",
+                    "1"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numero\": \"5500000000000004\",\n  \"nombreTitular\": \"Usuario Demo\",\n  \"fechaVencimiento\": \"12/2030\",\n  \"cvc\": \"123\",\n  \"esPrincipal\": false,\n  \"idBanco\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "PUT marcar como principal",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/tarjetas/1/set-principal",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "tarjetas",
+                    "1",
+                    "set-principal"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "DELETE tarjeta (solo si no es la principal)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/tarjetas/{{tarjetaIdBorrable}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "tarjetas",
+                    "{{tarjetaIdBorrable}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bancos (cargados al arrancar si la tabla está vacía)",
+          "item": [
+            {
+              "name": "GET bancos",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/bancos",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "bancos"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST banco",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/bancos",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "bancos"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Banco Postman\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET banco por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/bancos/1",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "bancos",
+                    "1"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT banco",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/bancos/1",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "bancos",
+                    "1"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Banco de la Nación Argentina\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "DELETE banco",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/bancos/{{bancoIdBorrable}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "bancos",
+                    "{{bancoIdBorrable}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET buscar bancos por nombre",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/users/bancos/buscar?nombre=Banco",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "bancos",
+                    "buscar"
+                  ],
+                  "query": [
+                    {
+                      "key": "nombre",
+                      "value": "Banco"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET info (qué instancia respondió)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/users/info",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "users",
+                "info"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "gestion-svc (/gestion)",
+      "item": [
+        {
+          "name": "Hoteles",
+          "item": [
+            {
+              "name": "GET hoteles",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST registrar hotel (CUIT válido)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles/registrar",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles",
+                    "registrar"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Hotel Postman\",\n  \"cuit\": \"30999999995\",\n  \"domicilio\": \"Bv. Pellegrini 2500, Santa Fe\",\n  \"latitud\": -31.6333,\n  \"longitud\": -60.7,\n  \"telefono\": \"342-4555000\",\n  \"correoContacto\": \"postman@example.com\",\n  \"categoria\": 4\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"hotelIdNuevo\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET hotel por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles/{{hotelId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles",
+                    "{{hotelId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT actualizar hotel (solo categoría, teléfono y correo)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles/{{hotelIdNuevo}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles",
+                    "{{hotelIdNuevo}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"categoria\": 5,\n  \"telefono\": \"342-4555001\",\n  \"correoContacto\": \"nuevo@example.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET consultar hoteles (nombre, cuit, domicilio, categoria, amenities)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles/consultar?categoria=4&amenities=WIFI&amenities=PILETA",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles",
+                    "consultar"
+                  ],
+                  "query": [
+                    {
+                      "key": "categoria",
+                      "value": "4"
+                    },
+                    {
+                      "key": "amenities",
+                      "value": "WIFI"
+                    },
+                    {
+                      "key": "amenities",
+                      "value": "PILETA"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT agregar amenities",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles/{{hotelIdNuevo}}/amenities",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles",
+                    "{{hotelIdNuevo}}",
+                    "amenities"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "[\n  {\n    \"amenity\": \"WIFI\"\n  },\n  {\n    \"amenity\": \"PILETA\"\n  }\n]",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET amenities del hotel",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles/{{hotelId}}/amenities",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles",
+                    "{{hotelId}}",
+                    "amenities"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "DELETE quitar amenity",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles/{{hotelIdNuevo}}/amenities/{{amenityId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles",
+                    "{{hotelIdNuevo}}",
+                    "amenities",
+                    "{{amenityId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT cerrar hotel (sus habitaciones dejan de estar disponibles)",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/hoteles/{{hotelIdNuevo}}/cerrar",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "hoteles",
+                    "{{hotelIdNuevo}}",
+                    "cerrar"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tipos de habitación",
+          "item": [
+            {
+              "name": "GET tipos",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tipos-habitacion",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tipos-habitacion"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST tipo",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tipos-habitacion",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tipos-habitacion"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"SUITE\",\n  \"descripcion\": \"Suite con living\",\n  \"capacidad\": 4\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET tipo por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tipos-habitacion/3",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tipos-habitacion",
+                    "3"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT tipo",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tipos-habitacion/{{tipoIdNuevo}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tipos-habitacion",
+                    "{{tipoIdNuevo}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"SUITE\",\n  \"descripcion\": \"Suite con living y balcón\",\n  \"capacidad\": 4\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "DELETE tipo",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tipos-habitacion/{{tipoIdNuevo}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tipos-habitacion",
+                    "{{tipoIdNuevo}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tarifas (solo POST y DELETE)",
+          "item": [
+            {
+              "name": "GET tarifas (por tipo)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tarifas?idTipoHabitacion=3",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tarifas"
+                  ],
+                  "query": [
+                    {
+                      "key": "idTipoHabitacion",
+                      "value": "3"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET tarifa vigente de un tipo",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tarifas/vigente?idTipoHabitacion=3",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tarifas",
+                    "vigente"
+                  ],
+                  "query": [
+                    {
+                      "key": "idTipoHabitacion",
+                      "value": "3"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET tarifa por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tarifas/1",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tarifas",
+                    "1"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST tarifa común (la actual termina ayer, la nueva rige desde hoy)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tarifas",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tarifas"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Tarifa Postman\",\n  \"idTipoHabitacion\": 3,\n  \"precioNoche\": 50000\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"tarifaId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST tarifa especial / promoción (con fechas)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tarifas",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tarifas"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Promo Postman\",\n  \"idTipoHabitacion\": 3,\n  \"precioNoche\": 35000,\n  \"fechaInicio\": \"{{promoDesde}}\",\n  \"fechaFin\": \"{{promoHasta}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "DELETE tarifa (409 si es la única del tipo)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/tarifas/{{tarifaId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "tarifas",
+                    "{{tarifaId}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Habitaciones (cada operación publica un evento RabbitMQ a reservas-svc)",
+          "item": [
+            {
+              "name": "GET habitaciones (filtros opcionales)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/habitaciones?cantidadHuespedes=2&precioMin=1000&precioMax=100000",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "habitaciones"
+                  ],
+                  "query": [
+                    {
+                      "key": "cantidadHuespedes",
+                      "value": "2"
+                    },
+                    {
+                      "key": "precioMin",
+                      "value": "1000"
+                    },
+                    {
+                      "key": "precioMax",
+                      "value": "100000"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST crear habitación",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/habitaciones",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "habitaciones"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numero\": 901,\n  \"piso\": 9,\n  \"idTipoHabitacion\": 3,\n  \"idHotel\": \"{{hotelIdNuevo}}\",\n  \"disponible\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"habitacionIdGestion\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET habitación por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/habitaciones/{{habitacionIdGestion}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "habitaciones",
+                    "{{habitacionIdGestion}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "PUT modificar habitación",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/habitaciones/{{habitacionIdGestion}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "habitaciones",
+                    "{{habitacionIdGestion}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"numero\": 901,\n  \"piso\": 9,\n  \"idTipoHabitacion\": 5,\n  \"idHotel\": \"{{hotelIdNuevo}}\",\n  \"disponible\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "DELETE habitación",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/habitaciones/{{habitacionIdGestion}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "habitaciones",
+                    "{{habitacionIdGestion}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET tarifa vigente de la habitación",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/habitaciones/{{habitacionIdGestion}}/tarifa-vigente",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "habitaciones",
+                    "{{habitacionIdGestion}}",
+                    "tarifa-vigente"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET ¿está disponible? (lo consulta reservas-svc por Feign)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/gestion/habitaciones/{{habitacionIdGestion}}/disponible",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "gestion",
+                    "habitaciones",
+                    "{{habitacionIdGestion}}",
+                    "disponible"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET info (qué instancia respondió)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/gestion/info",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "gestion",
+                "info"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "reservas-svc (/reservas)",
+      "item": [
+        {
+          "name": "Habitaciones (réplica de solo lectura, se actualiza por RabbitMQ)",
+          "item": [
+            {
+              "name": "GET habitaciones disponibles (todos los filtros)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/habitaciones/disponibles?checkIn={{checkIn}}&checkOut={{checkOut}}&cantidadHuespedes=2&precioMin=10000&precioMax=100000&estrellas=3&amenities=WIFI&lat=-31.6333&lng=-60.7&radioKm=30&hotelId={{hotelId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "habitaciones",
+                    "disponibles"
+                  ],
+                  "query": [
+                    {
+                      "key": "checkIn",
+                      "value": "{{checkIn}}"
+                    },
+                    {
+                      "key": "checkOut",
+                      "value": "{{checkOut}}"
+                    },
+                    {
+                      "key": "cantidadHuespedes",
+                      "value": "2"
+                    },
+                    {
+                      "key": "precioMin",
+                      "value": "10000"
+                    },
+                    {
+                      "key": "precioMax",
+                      "value": "100000"
+                    },
+                    {
+                      "key": "estrellas",
+                      "value": "3"
+                    },
+                    {
+                      "key": "amenities",
+                      "value": "WIFI"
+                    },
+                    {
+                      "key": "lat",
+                      "value": "-31.6333"
+                    },
+                    {
+                      "key": "lng",
+                      "value": "-60.7"
+                    },
+                    {
+                      "key": "radioKm",
+                      "value": "30"
+                    },
+                    {
+                      "key": "hotelId",
+                      "value": "{{hotelId}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET todas las habitaciones",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/habitaciones",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "habitaciones"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET habitación por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/habitaciones/{{habitacionId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "habitaciones",
+                    "{{habitacionId}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reservas (UserController y ReservaController repiten el segmento: /reservas/reservas)",
+          "item": [
+            {
+              "name": "POST crear reserva (201; 409 fechas ocupadas o sin tarifa; 404 huésped inexistente; 503 si user-svc cae)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"habitacionId\": \"{{habitacionId}}\",\n  \"idHuesped\": \"{{huespedId}}\",\n  \"checkIn\": \"{{checkIn}}\",\n  \"checkOut\": \"{{checkOut}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"reservaId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST crear reserva — huésped inexistente (404)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"habitacionId\": \"{{habitacionId}}\",\n  \"idHuesped\": 999999,\n  \"checkIn\": \"{{checkIn}}\",\n  \"checkOut\": \"{{checkOut}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "POST bloquear habitación (BLOQUEADA)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas/bloqueos",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas",
+                    "bloqueos"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"habitacionId\": \"{{habitacionId}}\",\n  \"checkIn\": \"{{checkIn}}\",\n  \"checkOut\": \"{{checkOut}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET reservas de un huésped",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas?idHuesped={{huespedId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas"
+                  ],
+                  "query": [
+                    {
+                      "key": "idHuesped",
+                      "value": "{{huespedId}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET reserva por id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas/{{reservaId}}",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas",
+                    "{{reservaId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST pago (primer pago: RESERVADA → CONFIRMADA)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas/{{reservaId}}/pagos",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas",
+                    "{{reservaId}}",
+                    "pagos"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"method\": \"TARJETA\",\n  \"monto\": 1000\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "PATCH estado (CANCELADA solo sin pagos; FINALIZADA → ADEUDADA si falta review o pago)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas/{{reservaId}}/estado",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas",
+                    "{{reservaId}}",
+                    "estado"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"estado\": \"CANCELADA\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "PUT review del cliente (desde el día del check-out)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas/{{reservaId}}/review-cliente",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas",
+                    "{{reservaId}}",
+                    "review-cliente"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 5,\n  \"comentario\": \"Excelente\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "PUT review del dueño",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gatewayUrl}}/reservas/reservas/{{reservaId}}/review-dueno",
+                  "host": [
+                    "{{gatewayUrl}}"
+                  ],
+                  "path": [
+                    "reservas",
+                    "reservas",
+                    "{{reservaId}}",
+                    "review-dueno"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 4,\n  \"comentario\": \"Buen huésped\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET info (qué instancia respondió)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/reservas/info",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "info"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gateway / seguridad",
+      "item": [
+        {
+          "name": "El gateway NO enruta el actuator (404)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/users/actuator/shutdown",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "users",
+                "actuator",
+                "shutdown"
+              ]
+            },
+            "description": "También /gestion/actuator/** y /reservas/actuator/**."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Swagger unificado (abrir en el navegador)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/swagger-ui.html",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "swagger-ui.html"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
