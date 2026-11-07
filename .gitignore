@@ -38,3 +38,8 @@ buildNumber.properties
 
 # Otros
 *.class
+
+# Node: las dependencias se instalan solo dentro de frontend/ (npm install en la raíz las creó por error)
+node_modules/
+/package.json
+/package-lock.json
