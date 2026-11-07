@@ -90,24 +90,24 @@ Build local y preview
 Requisitos
 - Docker Desktop o Docker Engine + Docker Compose plugin
 
-Primera vez o cambios en código
-- En la raíz del repo: `docker compose up --build -d`
-- Abrir `http://localhost:8080`
+Levantar todo (backend + frontend), desde la raíz del repo
+- `docker compose -f docker/docker-compose.yml up -d --build`
+- Abrir `http://localhost:5173` (nginx sirve el build y reenvía `/api/**` al gateway)
 
-Siguientes ejecuciones
-- `docker compose up -d`
+Rebuild rápido tras cambios en el front
+- `docker compose -f docker/docker-compose.yml build frontend && docker compose -f docker/docker-compose.yml up -d frontend`
 
-Rebuild rápido tras cambios
-- `docker compose build frontend && docker compose up -d`
+Desarrollo con recarga en caliente (Vite)
+- `docker compose -f docker/docker-compose.yml --profile dev up -d frontend-dev` → `http://localhost:5174`
 
 Estructura
-- `frontend/Dockerfile`: build multi-stage (Node → Nginx)
-- `frontend/nginx.conf`: SPA fallback y cache estáticos
-- `docker-compose.yml`: servicio `frontend` en puerto `8080:80`
+- `docker/frontend.Dockerfile`: build multi-stage (Node → nginx sin root); `VITE_*` entran como build args
+- `frontend/nginx.conf`: proxy `/api/` al gateway, SPA fallback y cache de estáticos
+- `docker/docker-compose.yml`: servicios `frontend` (producción, 5173) y `frontend-dev` (perfil `dev`, 5174)
 
 Troubleshooting
-- Si ves “Welcome to nginx”, reconstruí el build: `docker compose build --no-cache frontend && docker compose up -d`
-- Ver logs: `docker compose logs -f frontend`
+- Si ves “Welcome to nginx”, reconstruí el build: `docker compose -f docker/docker-compose.yml build --no-cache frontend`
+- Ver logs: `docker compose -f docker/docker-compose.yml logs -f frontend`
 
 ---
 

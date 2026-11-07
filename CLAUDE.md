@@ -15,13 +15,18 @@ services/user-svc/           # usuarios (MySQL)            -> 8080 interno
 services/reservas-svc/       # reservas (MongoDB)          -> 8080 interno
 services/gestion-svc/        # hoteles/habitaciones/tarifas (PostgreSQL) -> 8080 interno
 frontend/                    # React + Vite
-infra/                       # configs montadas por docker (mysql, postgres/initdb, pgadmin, phpmyadmin, rabbitmq)
-docker-compose.yml           # compose que se usa (raíz)
-docs/                        # documentación del proyecto
+docker/                      # TODO lo de Docker (consigna de entrega): compose, Dockerfiles y configs
+  docker-compose.yml         #   compose principal (perfiles observability, tools, dev)
+  docker-compose.dev-ports.yml  # override opcional: publica las bases en el host
+  backend.Dockerfile         #   multi-etapa (Maven+JDK21 -> un target JRE21 por servicio)
+  frontend.Dockerfile        #   Node -> nginx sin root
+  config/                    #   rabbitmq, postgres/initdb, mysql, pgadmin, phpmyadmin, otel, tempo, loki, prometheus, grafana
+docker-compose.yml           # solo `include` de docker/docker-compose.yml
+docs/                        # documentación (README para quien corrige en la raíz), docs/postman con la colección única
 ETAPA01.md, ETAPA02.md       # enunciados; PRACTICA_02.pdf, TP_PARTE_02.pdf
 ```
 
-`infra/docker-compose.yml` es una versión anterior/legada (sin profiles ni frontend): **el compose vigente es el de la raíz**.
+**El compose vigente es `docker/docker-compose.yml`** (el de la raíz solo lo incluye con `include`). Antes había un `infra/docker-compose.yml` legado y Dockerfiles por servicio que exigían `target/*.jar`: se eliminaron para que haya una sola fuente de verdad.
 
 Mensajería asíncrona: RabbitMQ (gestion-svc publica eventos de hoteles/habitaciones/tarifas; reservas-svc los consume). Las clases del evento viven en `dan-common-lib`.
 
@@ -46,29 +51,28 @@ export PATH="/c/Program Files/Eclipse Adoptium/jdk-21.0.12.101-hotspot/bin:$PATH
 
 ```bash
 ./mvnw clean install                 # compila todo y corre tests
-./mvnw -DskipTests clean package     # solo JARs (los Dockerfile copian target/*.jar)
 ./mvnw spotless:apply                # formatear (obligatorio antes de commitear)
 
-cp .env.example .env                 # elegir COMPOSE_PROFILES (ver README)
-docker compose up -d --build         # levanta lo que digan los profiles
-docker compose down                  # o `down -v` para borrar volúmenes
+# Docker: no hace falta compilar antes, el Dockerfile compila el reactor dentro de la imagen
+docker compose -f docker/docker-compose.yml up -d --build    # app completa, sin .env ni perfiles
+docker compose -f docker/docker-compose.yml down             # o `down -v` para borrar volúmenes
 ```
 
-Profiles del compose raíz: `frontend`, `prod`, `infra`, `eureka`, `user`, `reservas`, `gestion`, `gateway`, `observability` (Eureka arranca solo con cualquiera de los de servicio). Ej. todo: `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway,observability`.
+**Sin perfiles** levanta la app completa (MySQL, PostgreSQL, MongoDB, RabbitMQ, Eureka, user/gestion/reservas, gateway y el frontend de producción en nginx, 5173). Perfiles opcionales: `observability` (Collector, Tempo, Loki, Prometheus, Grafana), `tools` (pgAdmin, phpMyAdmin, Mongo Express) y `dev` (servicio `frontend-dev`, Vite en caliente en 5174). Todas las variables tienen valor por defecto `${VAR:-valor}` (no hace falta `.env`). `DEMO_DATOS_HABILITADO` (true en Docker) carga los datos de demo (ver "Datos de demo").
 
 Tests de un servicio: `./mvnw -pl services/gestion-svc test`.
 
 > **Windows/OneDrive:** el repo está dentro de OneDrive y a veces `clean` falla con "Failed to delete ...\target\classes\..." por un lock (OneDrive o el language server de Java). Solución: borrar los `target/` a mano y reintentar.
 
 ### MySQL (user-svc): el esquema lo crea Hibernate
-El compose raíz **no monta `infra/mysql/initdb`** en el servicio `mysql` (solo el volumen `mysql_data`), así que las tablas las crea Hibernate con `spring.jpa.hibernate.ddl-auto=update`. `infra/mysql/initdb/01_schema.sql` es solo referencia (alineado con las entidades) y su `ON DELETE CASCADE` **no existe** en la base real: el borrado de un huésped elimina sus tarjetas únicamente por el cascade JPA (`Huesped.tarjetaCredito`: `cascade = ALL` + `orphanRemoval`), verificado en `HuespedBorradoCascadaTest` (H2). No hay que depender de FKs de la base para esa regla.
+El compose **no monta `docker/config/mysql/initdb`** en el servicio `mysql` (solo el volumen `mysql_data`), así que las tablas las crea Hibernate con `spring.jpa.hibernate.ddl-auto=update`. `docker/config/mysql/initdb/01_schema.sql` es solo referencia (alineado con las entidades) y su `ON DELETE CASCADE` **no existe** en la base real: el borrado de un huésped elimina sus tarjetas únicamente por el cascade JPA (`Huesped.tarjetaCredito`: `cascade = ALL` + `orphanRemoval`), verificado en `HuespedBorradoCascadaTest` (H2). No hay que depender de FKs de la base para esa regla.
 
 ### initdb y volúmenes (PostgreSQL y demás bases que sí montan initdb)
-Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) solo se ejecutan cuando el volumen de la base está vacío. **Si cambia un script de initdb hay que recrear el volumen**: `docker compose down -v` (borra todo) o borrar solo el volumen de esa base (`docker volume ls` → `docker volume rm <proyecto>_postgres_data`, `..._mysql_data`, `..._mongo_data`).
+Los scripts de `docker/config/*/initdb` (p. ej. `docker/config/postgres/initdb/01_schema.sql`) solo se ejecutan cuando el volumen de la base está vacío. **Si cambia un script de initdb hay que recrear el volumen**: `docker compose -f docker/docker-compose.yml down -v` (borra todo) o borrar solo el volumen de esa base (`docker volume ls` → `docker volume rm <proyecto>_postgres_data`, `..._mysql_data`, `..._mongo_data`).
 
 ### PostgreSQL (gestion-svc) y mensajería de habitaciones
-- `infra/postgres/initdb/01_schema.sql` **sí** se monta y gestion-svc corre con `ddl-auto=none`: la columna `habitacion.disponible` y la restricción `UNIQUE (id_hotel, numero)` (`uq_habitacion_hotel_numero`) solo existen si se recrea el volumen (`docker compose down -v` o `docker volume rm <proyecto>_postgres_data`).
-- gestion-svc publica en el exchange topic `dan.exchange` con routing key `dan.habitacion.<accion>` (`crear`, `actualizar`, `eliminar`, `cerrar-hotel`); reservas-svc escucha la cola `habitacion.topic` (binding `dan.habitacion.#`, ver `infra/rabbitmq/definitions.json`). Propiedades: `rabbitmq.exchange` y `rabbitmq.routingkey.prefix`.
+- `docker/config/postgres/initdb/01_schema.sql` **sí** se monta y gestion-svc corre con `ddl-auto=none`: la columna `habitacion.disponible` y la restricción `UNIQUE (id_hotel, numero)` (`uq_habitacion_hotel_numero`) solo existen si se recrea el volumen (`docker compose -f docker/docker-compose.yml down -v` o `docker volume rm <proyecto>_postgres_data`).
+- gestion-svc publica en el exchange topic `dan.exchange` con routing key `dan.habitacion.<accion>` (`crear`, `actualizar`, `eliminar`, `cerrar-hotel`); reservas-svc escucha la cola `habitacion.topic` (binding `dan.habitacion.#`, ver `docker/config/rabbitmq/definitions.json`). Propiedades: `rabbitmq.exchange` y `rabbitmq.routingkey.prefix`.
 - Los mensajes se envían **después del commit** (`@TransactionalEventListener(AFTER_COMMIT)` en `HabitacionEventPublisher`); si la transacción hace rollback no sale nada. Eventos: `CREAR`/`ACTUALIZAR_DATOS`/`ELIMINAR` (alta, modificación y baja de habitación), `ACTUALIZAR_DATOS` por cada habitación cuando cambia el hotel o sus amenities, y `CERRAR_HOTEL` (un mensaje con `hotelId`, `habitacionIds` y `fechaCierre`; reservas-svc por ahora solo lo registra: falta crear las reservas CERRADA).
 
 ### Tarifas (gestion-svc)
@@ -83,9 +87,9 @@ Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) s
 - Los tests de integración usan Testcontainers (`mongo:7`, cliente 1.21.4 por Docker 29) y se saltean si no hay Docker.
 - **Simular la fecha de hoy** (`app.fecha-actual`, vacía = fecha real; variable `APP_FECHA_ACTUAL` en el compose). Sirve para probar en Swagger lo que solo vale después del check-out (`review-cliente`, finalizar):
   1. Con la fecha real: crear la reserva (`POST /reservas`, check-in ≥ hoy) y pagar.
-  2. Recrear reservas-svc con una fecha posterior al check-out. Bash: `APP_FECHA_ACTUAL=2027-01-15 docker compose up -d reservas-svc`. PowerShell: `$env:APP_FECHA_ACTUAL="2027-01-15"; docker compose up -d reservas-svc`. (También se puede poner `APP_FECHA_ACTUAL=...` en `.env`.) El log muestra un WARN "FECHA SIMULADA".
+  2. Recrear reservas-svc con una fecha posterior al check-out. Bash: `APP_FECHA_ACTUAL=2027-01-15 docker compose -f docker/docker-compose.yml up -d reservas-svc`. PowerShell: `$env:APP_FECHA_ACTUAL="2027-01-15"; docker compose -f docker/docker-compose.yml up -d reservas-svc`. (También se puede poner `APP_FECHA_ACTUAL=...` en un `.env` dentro de `docker/`.) El log muestra un WARN "FECHA SIMULADA".
   3. Probar `PUT /reservas/{id}/review-cliente` y `PATCH /reservas/{id}/estado` con `FINALIZADA`.
-  4. Volver a la fecha real: recrear el servicio sin la variable (`Remove-Item Env:APP_FECHA_ACTUAL` / `unset APP_FECHA_ACTUAL`, y sacarla de `.env`; luego `docker compose up -d reservas-svc`).
+  4. Volver a la fecha real: recrear el servicio sin la variable (`Remove-Item Env:APP_FECHA_ACTUAL` / `unset APP_FECHA_ACTUAL`, y sacarla del `.env` si la pusiste ahí; luego `docker compose -f docker/docker-compose.yml up -d reservas-svc`).
   Con la fecha simulada el reloj queda fijo ese día a las 12:00; no uses la fecha simulada en un entorno real.
 
 ## Puertos
@@ -94,14 +98,13 @@ Los scripts de `infra/*/initdb` (p. ej. `infra/postgres/initdb/01_schema.sql`) s
 |---|---|
 | API Gateway (único punto de entrada + Swagger unificado) | 8080 |
 | Eureka (dashboard) | 8761 |
-| Grafana / Prometheus (profile `observability`) | 3000 / 9090 |
-| OpenTelemetry Collector (OTLP gRPC / HTTP) | 4317 / 4318 |
+| Grafana / Prometheus (perfil `observability`) | 3000 / 9090 |
 | user-svc / reservas-svc / gestion-svc | sin puerto en el host (8080 interno): se llega por el gateway |
-| Frontend (dev/prod) | 5173 |
-| MySQL / phpMyAdmin | 3306 / 6080 |
-| PostgreSQL / pgAdmin | 5432 / 6081 |
-| MongoDB / Mongo Express | 27017 / 6091 |
-| RabbitMQ / consola | 5672 / 15672 (admin/admin) |
+| Frontend (nginx de producción) / Vite (perfil `dev`) | 5173 / 5174 |
+| RabbitMQ consola | 15672 (admin/admin) |
+| phpMyAdmin / pgAdmin / Mongo Express (perfil `tools`) | 6080 / 6081 / 6091 |
+| MySQL / PostgreSQL / MongoDB / AMQP (solo con `docker/docker-compose.dev-ports.yml`) | 3306 / 5432 / 27017 / 5672 |
+| OTel Collector, Tempo, Loki | no se publican (red de Docker) |
 
 (Dentro de docker los servicios escuchan en 8080. Desde la Etapa 4 no se publican en el host para poder escalarlos; ver "Eureka y escalado".)
 
@@ -138,7 +141,7 @@ Como los controllers no se renombraron, `UserController` (`/users`) y `ReservaCo
 - **Eureka Server** (`common/dan-eureka-server`, 8761, dashboard `http://localhost:8761`). Los 4 clientes (user, gestion, reservas y el gateway) se registran con el **perfil de Spring `eureka`** (`application-eureka.properties`, que el compose activa con `SPRING_PROFILES_ACTIVE=eureka`). Sin ese perfil `eureka.client.enabled=false`: los tests y correr un servicio desde el IDE no necesitan Eureka. Con el perfil, el gateway enruta con `lb://user-svc|gestion-svc|reservas-svc` (+ `StripPrefix=1`); como Spring Boot enlaza una lista indexada desde una sola fuente, el perfil repite las 3 rutas completas.
 - `eureka.server.enable-self-preservation=false` y expulsión cada 5 s son valores **solo de desarrollo** (para ver rápido que una instancia caída desaparece).
 - **`GET /info`** en cada servicio: `{servicio, instancia, ip, hora}`; `instancia` es el `HOSTNAME` del contenedor. Por el gateway: `/users/info`, `/gestion/info`, `/reservas/info`.
-- **Escalar**: `docker compose up -d --scale gestion-svc=3` (los servicios no tienen `container_name` ni puertos fijos; `instance-id` = `<servicio>:<HOSTNAME>`). Llamar varias veces a `http://localhost:8080/gestion/info` y ver que cambian `instancia` e `ip`.
+- **Escalar**: `docker compose -f docker/docker-compose.yml up -d --scale gestion-svc=3` (los servicios no tienen `container_name` ni puertos fijos; `instance-id` = `<servicio>:<HOSTNAME>`). Llamar varias veces a `http://localhost:8080/gestion/info` y ver que cambian `instancia` e `ip`.
 - Ejecutar un servicio **fuera de docker** (IDE): sin perfil `eureka`; para que reservas-svc llegue a los otros definir `clients.user-svc.url=http://localhost:8081` y `clients.gestion-svc.url=http://localhost:8083` (los puertos que uno elija al correrlos).
 
 ### Qué pasa al escalar
@@ -167,7 +170,7 @@ logs      (PUSH):  servicio ──OTLP/HTTP:4318──> otel-collector ──OTL
 Grafana (:3000, admin/admin) lee de Prometheus, Loki y Tempo (datasources provisionados con uid fijo)
 ```
 
-- **Cómo levantarlo**: `COMPOSE_PROFILES=infra,eureka,user,reservas,gestion,gateway,observability docker compose up -d --build`. UI: Grafana `http://localhost:3000` (dashboard "DAN — Servicios"), Prometheus `http://localhost:9090`. Loki y Tempo no se publican en el host (se consultan desde Grafana). Para generar datos: `.\scripts\generar-trafico.ps1` (PowerShell).
+- **Cómo levantarlo**: `docker compose -f docker/docker-compose.yml --profile observability up -d --build` (la exportación OTLP de los servicios está siempre encendida: sin el perfil no hay collector y no pasa nada). UI: Grafana `http://localhost:3000` (dashboard "DAN — Servicios"), Prometheus `http://localhost:9090`. Loki y Tempo no se publican en el host (se consultan desde Grafana). Para generar datos: `.\scripts\generar-trafico.ps1` (PowerShell).
 - **Qué se corrigió respecto de la implementación de la cátedra** (`ETAPA05-OBSERVABILIDAD.md`, solo referencia): (1) las propiedades `otel.*` son del agente Java y Spring Boot no las lee: acá se usa `management.tracing.*` y `management.otlp.tracing|logging.*` de Boot 3.5; (2) el collector enviaba las trazas a Tempo:3200 (API de consulta): el receptor OTLP es 4317; (3) el exporter `loki` del collector-contrib fue removido: Loki recibe OTLP nativo (`otlphttp` a `/otlp`, esquema v13 + tsdb + metadatos estructurados) y **Promtail ya no hace falta** (los logs salen por OTLP desde un appender de logback; funciona en Docker Desktop/Windows y los logs llevan `trace_id`/`span_id`); (4) Prometheus usa `eureka_sd_configs`, no targets fijos: las réplicas de `--scale` aparecen solas; (5) imágenes fijadas, no `latest`.
 - **Config Spring** (bloque "Observabilidad" de cada `application.properties`): `management.otlp.tracing.endpoint` / `management.otlp.logging.endpoint` (`OTEL_COLLECTOR_URL`, por defecto `http://otel-collector:4318`), `management.tracing.sampling.probability` (`TRACING_SAMPLING`, 1.0 en desarrollo; bajarlo en producción). La exportación está **apagada por defecto** (tests, IDE); el compose la enciende con `MANAGEMENT_OTLP_*_EXPORT_ENABLED=${OTEL_EXPORT_ENABLED:-true}`. Sin collector la app arranca y responde igual y no genera errores en el log; `OTEL_EXPORT_ENABLED=false` en `.env` la apaga del todo. Los logs usan `logback-spring.xml` con `OpenTelemetryAppender` (instalado por `ObservabilityConfig`).
 - **Versiones de OpenTelemetry**: Spring Boot 3.5.16 gestiona el SDK 1.49.0; el appender se fija en `opentelemetry-logback-appender-1.0:2.15.0-alpha` (propiedad `opentelemetry-instrumentation.version` del pom raíz), la línea de instrumentación que usa ese SDK. La 2.16.0-alpha trae el SDK 1.50.0 y mezclaría versiones. Comprobar con `./mvnw dependency:tree -Dincludes=io.opentelemetry`.
@@ -176,8 +179,8 @@ Grafana (:3000, admin/admin) lee de Prometheus, Loki y Tempo (datasources provis
 - **Ruido filtrado**: `ObservabilityConfig` descarta como observaciones los pedidos a `/actuator/**` (scrapes de Prometheus) y los heartbeats al servidor Eureka; si no, llenarían Tempo.
 - **Seguridad del actuator**: los 4 servicios exponen solo `health`, `info` y `prometheus` (`management.endpoints.web.exposure.include`), `shutdown` deshabilitado (`management.endpoint.shutdown.access=none`), `health.show-details=never`. En Docker el actuator escucha en un **puerto de gestión aparte (9091, `MANAGEMENT_SERVER_PORT`)** que no se publica en el host ni enruta el gateway: Prometheus lo lee por la red de Docker. El gateway además corta `/<servicio>/actuator/**` con 404. Tests: `ActuatorExposureTest` (4 módulos) y `GatewayActuatorBlockTest`. Eureka Server (8761) mantiene `health,info` y no se instrumenta.
 - **Eureka con el puerto 9091**: cada instancia registra `homePageUrl` en `:8080` y `statusPageUrl`/`healthCheckUrl` en `http://<ip>:9091/actuator/{info,health}` (verificable en `http://localhost:8761/eureka/apps`). Las IPs de contenedor no son alcanzables desde el navegador del host (tampoco antes, con el 8080): el link del dashboard muestra la URL pero se abre solo desde dentro de la red de Docker. El único healthcheck de actuator en el compose es el de Eureka sobre su propio puerto.
-- **Prometheus**: job `dan-servicios` (`job` = nombre de la app en minúsculas, `instance` = `<servicio>:<id del contenedor>`, `__address__` = `<ip>:9091`); jobs estáticos solo para `prometheus` y `otel-collector:8888`. El puerto 9091 está fijo en `infra/prometheus/prometheus.yml`.
-- **Dashboard** (`infra/grafana/dashboards/dan-servicios.json`, variables `job`/`instance`): instancias vivas, pedidos/seg, latencia p50/p95/media por servicio, errores 5xx por servicio y URI, % 5xx, heap/no-heap/GC/threads/CPU, y **estado del circuit breaker** (cerrado/semiabierto/abierto, tasa de fallos, llamadas rechazadas, llamadas por resultado). Saltos: Loki → Tempo (derived field `trace_id`) y Tempo → Loki (`tracesToLogsV2`, filtra `{service_name=…} | trace_id=…`).
+- **Prometheus**: job `dan-servicios` (`job` = nombre de la app en minúsculas, `instance` = `<servicio>:<id del contenedor>`, `__address__` = `<ip>:9091`); jobs estáticos solo para `prometheus` y `otel-collector:8888`. El puerto 9091 está fijo en `docker/config/prometheus/prometheus.yml`.
+- **Dashboard** (`docker/config/grafana/dashboards/dan-servicios.json`, variables `job`/`instance`): instancias vivas, pedidos/seg, latencia p50/p95/media por servicio, errores 5xx por servicio y URI, % 5xx, heap/no-heap/GC/threads/CPU, y **estado del circuit breaker** (cerrado/semiabierto/abierto, tasa de fallos, llamadas rechazadas, llamadas por resultado). Saltos: Loki → Tempo (derived field `trace_id`) y Tempo → Loki (`tracesToLogsV2`, filtra `{service_name=…} | trace_id=…`).
 - **Memoria** (Docker Desktop tiene 7,7 GiB en esta máquina): las JVM llevan tope (`mem_limit` + `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=65|60 -XX:+UseSerialGC -Xss512k`): user/gestion/reservas 512 MiB, gateway y Eureka 384 MiB; collector 256 MiB, Tempo/Loki/Grafana 384 MiB, Prometheus 512 MiB. Medido con todo arriba (18 contenedores, 2 réplicas de gestion-svc, pgAdmin/phpMyAdmin/Mongo Express incluidos): **≈ 3,9 GB**, sin OOM ni reinicios (JVM ~300 MiB c/u, MySQL 431, MongoDB 286, pgAdmin 295, RabbitMQ 209, Loki 190, Tempo 172, Grafana 150, Prometheus 141, collector 81). **Hacen falta ≥ 6 GB asignados a Docker Desktop** (≥ 7 GB si se escala a 3+ réplicas; cada réplica suma ~0,3–0,5 GB). pgAdmin, phpMyAdmin y Mongo Express (profile `infra`, ~0,4 GB) se pueden dejar afuera si falta memoria.
 - **Qué pasa al escalar**: ver "Qué pasa al escalar" (Etapa 4); además, cada réplica aparece como una serie distinta en Prometheus (`instance`) y todas envían sus trazas/logs al mismo collector.
 
@@ -191,18 +194,33 @@ SPA en `frontend/` (React 19 + TypeScript + Vite + Tailwind/SCSS, `react-router-
 - **Mis reservas**: los botones se habilitan con `util/reservaReglas.ts` (espejo de `ReservaPolicy`: pagar si no está CANCELADA/FINALIZADA/BLOQUEADA/CERRADA y hay saldo; cancelar solo RESERVADA/BLOQUEADA sin pagos; opinar desde el día del check-out y una vez). Es una ayuda de UI: **decide el backend** y su 409 se muestra tal cual.
 - **Sesión**: `context/auth.ts` (contexto + `useAuth`) y `AuthContext.tsx` (provider; **única** escritora de `localStorage['user']`). Login con usuario/contraseña (`POST /users/auth/login`); registro de huésped (`POST /users/users/huesped`, exige una tarjeta principal; bancos de `GET /users/bancos`; usa el id de la respuesta, ya no se busca por DNI). `?redirect=` solo acepta rutas internas (`util/redirect.ts`).
 - **Google es opcional**: `GoogleLoginButton` se renderiza (y carga el script de Google, inyectado dinámicamente) **solo si `VITE_GOOGLE_CLIENT_ID` está definido**. user-svc ya no exige `GOOGLE_CLIENT_ID` para arrancar (sin él, `POST /users/auth/google` → 503).
-- **Bancos iniciales**: el compose no monta `infra/mysql/initdb`, así que `BancoDataInitializer` (user-svc, `ApplicationRunner`) inserta una lista de bancos argentinos **solo si la tabla `bancos` está vacía** (idempotente).
-- **`VITE_*` se fijan al compilar**: `VITE_API_URL` (dev: `http://localhost:8080`; prod: `/api`) y `VITE_GOOGLE_CLIENT_ID`. En dev se leen al iniciar Vite; en prod entran como build args del `Dockerfile` (`PROD_VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID` del `.env`): para cambiarlas hay que reconstruir la imagen (`docker compose build frontend-prod`).
+- **Bancos iniciales**: el compose no monta `docker/config/mysql/initdb`, así que `BancoDataInitializer` (user-svc, `ApplicationRunner`) inserta una lista de bancos argentinos **solo si la tabla `bancos` está vacía** (idempotente).
+- **`VITE_*` se fijan al compilar**: `VITE_API_URL` (dev: `http://localhost:8080`; prod: `/api`) y `VITE_GOOGLE_CLIENT_ID`. En dev se leen al iniciar Vite; en prod entran como build args de `docker/frontend.Dockerfile` (`PROD_VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`): para cambiarlas hay que reconstruir la imagen (`docker compose -f docker/docker-compose.yml build frontend`).
 - **Dev vs prod**:
-  - `frontend` (dev, Vite en 5173): el navegador llama **directo al gateway** (`http://localhost:8080`), por eso el gateway necesita CORS para `:5173`. `package-lock.json` ya no se borra (el comando usa `npm install`, que respeta el lock; antes un `rm -f package-lock.json` sobre el bind mount lo eliminaba del host en cada arranque); `node_modules` vive en el volumen `frontend_node_modules`.
-  - `frontend-prod` (nginx, mapeado también a 5173: son excluyentes): sirve el build y hace de **proxy**: `location /api/` reenvía a `http://gateway:8080` (quita `/api`; `resolver 127.0.0.11` + variable para que nginx arranque aunque el gateway no esté). El front y la API quedan en el **mismo origen** → no hace falta CORS. Requiere el profile `gateway`.
+  - `frontend-dev` (perfil `dev`, Vite en **5174**): el navegador llama **directo al gateway** (`http://localhost:8080`), por eso el gateway necesita CORS para `:5174` (ya está permitido). `package-lock.json` ya no se borra (el comando usa `npm install`, que respeta el lock; antes un `rm -f package-lock.json` sobre el bind mount lo eliminaba del host en cada arranque); `node_modules` vive en el volumen `frontend_node_modules`.
+  - `frontend` (nginx sin root, 5173; es el que levanta el compose por defecto): sirve el build y hace de **proxy**: `location /api/` reenvía a `http://gateway:8080` (quita `/api`; `resolver 127.0.0.11` + variable para que nginx arranque aunque el gateway no esté). El front y la API quedan en el **mismo origen** → no hace falta CORS.
 - **Calidad**: `npm run typecheck`, `npm run lint`, `npm test` (Vitest + Testing Library, jsdom), `npm run build` (corre `tsc` antes de Vite). Tests en `*.test.ts(x)` junto al código; `src/test/` tiene el `setup` y `renderConApp`.
-- **Puerto 3306 en Windows**: si `docker compose up` falla con "listen tcp 0.0.0.0:3306: bind: Intento de acceso a un socket no permitido", Windows reservó el rango (`netsh interface ipv4 show excludedportrange protocol=tcp`). Se resuelve con `net stop winnat && net start winnat` (administrador) o publicando MySQL en otro puerto con un `docker-compose.override.yml` (`ports: !override ["13306:3306"]`).
+- **Bases en el host (solo desarrollo)**: ya no se publican por defecto; `docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev-ports.yml up -d` publica MySQL 3306, PostgreSQL 5432, MongoDB 27017 y AMQP 5672. En Windows el 3306 puede estar reservado por el sistema ("Intento de acceso a un socket no permitido", `netsh interface ipv4 show excludedportrange protocol=tcp`): `MYSQL_HOST_PORT=13306`.
 
 ### Seguridad del login (qué hay y qué falta)
 - **Hay**: contraseñas con BCrypt (`spring-security-crypto`), `POST /auth/login` con error genérico (no revela si falló el usuario o la clave; compara contra un hash ficticio si el usuario no existe), cuentas de Google sin contraseña no pueden entrar por clave, token de Google verificado por firma en el servidor, tarjetas enmascaradas y sin CVC en las respuestas, actuator fuera del gateway, CORS acotado, redirecciones del login solo internas.
 - **NO hay (mejora pendiente, no implementada)**: el login solo devuelve la identidad `{userId,email,nombre}`, **sin token ni sesión de servidor**. `localStorage['user']` es declarativo: la API no verifica quién llama, así que cualquiera que llegue al gateway puede pedir o pagar reservas de cualquier `idHuesped`, modificar/borrar huéspedes, etc. Un XSS podría además leer lo guardado.
 - **Qué haría falta**: (1) emitir un **JWT firmado** en `/auth/login` y `/auth/google` (user-svc) con `sub`=userId, rol y expiración corta (+ refresh); (2) **validarlo en el gateway** (filtro que verifique firma/expiración y responda 401, y propague `X-User-Id`/roles a los servicios; los servicios en la red interna confían solo en el gateway); (3) **autorización por dueño** en los servicios (p. ej. reservas-svc compara el `userId` del token con `idHuesped`; solo el dueño ve/paga/cancela) y por rol (huésped / propietario / admin); (4) guardar el token de forma segura (cookie `HttpOnly`+`Secure`+`SameSite` + protección CSRF, o memoria + refresh en cookie), HTTPS de extremo a extremo; (5) límite de intentos / bloqueo de cuenta en el login y auditoría.
+
+## Docker de entrega (ticket 7000)
+
+Consigna: el TP en la raíz con una carpeta `docker/` (yaml + Dockerfile) para levantarlo con Docker. Quien corrige solo tiene Docker (sin JDK, Maven, Node ni `.env`).
+
+- **Un comando**: `docker compose -f docker/docker-compose.yml up -d --build` (o `docker compose up -d --build` desde la raíz: el `docker-compose.yml` de la raíz solo hace `include` del de `docker/`; se verificó que las rutas relativas se resuelven y que un `.env` de la raíz sigue interpolándose). Proyecto `name: dan-reservas`.
+- **`docker/backend.Dockerfile`** (contexto = raíz del repo): etapa `build` con `maven:3.9-eclipse-temurin-21` que compila el reactor **una sola vez** (`mvn -Dmaven.test.skip=true package`, con `--mount=type=cache` de `~/.m2`); etapa `runtime` con `eclipse-temurin:21-jre-alpine`, usuario no-root `app` (uid 10001) y un **target por servicio**: `user-svc`, `gestion-svc`, `reservas-svc`, `gateway`, `eureka`, cada uno con su `HEALTHCHECK` (`wget` a `:9091/actuator/health`; Eureka a `:8761`). El `ENV MANAGEMENT_SERVER_PORT=9091` va en cada target, **no** en la base (Eureka usa su propio puerto). `.dockerignore` de la raíz excluye `target`, `node_modules`, `.env`, `frontend`, `docker`, `docs`.
+- **`docker/frontend.Dockerfile`** (contexto = `frontend/`): Node 20 (`npm ci` con cache de npm) → `nginxinc/nginx-unprivileged` (escucha en 8080, publicado como 5173; healthcheck a `127.0.0.1`, no `localhost`, que resuelve a IPv6).
+- **Perfiles**: sin perfil = app completa (3 bases, RabbitMQ, Eureka, 3 servicios, gateway, front). `observability`, `tools`, `dev` (`frontend-dev`, Vite en 5174). Puertos publicados: 5173, 8080, 8761, 15672 (+3000 y 9090 con observability). La exportación OTLP está **siempre encendida** (decisión: sin collector no pasa nada; así `--profile observability` alcanza para ver trazas).
+- **Configs** en `docker/config/` (antes `infra/`, movidos con `git mv`). RabbitMQ: `rabbitmq.conf` + `definitions.json` (`load_definitions`). **Ojo**: al importar definiciones RabbitMQ **no crea** el usuario de `RABBITMQ_DEFAULT_USER/PASS`: por eso `definitions.json` incluye el usuario `admin` (contraseña `admin`, hash SHA-256 con sal).
+- **Datos de demo** (`DEMO_DATOS_HABILITADO`, `true` en Docker, `false` por defecto en `application.properties`/tests): `DemoDataInitializer` (gestion-svc; hoteles de 6 ciudades con CUIT válido calculado, amenities, tarifas por tipo y habitaciones, **siempre por los services** para que se publiquen los eventos de RabbitMQ; idempotente por CUIT / tipo con tarifas / hotel+número) y `DemoUsuarioInitializer` (user-svc; `demo` / `demo1234`, `@Order(1)` tras `BancoDataInitializer`). gestion-svc declara `dan.exchange`, `habitacion.topic` y el binding (`RabbitMQConfig.habitacionesTopologia`) para no perder eventos si reservas-svc arranca después. Limitación: borrar solo MongoDB no re-replica (usar `down -v`).
+- **Imágenes del front**: `frontend/src/assets/images/hotel1–6.webp` (< 300 KB c/u; 4–6 derivadas de las originales con recortes/espejado/color). `util/hotelImage.ts` usa `id % 6`; el `Hero` usa las 3 primeras.
+- **Postman**: una sola colección, `docs/postman/DAN - API Gateway.postman_collection.json` (≈ 86 requests por el gateway). Las carpetas `.postman/` y `postman/` de la raíz las crea la app de escritorio de Postman y están excluidas en `.git/info/exclude` (reglas ancladas a la raíz: `/postman/`, para no ignorar `docs/postman/`).
+- **CI** (`.github/workflows/ci.yml`): `test-backend`, `frontend` (typecheck, lint, tests, build), `docker-build` (`compose config` con todos los perfiles + `bake` de las 6 imágenes con cache gha) y `dependency-review`.
+- **Medido** (esta máquina, Docker Desktop, imágenes base ya descargadas): primer build de las 6 imágenes **136 s**; reconstruir sin cambios 8 s; con 1 línea de Java 51 s; con 1 línea del front 40 s; `up` completo hasta *healthy* ~66 s tras el build.
 
 ## Datos sensibles de tarjetas (user-svc)
 `TarjetaCreditoResponse` **no incluye el CVC** y devuelve el `numero` enmascarado (`**** **** **** 0004`, `TarjetaMascara`, aplicado en `TarjetaCreditoMapper.toResponse`). El request sigue aceptando `cvc`.
