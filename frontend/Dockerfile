@@ -8,6 +8,14 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --no-audit --no-fund
 
+# Las variables VITE_* se incrustan en el bundle al COMPILAR: hay que pasarlas como build args.
+#  - VITE_API_URL=/api  -> el navegador llama al mismo origen y nginx reenvía /api/** al gateway
+#  - VITE_GOOGLE_CLIENT_ID vacío -> el botón de Google no aparece
+ARG VITE_API_URL=/api
+ARG VITE_GOOGLE_CLIENT_ID=
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 # Copy sources and build
 COPY . .
 RUN npm run build
