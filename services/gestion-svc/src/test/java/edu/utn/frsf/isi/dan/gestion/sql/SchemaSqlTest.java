@@ -14,7 +14,8 @@ import org.junit.jupiter.api.Test;
 class SchemaSqlTest {
 
   private static String sql() throws Exception {
-    return Files.readString(Path.of("..", "..", "infra", "postgres", "initdb", "01_schema.sql"));
+    return Files.readString(
+        Path.of("..", "..", "docker", "config", "postgres", "initdb", "01_schema.sql"));
   }
 
   @Test

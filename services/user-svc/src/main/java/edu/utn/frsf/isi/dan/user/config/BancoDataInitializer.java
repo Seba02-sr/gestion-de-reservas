@@ -10,9 +10,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Carga inicial de bancos. El compose no monta infra/mysql/initdb (el esquema lo crea Hibernate),
- * así que en una base nueva no habría bancos y el registro de huéspedes (que exige una tarjeta con
- * banco) quedaría bloqueado. Es idempotente: solo inserta si la tabla está vacía.
+ * Carga inicial de bancos. El compose no monta docker/config/mysql/initdb (el esquema lo crea
+ * Hibernate), así que en una base nueva no habría bancos y el registro de huéspedes (que exige una
+ * tarjeta con banco) quedaría bloqueado. Es idempotente: solo inserta si la tabla está vacía.
  */
 @Component
 @Order(0)
