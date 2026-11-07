@@ -4,7 +4,7 @@ Todo lo que no hace falta para *usar* el sistema (eso está en el [README](../RE
 
 ## Requisitos de desarrollo
 
-- **Java 21** (JDK), **Node 20+** y **Docker Desktop**. Para usar el sistema solo hace falta Docker.
+- **Java 21** (JDK), **Node 22+** y **Docker Desktop**. Para usar el sistema solo hace falta Docker.
 - En esta máquina de desarrollo el `java` del PATH puede ser el 1.8: hay que fijar `JAVA_HOME` por sesión.
   PowerShell: `$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"; $env:Path = "$env:JAVA_HOME\bin;$env:Path"`.
 

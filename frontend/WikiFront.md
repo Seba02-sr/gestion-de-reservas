@@ -14,7 +14,7 @@ Guía rápida para desarrolladores sobre la arquitectura, tecnologías y estruct
 | Tailwind CSS     | Utility-first; usamos `@apply` dentro de SCSS para layout/espaciados |
 | SCSS             | Sistema de diseño propio: variables, mixins, tipografías |
 | React Router     | Ruteo SPA |
-| Node.js / npm    | Node 20.x recomendado; npm para scripts |
+| Node.js / npm    | Node 22.x recomendado; npm para scripts |
 
 ---
 
@@ -70,7 +70,7 @@ Notas
 ## 🧰 Puesta en marcha (dev local)
 
 Requisitos
-- Node.js 20.x
+- Node.js 22.x
 - npm 10.x
 
 Pasos

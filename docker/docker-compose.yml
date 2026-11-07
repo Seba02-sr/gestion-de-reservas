@@ -249,7 +249,7 @@ services:
   # El navegador llama directo al gateway (http://localhost:8080); su CORS ya permite el origen :5174.
   frontend-dev:
     profiles: ["dev"]
-    image: node:20-alpine
+    image: node:22-alpine
     working_dir: /app
     # `npm install` respeta package-lock.json (no lo borra). node_modules vive en un volumen de Linux.
     command: sh -c "npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"

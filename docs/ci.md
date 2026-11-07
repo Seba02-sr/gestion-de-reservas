@@ -34,7 +34,7 @@ El workflow `.github/workflows/ci.yml` ahora tiene cuatro jobs:
 | Job | Qué hace |
 |---|---|
 | `test-backend` | Spotless check + `mvn test` (Java 21) |
-| `frontend` | `npm ci`, `typecheck`, `lint`, `test` y `build` del frontend (Node 20) |
+| `frontend` | `npm ci`, `typecheck`, `lint`, `test` y `build` del frontend (Node 22) |
 | `docker-build` | Valida `docker/docker-compose.yml` con todos los perfiles (`config -q`) y el `include` de la raíz, y **construye las 6 imágenes** (`docker/backend.Dockerfile` ×5 + `docker/frontend.Dockerfile`) con `docker/bake-action` y cache de GitHub Actions. No levanta el stack. |
 | `dependency-review` | Análisis de dependencias (solo PRs) |
 
