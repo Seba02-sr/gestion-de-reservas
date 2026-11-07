@@ -1,0 +1,78 @@
+@use "../base/variables" as *;
+@use "../base/layout" as layout;
+
+/* ===== Páginas internas (login, registro, resultados, detalle, mis reservas) ===== */
+.rarn-page {
+  @include layout.container(72rem);
+  @apply py-8;
+
+  &--narrow { @include layout.container(32rem); }
+  &--medium { @include layout.container(48rem); }
+  &__title { @apply text-2xl font-extrabold mb-1; color: $rarn-color-text-primary; }
+  &__subtitle { @apply mb-6; color: $rarn-color-gray-text-secondary; }
+}
+
+/* ===== Alertas ===== */
+.rarn-alert {
+  @apply rounded-lg px-4 py-3 text-sm border mb-4;
+
+  &--error   { background: #FEF2F2; border-color: #FECACA; color: $rarn-color-danger-600; }
+  &--success { background: #F0FDF4; border-color: #BBF7D0; color: $rarn-color-success-600; }
+  &--info    { background: $rarn-color-bg-secondary; border-color: $rarn-color-gray-border; color: $rarn-color-gray-text-secondary; }
+}
+
+/* ===== Formularios ===== */
+.rarn-form { @apply space-y-4; }
+.rarn-form__grid { @apply grid grid-cols-1 gap-4 md:grid-cols-2; }
+.rarn-form__section { @apply font-semibold text-base mt-2; color: $rarn-color-text-primary; }
+.rarn-form__hint { @apply text-xs; color: $rarn-color-gray-text-muted; }
+.rarn-divider { @apply flex items-center my-6 text-xs uppercase; color: $rarn-color-gray-text-muted;
+  &::before, &::after { content: ""; flex: 1; height: 1px; background: $rarn-color-gray-border; }
+  span { @apply px-3; }
+}
+.rarn-link { color: $rarn-color-accent; @apply font-medium underline; &:hover { color: $rarn-color-accent-600; } }
+.rarn-btn--block { @apply w-full justify-center; }
+.rarn-btn--danger { background: $rarn-color-danger; color: $rarn-color-white; &:hover { background: $rarn-color-danger-600; } }
+.rarn-btn--outline { background: transparent; border: 1px solid $rarn-color-gray-border-strong; color: $rarn-color-text-primary;
+  &:hover:not(:disabled) { background: $rarn-color-gray-hover; } }
+
+/* ===== Resultados ===== */
+.rarn-results { @apply grid grid-cols-1 gap-6 lg:grid-cols-[18rem_1fr]; }
+.rarn-filters { @apply space-y-4 self-start; }
+.rarn-filters__amenities { @apply grid grid-cols-1 gap-1 max-h-64 overflow-y-auto;
+  label { @apply flex items-center gap-2 text-sm cursor-pointer; } }
+.rarn-results__bar { @apply flex flex-wrap items-center justify-between gap-3 mb-4; }
+.rarn-results__grid { @apply grid grid-cols-1 gap-6 md:grid-cols-2; }
+.rarn-chip { @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+  background: $rarn-color-gray-hover; color: $rarn-color-text-primary; }
+.rarn-chip__remove { @apply ml-1 font-bold; }
+.rarn-tags { @apply flex flex-wrap gap-1 mb-3; }
+
+/* ===== Detalle ===== */
+.rarn-detail { @apply grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]; }
+.rarn-detail__media img { @apply w-full h-72 object-cover rounded-xl; }
+.rarn-detail__meta { @apply flex flex-wrap gap-x-6 gap-y-1 text-sm my-3; color: $rarn-color-gray-text-secondary; }
+.rarn-detail__total { @apply flex justify-between text-sm py-1; &--strong { @apply font-bold text-base; } }
+.rarn-stars { color: $rarn-color-warning; }
+
+/* ===== Mis reservas ===== */
+.rarn-reservas { @apply space-y-4; }
+.rarn-reserva { @apply flex flex-col gap-3; }
+.rarn-reserva__head { @apply flex flex-wrap items-start justify-between gap-2; }
+.rarn-reserva__grid { @apply grid grid-cols-2 gap-3 text-sm md:grid-cols-4; dt { color: $rarn-color-gray-text-muted; } dd { @apply font-semibold; } }
+.rarn-reserva__actions { @apply flex flex-wrap gap-2; }
+
+.rarn-badge { @apply inline-block rounded-full px-3 py-1 text-xs font-semibold;
+  background: $rarn-color-gray-hover; color: $rarn-color-text-primary;
+  &--CONFIRMADA, &--FINALIZADA { background: #DCFCE7; color: $rarn-color-success-600; }
+  &--RESERVADA { background: #FEF3C7; color: $rarn-color-warning-600; }
+  &--ADEUDADA, &--CANCELADA { background: #FEE2E2; color: $rarn-color-danger-600; }
+}
+
+/* ===== Modal ===== */
+.rarn-modal-backdrop { @apply fixed inset-0 z-50 flex items-center justify-center p-4; background: rgba(15, 23, 42, .5); }
+.rarn-modal { @apply w-full max-w-md rounded-xl bg-white p-6 shadow-lg space-y-4; }
+.rarn-modal__title { @apply text-lg font-bold; }
+.rarn-modal__actions { @apply flex justify-end gap-2; }
+
+.rarn-empty { @apply text-center py-12; color: $rarn-color-gray-text-secondary; }

@@ -1,89 +1,93 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import GoogleLoginButton from '../components/auth/GoogleLoginButton'
-import { useAuth } from '../context/AuthContext'
+import React, { useState } from "react"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import GoogleLoginButton from "../components/auth/GoogleLoginButton"
+import Alert from "../components/ui/Alert"
+import Button from "../components/ui/Button"
+import Card from "../components/ui/Card"
+import { Field, Input } from "../components/ui/Field"
+import { login } from "../api/auth"
+import { mensajeAmigable } from "../api/client"
+import { useAuth } from "../context/auth"
+import { destinoSeguro } from "../util/redirect"
 
 const Login: React.FC = () => {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [params] = useSearchParams()
   const { signIn } = useAuth()
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const googleHabilitado = !!import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const destino = destinoSeguro(params.get("redirect"))
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('El login con usuario/contraseña estará disponible pronto.')
+    setError(null)
+    setLoading(true)
+    try {
+      signIn(await login({ username: username.trim(), password }))
+      navigate(destino, { replace: true })
+    } catch (err) {
+      setError(mensajeAmigable(err))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-6">
-        <h1 className="text-2xl font-semibold text-gray-800 text-center mb-2">Iniciar sesión</h1>
-        <p className="text-sm text-gray-500 text-center mb-6">Accedé con tu cuenta o con Google</p>
+    <main className="rarn-page rarn-page--narrow">
+      <Card>
+        <h1 className="rarn-page__title">Iniciar sesión</h1>
+        <p className="rarn-page__subtitle">Ingresá con tu usuario y contraseña</p>
 
-        {error && (
-          <div className="mb-4 rounded-md bg-yellow-50 p-3 text-yellow-800 text-sm border border-yellow-200">
-            {error}
-          </div>
-        )}
+        {error && <Alert kind="error">{error}</Alert>}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="tucorreo@ejemplo.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <input
+        <form onSubmit={handleSubmit} className="rarn-form">
+          <Field label="Usuario" htmlFor="username">
+            <Input id="username" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+          </Field>
+          <Field label="Contraseña" htmlFor="password">
+            <Input
+              id="password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="••••••••"
               required
             />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-gray-300 text-gray-600 font-medium py-2 rounded-md cursor-not-allowed"
-            disabled
-            title="Pronto disponible"
-          >
-            Iniciar sesión
-          </button>
+          </Field>
+          <Button type="submit" className="rarn-btn--block" disabled={loading || !username || !password}>
+            {loading ? "Ingresando..." : "Iniciar sesión"}
+          </Button>
         </form>
 
-        <div className="my-6 flex items-center">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="px-3 text-xs uppercase text-gray-400">o</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
+        {googleHabilitado && (
+          <>
+            <div className="rarn-divider">
+              <span>o</span>
+            </div>
+            <div className="flex justify-center">
+              <GoogleLoginButton
+                onSuccess={(data) => {
+                  signIn(data)
+                  navigate(destino, { replace: true })
+                }}
+                onError={setError}
+              />
+            </div>
+          </>
+        )}
 
-        <div className="flex justify-center">
-          <GoogleLoginButton
-            onSuccess={(data) => {
-              signIn(data)
-              navigate('/')
-            }}
-            onError={(msg) => setError(msg)}
-          />
-        </div>
-
-        <p className="mt-6 text-center text-sm text-gray-600">
-          ¿No tenés cuenta?{' '}
-          <span className="text-indigo-600 hover:underline cursor-pointer" title="Pronto disponible">
+        <p className="mt-6 text-center text-sm">
+          ¿No tenés cuenta?{" "}
+          <Link to={`/registro${params.get("redirect") ? `?redirect=${encodeURIComponent(destino)}` : ""}`} className="rarn-link">
             Registrate
-          </span>
+          </Link>
         </p>
-      </div>
-    </div>
+      </Card>
+    </main>
   )
 }
 

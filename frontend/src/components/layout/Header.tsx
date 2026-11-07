@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { useAuth } from "../../context/AuthContext"
+import { Link, NavLink, useNavigate } from "react-router-dom"
+import { useAuth } from "../../context/auth"
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth()
@@ -31,10 +31,11 @@ const Header: React.FC = () => {
 
           {/* Navigation */}
           <nav className="header__nav">
-            <Link to="/" className="active">Inicio</Link>
-            <a href="#hoteles">Hoteles</a>
-            <a href="#mis-reservas">Mis Reservas</a>
-            <a href="#propietarios">Propietarios</a>
+            <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>Inicio</NavLink>
+            <NavLink to="/buscar" className={({ isActive }) => (isActive ? "active" : "")}>Habitaciones</NavLink>
+            {user && (
+              <NavLink to="/mis-reservas" className={({ isActive }) => (isActive ? "active" : "")}>Mis Reservas</NavLink>
+            )}
           </nav>
 
           {/* Auth Actions */}
@@ -47,8 +48,8 @@ const Header: React.FC = () => {
                 </button>
                 {open && (
                   <div className="absolute right-0 top-10 w-44 bg-white rounded-md shadow-lg border border-gray-100 z-50">
-                    <Link to="#" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setOpen(false)}>
-                      Perfil
+                    <Link to="/mis-reservas" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setOpen(false)}>
+                      Mis reservas
                     </Link>
                     <button
                       className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -65,7 +66,7 @@ const Header: React.FC = () => {
               </>
             ) : (
               <>
-                <Link to="/login" className="header__register-btn">Registrarse</Link>
+                <Link to="/registro" className="header__register-btn">Registrarse</Link>
                 <Link to="/login" className="header__auth-btn">Iniciar sesión</Link>
               </>
             )}
