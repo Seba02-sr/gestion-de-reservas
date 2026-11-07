@@ -10,7 +10,7 @@ import { buscarHabitaciones } from "../../api/habitaciones"
 import { useAsync } from "../../hooks/useAsync"
 import { imagenDeHotel } from "../../util/hotelImage"
 
-const CANTIDAD = 3
+const CANTIDAD = 6
 
 async function cargarDestacados(signal: AbortSignal): Promise<Hotel[]> {
   const hoteles = (await listarHotelesAbiertos(signal)).slice(0, CANTIDAD)

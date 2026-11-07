@@ -14,10 +14,10 @@ const hab = (id: number, precio: number | null, estrellas: number): HabitacionRe
 })
 
 describe("utilidades", () => {
-  it("imagenDeHotel es determinística y siempre devuelve una de las 3 imágenes", () => {
+  it("imagenDeHotel es determinística y siempre devuelve una de las 6 imágenes", () => {
     expect(imagenDeHotel(4)).toBe(imagenDeHotel(4))
-    expect(imagenDeHotel(1)).toBe(imagenDeHotel(4))
-    expect(new Set([1, 2, 3].map(imagenDeHotel)).size).toBe(3)
+    expect(imagenDeHotel(1)).toBe(imagenDeHotel(7))
+    expect(new Set([1, 2, 3, 4, 5, 6].map(imagenDeHotel)).size).toBe(6)
     expect(imagenDeHotel(-1)).toBeTruthy()
   })
 

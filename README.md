@@ -1,260 +1,166 @@
-# Trabajo Práctico DAN 2025
+# Reservas ARN — TP Final DAN 2025
 
-Aplicación distribuida con microservicios (Spring Boot) y frontend moderno. Monorepo con Docker Compose para levantar infraestructura, backend y frontend.
+Sistema de **reserva de hoteles** hecho con microservicios (Spring Boot, Java 21), mensajería asíncrona (RabbitMQ), service discovery (Eureka), API Gateway, observabilidad (OpenTelemetry + Prometheus + Loki + Tempo + Grafana) y un frontend React. Se levanta completo con **un solo comando** y solo necesita Docker.
 
-## Desarrolladores
-- Arrua Alejandro
-- Nicle Santiago
-- Ramella Sebastian
+> TP de *Desarrollo de Aplicaciones en la Nube* — UTN FRSF. Integrantes: Arrua Alejandro, Nicle Santiago, Ramella Sebastian.
 
-## Cómo levantar el proyecto
+## Qué hace el sistema
 
-1) Requisitos
-- Java 21, Docker, Node 20+ (para desarrollo del front)
+Un **huésped** busca habitaciones por fechas, cantidad de personas, precio, estrellas, amenities y cercanía a una ciudad; ve el detalle (hotel, amenities, tipo, capacidad, tarifa vigente y total estimado), reserva, paga (total o parcialmente), cancela si todavía no pagó y deja su opinión después del check-out. Los **hoteles, habitaciones y tarifas** se gestionan en gestion-svc; cada cambio viaja por RabbitMQ a reservas-svc, que mantiene su propia réplica para buscar y reservar.
 
-2) Compilar backend (JARs)
+## Arquitectura
+
+```mermaid
+flowchart LR
+    NAV["Navegador"] -->|":5173"| FE["Frontend<br/>nginx + React"]
+    FE -->|"/api/** (mismo origen, sin CORS)"| GW["API Gateway<br/>:8080 + Swagger"]
+    NAV -->|":8080/swagger-ui.html"| GW
+
+    GW -->|"/users/**"| US["user-svc"]
+    GW -->|"/gestion/**"| GS["gestion-svc"]
+    GW -->|"/reservas/**"| RS["reservas-svc"]
+
+    US --> MY[("MySQL")]
+    GS --> PG[("PostgreSQL")]
+    RS --> MO[("MongoDB")]
+
+    GS -->|"eventos de hoteles,<br/>habitaciones y tarifas"| MQ{{"RabbitMQ"}}
+    MQ -->|"cola habitacion.topic"| RS
+    RS -->|"Feign + circuit breaker<br/>(valida huésped y disponibilidad)"| US
+    RS -->|"Feign + circuit breaker"| GS
+
+    EU["Eureka :8761<br/>service discovery"]
+    GW -. "lb:// descubre instancias" .-> EU
+    US -. "se registran" .-> EU
+    GS -. "se registran" .-> EU
+    RS -. "se registran" .-> EU
+
+    subgraph OBS["Observabilidad (perfil observability)"]
+        OC["OTel Collector"] --> TE["Tempo<br/>trazas"]
+        OC --> LO["Loki<br/>logs"]
+        PR["Prometheus<br/>métricas"]
+        GR["Grafana :3000"]
+        TE --> GR
+        LO --> GR
+        PR --> GR
+    end
+    GW -. "OTLP" .-> OC
+    US -. "OTLP" .-> OC
+    GS -. "OTLP" .-> OC
+    RS -. "OTLP" .-> OC
+    PR -. "scrape :9091<br/>(instancias de Eureka)" .-> GS
+```
+
+| Pieza | Rol |
+|---|---|
+| **frontend** | SPA React + Vite. En Docker la sirve nginx (sin root) y reenvía `/api/**` al gateway. |
+| **gateway** | Único punto de entrada (`/users`, `/gestion`, `/reservas`), CORS y Swagger unificado. No expone el actuator. |
+| **user-svc** | Huéspedes, propietarios, tarjetas, bancos y login (BCrypt). MySQL. |
+| **gestion-svc** | Hoteles, habitaciones, tipos y tarifas. PostgreSQL. Publica eventos por RabbitMQ. |
+| **reservas-svc** | Reservas, pagos, reviews y búsqueda (con índice geoespacial). MongoDB. Consume los eventos. |
+| **Eureka** | Registro de instancias: permite escalar con `--scale` sin puertos fijos. |
+| **RabbitMQ** | Mensajería asíncrona gestion-svc → reservas-svc. |
+
+## Requisitos
+
+- **Docker Desktop** (Windows/Mac) o Docker Engine + Compose v2.20+ (con BuildKit, activo por defecto).
+- **~6 GB de RAM** asignados a Docker (la aplicación usa ≈ 3,5 GB; con observabilidad ≈ 5 GB).
+- Puertos libres en el host: 5173, 8080, 8761, 15672 (y 3000, 9090 con observabilidad).
+- No hace falta Java, Maven, Node ni ningún archivo `.env`: todo se compila dentro de Docker.
+
+## Arranque en un comando
+
+Desde la raíz del repositorio:
+
 ```bash
-./mvnw -DskipTests clean package
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-3) Elegir perfiles de ejecución
-- Copiar ejemplo: `cp .env.example .env`
-- Editar `COMPOSE_PROFILES` según necesidad:
-  - Todo (frontend dev + infra + microservicios):
-    - `COMPOSE_PROFILES=frontend,infra,user,reservas,gestion,gateway` (Eureka arranca solo, junto con cualquier servicio)
-  - Con observabilidad (OpenTelemetry + Prometheus + Loki + Tempo + Grafana): agregar el perfil `observability`. Necesita **≥ 6 GB de RAM** asignados a Docker Desktop (ver `CLAUDE.md`, "Observabilidad"). Para generar tráfico de prueba: `.\scripts\generar-trafico.ps1`
-  - Solo frontend dev: `COMPOSE_PROFILES=frontend`
-  - Solo un servicio (con su infra mínima):
-    - user-svc: `COMPOSE_PROFILES=frontend,user`
-    - reservas-svc: `COMPOSE_PROFILES=frontend,reservas`
-    - gestion-svc: `COMPOSE_PROFILES=frontend,gestion`
-  - Frontend producción (Nginx, proxy `/api` → gateway; excluyente con `frontend`, ambos usan el 5173):
-    - `COMPOSE_PROFILES=prod,infra,user,reservas,gestion,gateway` y `docker compose up -d --build`
-  - Sin `gateway` no hay punto de entrada: los servicios ya no publican puertos en el host (Etapa 4), así que para usarlos siempre se incluye `gateway`.
+(equivalente: `docker compose up -d --build`, el `docker-compose.yml` de la raíz solo hace `include` del de `docker/`).
 
-4) Levantar con Docker Compose
-```bash
-docker compose up -d --build
-```
+- La **primera vez** compila los 5 servicios Java en una única etapa de Maven y construye el frontend: tarda **≈ 2–3 minutos** (medido: 2 min 16 s, con las imágenes base ya descargadas; la primera vez Docker además descarga las imágenes base, lo que depende de la conexión). Con la caché de Docker, reconstruir sin cambios tarda ~10 s y con un cambio de código ~50 s. Después los servicios tardan ~1 minuto más en estar *healthy*.
+- Seguimiento: `docker compose -f docker/docker-compose.yml ps` (esperar que todos digan *healthy*) y `docker compose -f docker/docker-compose.yml logs -f gestion-svc`.
+- Al arrancar se **cargan datos de demo automáticamente** (6 hoteles, habitaciones, tarifas y un usuario): ver más abajo.
+- Para bajar todo: `docker compose -f docker/docker-compose.yml down` (agregar `-v` borra los datos; al volver a subir se recargan los de demo).
 
-5) URLs y credenciales
-- API Gateway: `http://localhost:8080` (perfil `gateway`; ver tabla de URLs en `CLAUDE.md` y `ETAPA03.md`)
-- Frontend dev: `http://localhost:5173`
-- Frontend prod: `http://localhost:5173` (perfil `prod`)
-- Swagger unificado (todos los servicios): `http://localhost:8080/swagger-ui.html`
-- Eureka (servicios registrados): `http://localhost:8761`
-- Observabilidad (perfil `observability`): Grafana `http://localhost:3000` (admin / admin), Prometheus `http://localhost:9090`
-- user-svc, reservas-svc y gestion-svc no publican puerto en el host (se pueden escalar con `docker compose up -d --scale gestion-svc=3`); se llega a ellos por el gateway: `/users/**`, `/reservas/**`, `/gestion/**`
+Extras opcionales por perfil (se pueden combinar):
 
-- MySQL: `localhost:3306`
-  - Base: `users`
-  - Usuario app: `usr_app` / `usrapp`
-  - Root: `root` / `rootpwd`
-  - phpMyAdmin: `http://localhost:6080`
+| Perfil | Comando | Agrega |
+|---|---|---|
+| `observability` | `docker compose -f docker/docker-compose.yml --profile observability up -d` | OTel Collector, Tempo, Loki, Prometheus y Grafana |
+| `tools` | `docker compose -f docker/docker-compose.yml --profile tools up -d` | pgAdmin, phpMyAdmin y Mongo Express |
+| `dev` | `docker compose -f docker/docker-compose.yml --profile dev up -d frontend-dev` | Frontend con Vite en caliente (`http://localhost:5174`) |
 
-- PostgreSQL: `localhost:5432`
-  - Base: `appdb`
-  - Usuario app: `appuser` / `apppwd`
-  - pgAdmin: `http://localhost:6081` (login: `admin@admin.com` / `admin`)
+## URLs y credenciales
 
-- MongoDB: `localhost:27017`
-  - Admin: `root` / `rootpwd`
-  - Mongo Express: `http://localhost:6091`
+| Qué | URL | Credenciales |
+|---|---|---|
+| **Frontend** | http://localhost:5173 | usuario demo: `demo` / `demo1234` (o registrarse) |
+| **API Gateway** | http://localhost:8080 | — |
+| **Swagger unificado** (3 servicios) | http://localhost:8080/swagger-ui.html | — |
+| **Eureka** (instancias registradas) | http://localhost:8761 | — |
+| **RabbitMQ** (consola) | http://localhost:15672 | `admin` / `admin` |
+| Grafana *(observability)* | http://localhost:3000 | `admin` / `admin` |
+| Prometheus *(observability)* | http://localhost:9090 | — |
+| pgAdmin *(tools)* | http://localhost:6081 | `admin@admin.com` / `admin` |
+| phpMyAdmin *(tools)* | http://localhost:6080 | acceso automático |
+| Mongo Express *(tools)* | http://localhost:6091 | `admin` / `admin` |
 
-- RabbitMQ UI: `http://localhost:15672` (login: `admin` / `admin`)
+Las bases de datos y el AMQP de RabbitMQ **no se publican** en el host (se usan desde la red de Docker; con `tools` hay interfaces web). Para conectarse con un cliente: [docs/desarrollo.md](docs/desarrollo.md#perfiles-de-docker-compose).
 
-6) Bajar servicios
-```bash
-docker compose down
-# con volúmenes (borra datos):
-docker compose down -v
-```
+### Datos de demo
 
----
+Se cargan solos si las bases están vacías (idempotente: reiniciar no duplica nada):
 
-Documentación detallada (wiki)
-- Estructura de carpetas e infraestructura: ver `docs/estructura.md`
-- Arquitectura y modelo de datos: ver `docs/arquitectura.md`
-- Guías de trabajo, convenciones y herramientas: ver `docs/guias.md`
+- **Usuario**: `demo` / `demo1234` (huésped con una tarjeta de crédito).
+- **6 hoteles** ficticios en **Santa Fe, Rosario, Córdoba, Buenos Aires, Mendoza y Bariloche** (categorías 2 a 5), con amenities distintos, 4–6 habitaciones de distintos tipos (1 a 4 huéspedes) y tarifas vigentes. Las habitaciones llegan a reservas-svc por RabbitMQ, como cualquier alta.
+- Desactivar: `DEMO_DATOS_HABILITADO=false docker compose -f docker/docker-compose.yml up -d`.
 
-## Frontend integrado (ticket 6000)
+## Recorrido sugerido (10 minutos)
 
-El front (`/frontend`, React + Vite) usa datos reales, siempre por el gateway. Pantallas: Home (búsqueda y hoteles destacados), `/buscar` (resultados con filtros y orden), `/habitaciones/:id` (detalle y reserva), `/login`, `/registro`, `/mis-reservas` (pagar, cancelar, opinar). Detalle técnico en `CLAUDE.md`, sección "Frontend (ticket 6000)".
+1. **Buscar y reservar (front)** — http://localhost:5173: en el buscador elegí *Santa Fe*, fechas futuras y 2 huéspedes → *Buscar*. Probá los filtros (precio, estrellas, amenities) y el orden. Abrí una habitación (se ve el precio por noche y el total estimado). Iniciá sesión con `demo` / `demo1234` y **Reservar**.
+2. **Mis reservas** — pagá una parte (la reserva pasa de RESERVADA a CONFIRMADA); intentá **cancelar**: el backend responde 409 porque ya tiene un pago. El botón "Dejar opinión" se habilita recién desde el check-out (ver `APP_FECHA_ACTUAL` en [docs/desarrollo.md](docs/desarrollo.md#simular-la-fecha-de-hoy)).
+3. **Eureka** — http://localhost:8761: user-svc, gestion-svc, reservas-svc y el gateway registrados.
+4. **Escalar** — `docker compose -f docker/docker-compose.yml up -d --scale gestion-svc=3 --no-recreate` y llamá varias veces a http://localhost:8080/gestion/info: cambian `instancia` e `ip` (balanceo por Eureka). Volvé con `--scale gestion-svc=1`.
+5. **Swagger y RabbitMQ** — http://localhost:8080/swagger-ui.html (elegí un servicio, *Try it out*). En http://localhost:15672 → *Queues* → `habitacion.topic`: creá una habitación desde Swagger de gestion-svc (`POST /gestion/habitaciones`) y mirá cómo aparece en `GET /reservas/habitaciones` unos instantes después.
+6. **Trazas en Grafana** — `docker compose -f docker/docker-compose.yml --profile observability up -d`, reservá desde el front, y en http://localhost:3000 → *Explore* → **Tempo** → búsqueda por `service.name = gateway`: una única traza con el gateway, reservas-svc, las llamadas Feign a user-svc y gestion-svc y los comandos de MongoDB; desde un span, *Logs for this span* salta a los logs en Loki. El dashboard "DAN — Servicios" muestra métricas por servicio.
+7. **Circuit breaker** — `docker compose -f docker/docker-compose.yml stop user-svc` y reservá (o `POST /reservas/reservas`): responde **503** con un mensaje claro (el front muestra "el servicio no está disponible") y el circuito se abre (panel *circuit breaker* del dashboard). `docker compose -f docker/docker-compose.yml start user-svc` lo recupera.
 
-- **Dev** (`COMPOSE_PROFILES=frontend,...`): Vite con recarga en `http://localhost:5173`; el navegador llama directo al gateway (`VITE_API_URL`, por defecto `http://localhost:8080`; el gateway permite ese origen por CORS).
-- **Prod** (`COMPOSE_PROFILES=prod,...`): nginx sirve el build y reenvía `/api/**` al gateway por la red de Docker (`VITE_API_URL=/api`): mismo origen, sin CORS.
-- **`VITE_*` se fijan al compilar**, no al ejecutar. En dev se leen al iniciar Vite; en prod hay que reconstruir la imagen (`docker compose build frontend-prod`) si se cambian (`VITE_GOOGLE_CLIENT_ID`, `PROD_VITE_API_URL`).
-- Comandos del front (en `frontend/`): `npm ci`, `npm run dev`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
-- Usuarios: se registra un huésped en `/registro` (exige una tarjeta principal; los bancos salen de `GET /users/bancos`, cargados al arrancar user-svc si la tabla está vacía). Login con usuario y contraseña (`POST /users/auth/login`).
+Una colección de Postman con todos los endpoints por el gateway está en [`docs/postman/`](docs/postman/DAN%20-%20API%20Gateway.postman_collection.json).
 
-## Login con Google (opcional)
+## Qué cubre cada etapa del enunciado
 
-Es opcional: **sin `GOOGLE_CLIENT_ID` user-svc arranca igual**, `POST /users/auth/google` responde 503 y el front no muestra el botón. El login con usuario y contraseña funciona siempre.
+| Etapa | Qué se implementó | Dónde |
+|---|---|---|
+| **1 — user-svc** | Huéspedes y propietarios, tarjetas (una sola principal, no se borra la principal), bancos (CRUD), borrado en cascada de tarjetas, búsqueda por nombre/DNI, login con usuario/contraseña (BCrypt) y Google opcional. | `services/user-svc`, [ETAPA01.md](ETAPA01.md) |
+| **2 — gestion-svc y reservas-svc** | Hoteles (alta validada, cierre, amenities), habitaciones, tipos y tarifas (reglas de vigencia y promociones); eventos por RabbitMQ; reservas con estados, pagos, reviews, disponibilidad y búsqueda geoespacial (MongoDB). | `services/gestion-svc`, `services/reservas-svc`, [ETAPA02.md](ETAPA02.md), [decisiones de diseño](docs/reservas-svc.md) |
+| **3 — API Gateway** | Spring Cloud Gateway WebMVC con rutas por prefijo, CORS centralizado y Swagger unificado. | `common/dan-spring-gateway`, [ETAPA03.md](ETAPA03.md) |
+| **4 — Eureka, Feign y escalado** | Service discovery, balanceo `lb://`, `--scale`, llamadas síncronas con OpenFeign, timeouts y circuit breaker (Resilience4j) con 503 claros. | `common/dan-eureka-server`, [ETAPA04.md](ETAPA04.md) |
+| **5 — Observabilidad** | OpenTelemetry + Prometheus + Loki + Tempo + Grafana: métricas por servicio y réplica, logs con `trace_id`, trazas de punta a punta (HTTP, Feign, MongoDB y RabbitMQ), dashboard; actuator mínimo y no expuesto. | `docker/config/*`, [ETAPA05-OBSERVABILIDAD.md](ETAPA05-OBSERVABILIDAD.md) |
+| **Extra — Frontend** | SPA conectada al backend (búsqueda, detalle, reserva, mis reservas, registro y login). | `frontend/` |
+| **Entrega — Docker** | Compose en `docker/`, Dockerfiles multi-etapa sin dependencias locales, perfiles, datos de demo y CI. | `docker/` |
 
-Backend (user-svc):
-- Para habilitarlo, configurar el Client ID de Google como variable de entorno `GOOGLE_CLIENT_ID` (ya referenciado en `docker-compose.yml`; alternativa: `google.oauth.clientId` en `application.properties`).
-- Endpoint (por el API Gateway): `POST http://localhost:8080/users/auth/google` con cuerpo JSON `{ "credential": "<ID_TOKEN>" }`.
-- CORS se configura solo en el gateway (`GATEWAY_CORS_ORIGINS`, por defecto `http://localhost:5173,http://localhost:5174`).
+## Decisiones de diseño (resumen)
 
-Frontend (Vite):
-- Definir `GOOGLE_CLIENT_ID` y `VITE_GOOGLE_CLIENT_ID` en el `.env` de la raíz (ver `.env.example`). El botón y el script de Google Identity Services solo aparecen/cargan si `VITE_GOOGLE_CLIENT_ID` está definido.
-- El front corre en `http://localhost:5173`: ese origen debe estar autorizado en Google Cloud Console (Credenciales).
-- Al autenticarse (Google o usuario/contraseña), `AuthContext` guarda el usuario en `localStorage` con clave `user`. **No hay token**: ver "Seguridad" en `CLAUDE.md` (mejora pendiente).
+- **Base de datos por servicio** (MySQL, PostgreSQL, MongoDB) y comunicación asíncrona por eventos; reservas-svc mantiene una **réplica** de habitaciones solo por mensajes (consistencia eventual) y, al reservar, valida contra las fuentes de verdad por Feign. Detalle: [docs/reservas-svc.md](docs/reservas-svc.md).
+- **Reserva concurrente sin transacciones**: `findAndModify` atómico sobre el documento de la habitación (nunca hay doble reserva).
+- **Regla de pagos**: CONFIRMADA con al menos un pago (slide 14 del enunciado; el enunciado se contradice, ver el documento anterior).
+- **Fallos remotos → 503, nunca 500**, con circuit breaker; los 404 de negocio no abren el circuito.
+- **El gateway es el único punto de entrada**: CORS solo ahí, actuator en un puerto de gestión (9091) que no se publica ni se enruta.
+- **Observabilidad desde el diseño**: Prometheus descubre las réplicas en Eureka; la traza viaja por `traceparent` (HTTP) y por headers del mensaje (RabbitMQ).
+- **Docker**: un Dockerfile multi-etapa para todo el backend (el reactor se compila una sola vez, con caché de Maven), imágenes finales con JRE 21 y usuario no-root; nginx sin root para el front.
+- Más detalle de cada etapa en [CLAUDE.md](CLAUDE.md) (guía técnica del repositorio).
 
-Notas:
-- Esta integración verifica el ID Token de Google y crea el usuario (tipo Huesped) si no existe.
-- Aún no emite JWT propio ni protege endpoints; eso puede sumarse en una etapa siguiente.
+## Limitaciones conocidas
 
----
+- **Seguridad**: el login devuelve la identidad pero **no emite tokens (JWT)** y la API no verifica quién llama; cualquiera que llegue al gateway podría consultar o pagar reservas de otro `idHuesped`. Está documentado como mejora pendiente (JWT validado en el gateway + autorización por dueño): [CLAUDE.md](CLAUDE.md#seguridad-del-login-qué-hay-y-qué-falta).
+- **Solo para demostración**: contraseñas de bases, RabbitMQ y Grafana por defecto (`admin/admin`), Eureka con *self-preservation* apagado, muestreo de trazas al 100 %, sin HTTPS.
+- **JPA/JDBC no están instrumentados**: las trazas no muestran spans de SQL.
+- **Tarea programada con réplicas**: con varias réplicas de gestion-svc, `TarifaPrecioScheduler` corre en cada una (el evento es idempotente; no hay lock distribuido).
+- **Datos de demo**: si se borra solo MongoDB (no PostgreSQL), las habitaciones no se vuelven a replicar; usar `down -v`.
+- **Los eventos que fallan en reservas-svc no se reintentan** (no hay cola de errores).
+- **Memoria**: ≥ 6 GB para Docker; ≥ 7 GB con observabilidad y 3+ réplicas.
 
-## reservas-svc — decisiones de diseño
+## Para desarrolladores
 
-Servicio de reservas sobre MongoDB. Se accede por el API Gateway (`http://localhost:8080/reservas/...`) y su
-Swagger está en el Swagger unificado (`http://localhost:8080/swagger-ui.html`, elegir `reservas-svc`); el servicio
-ya no publica el puerto 8082 en el host. Los paths de esta sección son los del servicio: por el gateway llevan
-el prefijo `/reservas` (p. ej. `PATCH /reservas/reservas/{id}/estado`). La
-colección `habitacion` es una **réplica** que se actualiza solo con los mensajes de RabbitMQ de
-gestion-svc (la fuente de verdad); por HTTP las habitaciones son de solo lectura.
-
-### Regla de confirmación de pagos (el enunciado se contradice)
-- Slide 12: la reserva queda CONFIRMADA "cuando se paga **al menos la mitad**".
-- Slide 14: "cuando la reserva tiene **al menos un pago** pasa a estado CONFIRMADA".
-- **Se implementó la slide 14** (≥ 1 pago). La regla está aislada en un único método,
-  `ReservaPolicy.pagoAlcanzaParaConfirmar`; pasar a "la mitad" es cambiar esa línea
-  (`totalPagado ≥ precioTotal / 2`) y su test.
-
-### Estados
-`RESERVADA` (al crear) → `CONFIRMADA` (primer pago) → `FINALIZADA` / `ADEUDADA`; `CANCELADA` (solo
-sin pagos); `BLOQUEADA` (el dueño bloquea fechas con `POST /reservas/bloqueos`); `CERRADA` (llega
-por el evento `CERRAR_HOTEL`). El enunciado también menciona REALIZADA y EFECTUADA (slide 12): no se
-implementaron, se usan los estados de la slide 14.
-- `PATCH /reservas/{id}/estado` acepta solo `CANCELADA` (desde RESERVADA/BLOQUEADA sin pagos) y
-  `FINALIZADA` (desde RESERVADA/CONFIRMADA/ADEUDADA). `FINALIZADA` exige el review del dueño
-  (`PUT /review-dueno`) **y** el pago completo; si falta algo la reserva queda `ADEUDADA` (se puede
-  reintentar). Desde RESERVADA no hay pagos, así que queda ADEUDADA.
-- Todo cambio actualiza la `Reserva` y la copia embebida (`ReservaSimple`) en la habitación.
-- `PUT /review-cliente` solo después del check-out (el día del check-out ya vale).
-
-### Disponibilidad
-Una habitación está **ocupada** para `[checkIn, checkOut)` si tiene una reserva **no CANCELADA** con
-`reserva.checkIn < checkOut pedido` **y** (`reserva.checkOut` es null **o** `reserva.checkOut >
-checkIn pedido`). Dos estadías pueden encadenarse el mismo día (sale uno, entra otro) y el `null`
-cubre las reservas abiertas (CERRADA). La fórmula de la slide 15 está mal redactada (compara la
-entrada con la entrada y usa extremos cerrados); el razonamiento está comentado en
-`Disponibilidad.java`, donde conviven la versión Java y la de Mongo (un test las compara).
-
-### Reserva concurrente: operación atómica, no transacción
-Dos pedidos simultáneos no pueden quedarse con las mismas fechas. Se resuelve con **un `findAndModify`
-sobre el documento de la habitación** cuyo filtro incluye "no hay reservas que se superpongan" y que
-hace el `$push` de la reserva en la misma operación: Mongo garantiza atomicidad por documento, así
-que solo un pedido modifica el documento. Se eligió sobre una transacción porque el Mongo del
-compose es standalone (las transacciones piden replica set) y porque, al estar las reservas
-embebidas en la habitación, alcanza con un documento. Orden: primero se toma el cupo y después se
-guarda la `Reserva`; si el guardado falla, se libera el cupo. Un corte en el medio deja a lo sumo
-fechas bloqueadas de más (seguro), nunca una doble reserva. Hay un test con 10 hilos contra un Mongo
-real. Los pagos y el resto de los cambios de estado son lectura-modificación-escritura de una
-`Reserva` (no compiten por fechas).
-
-### Consistencia eventual
-reservas-svc y gestion-svc tienen bases distintas y se enteran por mensajes: entre el cambio en
-gestion-svc y su réplica puede pasar un instante (p. ej. una habitación recién creada tarda en
-aparecer). `CREAR` y `CERRAR_HOTEL` son idempotentes (índice único + `upsert`, y condición atómica
-"no tiene ya una reserva CERRADA"), así que un mensaje repetido no duplica nada. Las reservas ya
-existentes de un hotel que cierra no se cancelan automáticamente.
-
-### Fechas
-Los check-in/check-out son días (`yyyy-MM-dd`) y se guardan como la medianoche de ese día en
-`America/Argentina/Buenos_Aires` (`app.zone`). "Hoy" sale de un `Clock`; para probar a mano se puede
-simular la fecha con `APP_FECHA_ACTUAL` (ver CLAUDE.md).
-
-### Llamadas a otros servicios (Etapa 4)
-`POST /reservas` valida contra las fuentes de verdad por OpenFeign antes de tomar el cupo: el huésped en user-svc (404 si no existe; se guardan su nombre y email) y la disponibilidad de la habitación en gestion-svc (409 si no está disponible). Si alguno no responde, tarda más que el timeout o su circuit breaker (Resilience4j) está abierto, la respuesta es **503** con un mensaje claro. Detalle y trade-offs en `CLAUDE.md`.
-
-### Geo
-`hotel.ubicacion` es un punto GeoJSON `[longitud, latitud]` (x = longitud, y = latitud) con índice
-`2dsphere` creado al arrancar. La búsqueda por cercanía usa `$geoWithin` + `$centerSphere`
-(combinable con los demás filtros).
-
-## Guías para el desarrollador y el usuario
-
-### Convención de nombre de ticket
-
-**Formato:**
-
-```
-[0010]-[T]-[I1] > Ejemplo de nombre de ticket
-```
-### Convención de nombre de commit
-
-**Formato:**
-```
-feat(0010): descripción corta
-fix(0010): corrección breve
-```
-Usa feat para funcionalidades nuevas, fix para correcciones.
-
-### Convención de nombre de rama
-**Formato:**
-```
-0010-t-i1-ejemplo-de-nombre-de-ticket
-```
-
-
-
-
-## Guía para completar una tarea
-**1- Al finalizar la tarea:**
-
-- Registrar el tiempo estimado que llevó realizarla en el campo correspondiente del ticket.
-- Crear un Pull Request (PR) desde la rama de trabajo hacia development (link propuesto en consola al realizar un push).
-- Asignar la etiqueta testing a la tarea correspondiente.
-- Dejar comentario en el ticket con el link al PR.
-
-**2- En el Pull Request:**
-
-- Asegurarse de que la funcionalidad fue testeada manualmente.
-- Incluir una descripción breve indicando qué funcionalidades se probaron y cómo.
-
-**3- Revisión y merge:**
-
-- Otro desarrollador debe revisar el código y dejar un comentario confirmando que fue testeado y revisado.
-- Luego podrá hacer merge a `development`.
-
-**4. Completar wiki**
-
-- En caso de ser necesario, se completará con instrucciones, guías y aclaraciones relevantes durante el desarrollo del proyecto, con el objetivo de facilitar la colaboración entre los integrantes del equipo y mantener la documentación centralizada y actualizada.
----
-
-
-## Herramientas necesarias
-
-### IDEs
-- [VSCode](https://code.visualstudio.com/)
-
-### Entornos de ejecución backend
-- [Java 21](https://adoptium.net/es/temurin/releases/?version=21&package=jdk)
-- [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)
-
-### Entornos de ejecución frontend
-- [Node 22](https://nodejs.org/es/download)
-
-### Gestión de código
-- [Git](https://git-scm.com/)
-- [GitHub](https://github.com/) *(requiere usuario)*
-
-### Gestor de proyecto
-- [Quire](https://quire.io/w/Reservas_ARN/33)
-
-
-### TP Etapa 02
-- Tareas necesarias para completar el servicio gestion-svc y reservas-svc [ETAPA02.md](./ETAPA02.md).
-- Descripción paso a paso de las acciones a realizar [PRACTICA_02.pdf](PRACTICA_02.pdf)
-
-### TP Etapa 03 (API Gateway)
-- Rutas y filtros del gateway: [ETAPA03.md](./ETAPA03.md) y [PRACTICA_03.pdf](PRACTICA_03.pdf). Tabla de URLs por gateway en `CLAUDE.md`.
-
-### TP Etapa 05 (Observabilidad)
-- Descripción de la cátedra: [ETAPA05-OBSERVABILIDAD.md](./ETAPA05-OBSERVABILIDAD.md). Lo implementado en este repo (con las correcciones a esa versión: propiedades de Spring Boot, puertos de Tempo, Loki con OTLP nativo, Prometheus con Eureka, actuator mínimo) está en `CLAUDE.md`, sección "Observabilidad (Etapa 5)".
-
-### TP Etapa 04 (Eureka + OpenFeign)
-- Service discovery, escalado y comunicación sincrónica: [ETAPA04.md](./ETAPA04.md) y [ETAPA04-IMPL.md](./ETAPA04-IMPL.md) (versión de la cátedra). Lo implementado en este repo está en `CLAUDE.md` (secciones "Eureka y escalado" y "Comunicación sincrónica entre servicios").
+Cómo compilar y correr los tests, perfiles, publicar las bases en el host, simular la fecha, convenciones y estructura del repo: [docs/desarrollo.md](docs/desarrollo.md), [docs/estructura.md](docs/estructura.md) y [docs/ci.md](docs/ci.md). Guía técnica completa del repositorio: [CLAUDE.md](CLAUDE.md).

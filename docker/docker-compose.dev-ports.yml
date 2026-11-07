@@ -1,0 +1,25 @@
+# Override SOLO PARA DESARROLLO: publica en el host las bases de datos y el AMQP de RabbitMQ
+# (por defecto no se publican; la aplicación se usa por el front, el gateway y Eureka).
+#
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev-ports.yml up -d
+#
+#   MySQL      localhost:3306   (usr_app / usrapp, root / rootpwd, base `users`)
+#   PostgreSQL localhost:5432   (appuser / apppwd, base `appdb`)
+#   MongoDB    localhost:27017  (root / rootpwd)
+#   RabbitMQ   localhost:5672   (admin / admin)
+#
+# Windows: si el 3306 está reservado por el sistema ("Intento de acceso a un socket no permitido"),
+# cambiar el puerto del host aquí, por ejemplo "13306:3306" (ver netsh interface ipv4 show excludedportrange protocol=tcp).
+services:
+  mysql:
+    ports:
+      - "${MYSQL_HOST_PORT:-3306}:3306"
+  postgres:
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+  mongodb:
+    ports:
+      - "${MONGO_HOST_PORT:-27017}:27017"
+  rabbitmq:
+    ports:
+      - "5672:5672"

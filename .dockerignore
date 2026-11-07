@@ -1,0 +1,16 @@
+# Contexto de build del backend (la raíz del repo): solo hacen falta pom.xml, common/ y services/.
+.git
+.github
+.vscode
+.idea
+.env
+.env.*
+**/target
+**/node_modules
+node_modules
+frontend
+docker
+docs
+scripts
+*.md
+*.pdf

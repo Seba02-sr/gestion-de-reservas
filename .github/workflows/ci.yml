@@ -35,6 +35,55 @@ jobs:
       - name: Run tests
         run: mvn -B -ntp test
 
+  frontend:
+    name: Frontend (typecheck, lint, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  docker-build:
+    name: Docker (valida el compose y construye las imágenes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validar docker/docker-compose.yml (con todos los perfiles) y el include de la raíz
+        run: |
+          docker compose -f docker/docker-compose.yml --profile observability --profile tools --profile dev config -q
+          docker compose config -q
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Construye las 6 imágenes propias (backend multi-etapa x5 + frontend) con el mismo
+      # comando que usa quien corrige el TP (README). No levanta el stack.
+      - name: Build de las imágenes (igual que el README)
+        run: docker compose -f docker/docker-compose.yml build
+
   dependency-review:
     name: Dependency Review (PRs)
     runs-on: ubuntu-latest
