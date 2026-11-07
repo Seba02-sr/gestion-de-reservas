@@ -1,0 +1,120 @@
+@use "../base/variables" as *;
+
+/* ===========================
+   TOKENS
+   =========================== */
+$rarn-control-height: 44px !default;
+$rarn-control-radius: 0.5rem !default;       // 8px
+$rarn-control-font-size: 0.95rem !default;
+$rarn-control-icon-left: .625rem !default;   // 10px desde el borde izq.
+$rarn-control-icon-size: 20px !default;      // tamaño de svg
+$rarn-control-pl-icon: 2.25rem !default;     // padding-left con icono
+$rarn-control-pr: 2.5rem !default;           // padding-right para chevron/picker
+
+/* ===========================
+   FIELD + LABEL
+   =========================== */
+.rarn-field { display: flex; flex-direction: column; gap: .375rem; }
+.rarn-label { font-size: .875rem; font-weight: 600; color: $rarn-color-gray-text-secondary; }
+
+/* ===========================
+   BASE CONTROLS
+   =========================== */
+.rarn-input,
+.rarn-select {
+  background: rgba($rarn-color-bg-primary, .9);
+  color: $rarn-color-text-primary;
+  border: 1px solid $rarn-color-gray-border;
+
+  height: $rarn-control-height;
+  line-height: normal;
+  font-size: $rarn-control-font-size;
+  border-radius: $rarn-control-radius;
+
+  padding-inline: .75rem;   // simétrico sin icono
+  padding-block: .5rem;
+  width: 100%;
+
+  &::placeholder { color: $rarn-color-gray-text-placeholder; }
+  &:hover  { border-color: $rarn-color-gray-border-strong; }
+  &:focus  { outline: none; border-color: transparent; box-shadow: 0 0 0 2px $rarn-color-focus-ring; }
+  &:disabled { background: $rarn-color-gray-hover; color: $rarn-color-gray-text-muted; cursor: not-allowed; }
+}
+
+/* ===========================
+   INPUT/SELECT CON ÍCONO IZQUIERDO
+   =========================== */
+.rarn-input-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rarn-input-icon__icon {
+  position: absolute;
+  left: $rarn-control-icon-left;         // más cerca del borde
+  top: 50%;
+  transform: translateY(-50%);           // centrado vertical perfecto
+  display: flex;
+  align-items: center;
+  line-height: 0;
+  pointer-events: none;
+  color: $rarn-color-gray-text-secondary;
+
+  /* Asegura tamaño si el svg no lo trae */
+  svg, .rarn-input-icon__svg {
+    width: $rarn-control-icon-size;
+    height: $rarn-control-icon-size;
+    display: block;
+  }
+}
+
+/* El control con icono necesita padding-left extra */
+.rarn-input-icon__control {
+  padding-left: $rarn-control-pl-icon;
+  height: $rarn-control-height;
+  line-height: normal;
+}
+
+/* ===========================
+   NORMALIZACIONES ESPECÍFICAS
+   =========================== */
+.rarn-input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: $rarn-control-pr;
+
+  &::-webkit-calendar-picker-indicator {
+    opacity: .85;
+    cursor: pointer;
+    margin-inline-end: .25rem;
+  }
+
+  &::-webkit-date-and-time-value { text-align: left; }
+}
+
+.rarn-select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: $rarn-control-pr;       // espacio para chevron/picker
+}
+
+/* Chevron custom (si lo usás en SelectIcon) */
+.rarn-select__chev {
+  position: absolute;
+  inset-block: 0;
+  right: $rarn-control-icon-left;        // simétrico con el icono izq.
+  width: 18px; height: 18px;
+  margin: auto 0;
+  pointer-events: none;
+  color: $rarn-color-gray-text-secondary;
+}
+
+/* ===========================
+   ERRORES
+   =========================== */
+.rarn-form-error {
+  margin-top: .375rem;
+  font-size: .8125rem;
+  color: $rarn-color-danger;
+}

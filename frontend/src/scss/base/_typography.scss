@@ -1,0 +1,149 @@
+@use "sass:list";
+@use "mixins" as *;
+@use "variables" as *;
+
+
+.rarn-typography {
+  // ---------------------------------------------------------------------------
+  // MOBILE FIRST (base)
+  // ---------------------------------------------------------------------------
+  &-h1 { font-size: $rarn-font-size-h1; }
+  &-h2 { font-size: $rarn-font-size-h2; }
+  &-h3 { font-size: $rarn-font-size-h3; }
+  &-h4 { font-size: $rarn-font-size-h4; }
+  &-h5 { font-size: $rarn-font-size-h5; }
+  &-h6 { font-size: $rarn-font-size-h6; }
+  &-p  { font-size: $rarn-font-size-p; }
+  &-span { font-size: $rarn-font-size-span; }
+  &-a  { font-size: $rarn-font-size-a; }
+
+  // ---------------------------------------------------------------------------
+  // DESKTOP
+  // ---------------------------------------------------------------------------
+
+  @include respond-from("tablet") {
+    &-h1 { font-size: $rarn-font-size-h1; }
+    &-h2 { font-size: $rarn-font-size-h2; }
+    &-h3 { font-size: $rarn-font-size-h3; }
+    &-h4 { font-size: $rarn-font-size-h4; }
+    &-h5 { font-size: $rarn-font-size-h5; }
+    &-h6 { font-size: $rarn-font-size-h6; }
+    &-p  { font-size: $rarn-font-size-p; }
+    &-span { font-size: $rarn-font-size-span; }
+    &-a  { font-size: $rarn-font-size-a; }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// LINE HEIGHTS
+// -----------------------------------------------------------------------------
+@each $key, $value in $line-height {
+  // Mobile first
+  .rarn-line-height-#{$key} {
+    line-height: $value;
+  }
+
+  // Desktop
+  @include respond-from("tablet") {
+    .rarn-line-height-#{$key} {
+      line-height: $value;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// FONT WEIGHTS
+// -----------------------------------------------------------------------------
+@each $name, $weight in $weights {
+  // Mobile first
+  .rarn-font-weight-#{$name} {
+    font-weight: $weight;
+  }
+
+  // Desktop
+  @include respond-from("tablet") {
+    .rarn-font-weight-#{$name} {
+      font-weight: $weight;
+    }
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// APLICACIÓN AUTOMÁTICA A ELEMENTOS HTML
+// -----------------------------------------------------------------------------
+
+h1,h2,h3,h4,h5,h6,p,a,span {
+  font-family: $rarn-font-family;
+  margin: 0;
+  padding: 0;
+}
+h1 { 
+  font-size: $rarn-font-size-h1;
+  
+  @include respond-from("tablet") {
+    font-size: $rarn-font-size-h1;
+  }
+}
+
+h2 { 
+  font-size: $rarn-font-size-h2;
+  
+  @include respond-from("tablet") {
+    font-size: $rarn-font-size-h2;
+  }
+}
+
+h3 { 
+  font-size: $rarn-font-size-h3;
+  
+  @include respond-from("tablet") {
+    font-size: $rarn-font-size-h3;
+  }
+}
+
+h4 { 
+  font-size: $rarn-font-size-h4;
+  
+  @include respond-from("tablet") {
+    font-size: $rarn-font-size-h4;
+  }
+}
+
+h5 { 
+  font-size: $rarn-font-size-h5;
+  
+  @include respond-from("tablet") {
+    font-size: $rarn-font-size-h5;
+  }
+}
+
+h6 { 
+  font-size: $rarn-font-size-h6;
+  
+  @include respond-from("tablet") {
+    font-size: $rarn-font-size-h6;
+  }
+}
+
+p { 
+  font-size: $rarn-font-size-p;
+  
+  @include respond-from("tablet") {
+    font-size: $rarn-font-size-p;
+  }
+}
+
+a { 
+  font-size: $rarn-font-size-a;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+  
+  @include respond-from("tablet") {
+    font-size: $rarn-font-size-a;
+  }
+}

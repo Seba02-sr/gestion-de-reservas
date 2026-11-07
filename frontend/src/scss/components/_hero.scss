@@ -1,0 +1,29 @@
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+@use "../base/layout" as layout;
+
+.hero {
+  @apply relative w-full overflow-hidden flex items-center justify-center;
+  min-height: 75vh;
+
+  &__slides { @apply absolute inset-0; z-index: 0; }
+  &__slide  { @apply absolute inset-0 transition-opacity duration-1000; opacity: 0; &.is-active { opacity: 1; } }
+  &__image  { @apply block w-full h-full object-cover; }
+
+  &__overlay {
+    @apply absolute inset-0 pointer-events-none; z-index: 10;
+    background-image: linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,.30), rgba(0,0,0,.50));
+  }
+
+  &__container { @include layout.container(80rem); @apply relative text-center; z-index: 20; }
+  &__title { color: $rarn-color-text-inverse; @apply drop-shadow; }
+  &__subtitle { color: $rarn-color-text-inverse-weak; margin-top: .5rem; }
+  &__card {
+    @apply mt-8 rounded-xl shadow-lg p-6;
+    background: $rarn-color-gray-card;
+    border: 1px solid $rarn-color-gray-border;
+    backdrop-filter: blur(6px);
+  }
+
+  &__form  { @apply w-full; }
+}

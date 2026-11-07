@@ -1,0 +1,10 @@
+@use "../base/layout" as layout;
+
+.rarn-section {
+  @include layout.section-spacing();
+}
+
+.rarn-section__container {
+  @include layout.container();
+}
+

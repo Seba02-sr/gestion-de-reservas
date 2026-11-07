@@ -4,21 +4,25 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @DiscriminatorValue("PROPIETARIO")
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 public class Propietario extends Usuario {
 
-    @OneToOne(mappedBy = "cuentaBancaria", cascade = CascadeType.ALL, orphanRemoval = true)
-    private CuentaBancaria cuentaBancaria;
+  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "cuenta_bancaria_id")
+  private CuentaBancaria cuentaBancaria;
 
-    @Column(name = "hotel_id")
-    private Long idHotel;
+  @Column(name = "hotel_id")
+  private Integer idHotel;
 }

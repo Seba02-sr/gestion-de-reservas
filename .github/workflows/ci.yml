@@ -1,32 +1,104 @@
-name: CI/CD Pipeliine for Spring Boot
+name: CI
 
 on:
   push:
-    branches:
-      - "**"
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest # Ejecuta en un entorno Ubuntu
-
+  test-backend:
+    name: Maven Tests (Java 21)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4 # Descarga el código del repositorio
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4 # Configura el JDK de Java 21
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          java-version: "21"
-          distribution: "temurin"
-          cache: "maven" # Habilita el caché de dependencias de Maven para acelerar builds
-      - name: Build with Maven
-        run: mvn clean package -DskipTests # Compila el proyecto
+          fetch-depth: 0
 
-      - name: Run Unit and Integration Tests
-        run: mvn test # Ejecuta todos los tests (unitarios y de integración)
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4 # Sube los resultados de los tests como un artefacto
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          name: test-results
-          path: target/surefire-reports/ # Ruta a los informes de Surefire (tests unitarios)
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Spotless check (format)
+        run: mvn -B -ntp -Pci -Dspotless.ratchetFrom=origin/${{ github.event.repository.default_branch }} spotless:check
+
+      - name: Run tests
+        run: mvn -B -ntp test
+
+  frontend:
+    name: Frontend (typecheck, lint, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  docker-build:
+    name: Docker (valida el compose y construye las imágenes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validar docker/docker-compose.yml (con todos los perfiles) y el include de la raíz
+        run: |
+          docker compose -f docker/docker-compose.yml --profile observability --profile tools --profile dev config -q
+          docker compose config -q
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Construye las 6 imágenes propias (backend multi-etapa x5 + frontend) con el mismo
+      # comando que usa quien corrige el TP (README). No levanta el stack.
+      - name: Build de las imágenes (igual que el README)
+        run: docker compose -f docker/docker-compose.yml build
+
+  dependency-review:
+    name: Dependency Review (PRs)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Review dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          # Excepciones revisadas (ticket 7100): DoS por amplificación en minimatch/glob,
+          # que solo llegan por herramientas de desarrollo (typescript-eslint y el build
+          # de Tailwind). No van al bundle de producción. Sin versión corregida aún:
+          # quitar de esta lista cuando los paquetes se actualicen.
+          allow-ghsas: GHSA-g3hv-75wg-m249, GHSA-3g3m-2fjr-6pw4

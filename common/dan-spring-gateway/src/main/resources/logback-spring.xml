@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Logs por consola (con traceId/spanId) + exportación por OTLP al Collector -> Loki.
+     El appender de OpenTelemetry no emite nada hasta que Spring lo "instala" (ver
+     OpenTelemetryAppenderInitializer) y solo exporta si management.otlp.logging.export.enabled=true. -->
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+  <appender name="OTEL" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+    <captureExperimentalAttributes>true</captureExperimentalAttributes>
+    <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
+    <captureMdcAttributes>*</captureMdcAttributes>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="OTEL"/>
+  </root>
+</configuration>

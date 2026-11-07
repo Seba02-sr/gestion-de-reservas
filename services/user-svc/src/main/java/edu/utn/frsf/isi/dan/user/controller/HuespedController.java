@@ -1,0 +1,120 @@
+package edu.utn.frsf.isi.dan.user.controller;
+
+import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedUpdateRequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoRequest;
+import edu.utn.frsf.isi.dan.user.dto.TarjetaCreditoResponse;
+import edu.utn.frsf.isi.dan.user.service.HuespedService;
+import edu.utn.frsf.isi.dan.user.service.TarjetaCreditoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@Validated
+@RestController
+@RequestMapping("/huespedes")
+@Tag(name = "Huesped Controller", description = "Operaciones para gestionar huéspedes")
+public class HuespedController {
+
+  @Autowired private HuespedService huespedService;
+  @Autowired private TarjetaCreditoService tarjetaCreditoService;
+
+  @Operation(summary = "Listar huéspedes")
+  @ApiResponses({@ApiResponse(responseCode = "200", description = "Listado obtenido")})
+  @GetMapping
+  public ResponseEntity<List<HuespedResponse>> getAllHuespedes() {
+    return ResponseEntity.ok(huespedService.getAllHuespedes());
+  }
+
+  @Operation(summary = "Obtener huésped por ID")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Huésped encontrado"),
+    @ApiResponse(responseCode = "404", description = "Huésped no encontrado")
+  })
+  @GetMapping("/{id}")
+  public ResponseEntity<HuespedResponse> getHuespedById(@PathVariable @Positive Integer id) {
+    return ResponseEntity.ok(huespedService.getHuespedById(id));
+  }
+
+  @Operation(summary = "Actualizar datos de usuario y fecha de nacimiento de un huésped")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Huésped actualizado"),
+    @ApiResponse(responseCode = "404", description = "Huésped no encontrado")
+  })
+  @PutMapping("/{id}")
+  public ResponseEntity<HuespedResponse> actualizarHuesped(
+      @PathVariable @Positive Integer id, @RequestBody @Valid HuespedUpdateRequest huespedRequest) {
+    return ResponseEntity.ok(huespedService.actualizarHuesped(id, huespedRequest));
+  }
+
+  @Operation(summary = "Eliminar un huésped y, en cascada, sus tarjetas")
+  @ApiResponses({@ApiResponse(responseCode = "204", description = "Huésped eliminado")})
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> eliminarHuesped(@PathVariable @Positive Integer id) {
+    huespedService.eliminarHuesped(id);
+    return ResponseEntity.noContent().build();
+  }
+
+  @Operation(summary = "Buscar huéspedes por nombre")
+  @ApiResponses({@ApiResponse(responseCode = "200", description = "Búsqueda realizada")})
+  @GetMapping("/buscar")
+  public ResponseEntity<List<HuespedResponse>> buscarPorNombre(
+      @RequestParam @NotBlank String nombre) {
+    return ResponseEntity.ok(huespedService.buscarPorNombre(nombre));
+  }
+
+  @Operation(summary = "Buscar huésped por DNI exacto")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Huésped encontrado"),
+    @ApiResponse(responseCode = "404", description = "Huésped no encontrado")
+  })
+  @GetMapping("/dni/{dni}")
+  public ResponseEntity<HuespedResponse> buscarPorDni(@PathVariable @NotBlank String dni) {
+    return ResponseEntity.ok(huespedService.buscarPorDni(dni));
+  }
+
+  // Variante con query param por compatibilidad con tests/consumidores
+  @Operation(hidden = true)
+  @GetMapping("/dni")
+  public ResponseEntity<HuespedResponse> buscarPorDniQuery(@RequestParam("dni") String dni) {
+    return ResponseEntity.ok(huespedService.buscarPorDni(dni));
+  }
+
+  @Operation(summary = "Listar tarjetas de un huésped")
+  @GetMapping("/{id}/tarjetas")
+  public ResponseEntity<List<TarjetaCreditoResponse>> listarTarjetasPorHuesped(
+      @PathVariable @Positive Integer id) {
+    return ResponseEntity.ok(tarjetaCreditoService.getTarjetasPorHuesped(id));
+  }
+
+  @Operation(summary = "Agregar una tarjeta a un huésped")
+  @ApiResponses({
+    @ApiResponse(responseCode = "201", description = "Tarjeta creada"),
+    @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+    @ApiResponse(responseCode = "404", description = "Huésped no encontrado")
+  })
+  @PostMapping("/{id}/tarjetas")
+  public ResponseEntity<TarjetaCreditoResponse> agregarTarjeta(
+      @PathVariable @Positive Integer id, @RequestBody @Valid TarjetaCreditoRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(tarjetaCreditoService.crearTarjetaParaHuesped(id, request));
+  }
+}

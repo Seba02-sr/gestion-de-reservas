@@ -1,0 +1,66 @@
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+@use "../base/layout" as layout;
+
+// Fondo de sección usa el neutral global
+$rarn-section-bg: $rarn-color-gray-section !default;
+
+.rarn-benefits {
+  background: $rarn-section-bg;
+  color: $rarn-color-text-primary;
+
+  &__container {
+    // Unifica con el container global; el spacing vertical viene de .rarn-section
+    @include layout.container();
+  }
+
+  &__title {
+    @apply text-center font-bold;
+    margin-bottom: 1.75rem;
+  }
+
+  &__grid {
+    // Grid responsivo con Tailwind
+    @apply grid grid-cols-1 gap-7 md:grid-cols-3 md:gap-8;
+  }
+
+  /* ITEM: limpio, sin fondo/borde */
+  &__item {
+    @apply text-center;
+    padding: 0.5rem 0.25rem;
+  }
+
+  /* ICONO: círculo = primario (currentColor), path = blanco */
+  &__icon {
+    @apply inline-flex mb-2.5;
+    color: $rarn-color-primary; // círculo
+  }
+
+  &__icon-svg {
+    @apply block w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16;
+
+    /* Escalar el pictograma para que quede más chico dentro del círculo */
+    path {
+      transform: scale(0.75);
+      transform-origin: center;
+    }
+  }
+
+  &__item-title {
+    @apply font-bold;
+    margin-bottom: 0.25rem;
+    font-size: 1.125rem; // ~18px
+
+    @include respond-from("tablet") {
+      font-size: 1.25rem; // ~20px
+    }
+  }
+
+  &__item-desc {
+    color: $rarn-color-gray-text-secondary;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 40ch;
+    margin-inline: auto;
+  }
+}

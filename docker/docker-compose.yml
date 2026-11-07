@@ -1,0 +1,427 @@
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# Compose principal del TP Final. Sirve sin .env, sin Java, sin Maven y sin Node en la máquina:
+#
+#   docker compose -f docker/docker-compose.yml up -d --build
+#
+# (también `docker compose up -d --build` desde la raíz: el docker-compose.yml de la raíz hace `include`
+#  de este archivo.) Todas las variables tienen un valor por defecto: ${VAR:-valor}.
+#
+# Sin perfiles levanta la aplicación completa: MySQL, PostgreSQL, MongoDB, RabbitMQ, Eureka, user-svc,
+# gestion-svc, reservas-svc, API Gateway y frontend (nginx). Perfiles opcionales:
+#   observability : OpenTelemetry Collector, Tempo, Loki, Prometheus y Grafana
+#   tools         : pgAdmin, phpMyAdmin y Mongo Express
+#   dev           : frontend con Vite y recarga en caliente (http://localhost:5174)
+#
+# Puertos publicados en el host: 5173 (front), 8080 (gateway + Swagger), 8761 (Eureka), 15672 (RabbitMQ),
+# y con observability 3000 (Grafana) y 9090 (Prometheus). Las bases NO se publican: para desarrollo ver
+# docker/docker-compose.dev-ports.yml.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+name: dan-reservas
+
+# Variables comunes de los servicios Spring (observabilidad, Etapa 5).
+#  - MANAGEMENT_SERVER_PORT: el actuator escucha en un puerto aparte (9091) que no se publica ni enruta el gateway.
+#  - Exportación OTLP (trazas y logs): siempre encendida. Sin el perfil `observability` no hay collector y la
+#    aplicación funciona igual y sin errores en el log. OTEL_EXPORT_ENABLED=false la apaga del todo.
+x-observabilidad: &observabilidad
+  MANAGEMENT_SERVER_PORT: "9091"
+  MANAGEMENT_OTLP_TRACING_EXPORT_ENABLED: ${OTEL_EXPORT_ENABLED:-true}
+  MANAGEMENT_OTLP_LOGGING_EXPORT_ENABLED: ${OTEL_EXPORT_ENABLED:-true}
+
+# Tope de heap de las JVM (MaxRAMPercentage se calcula sobre mem_limit).
+x-jvm-servicio: &jvm-servicio
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65 -XX:+UseSerialGC -Xss512k"
+x-jvm-liviana: &jvm-liviana
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 -XX:+UseSerialGC -Xss512k"
+
+services:
+  # ═══════════════════════════ Bases de datos y mensajería ═══════════════════════════
+  mysql:
+    image: mysql:8.3
+    container_name: mysql-users
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: users
+      MYSQL_USER: usr_app
+      MYSQL_PASSWORD: usrapp
+      MYSQL_ROOT_PASSWORD: rootpwd
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpwd"]
+      interval: 10s
+      retries: 10
+      start_period: 40s
+
+  postgres:
+    image: postgres:16
+    container_name: postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppwd
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Esquema + tipos de habitación (solo se ejecuta con el volumen vacío)
+      - ./config/postgres/initdb/:/docker-entrypoint-initdb.d/:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 10s
+      retries: 10
+      start_period: 20s
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpwd
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand(\"ping\")'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "15672:15672"   # consola web (admin / admin). El 5672 (AMQP) solo es interno.
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      # Crea al arrancar el exchange dan.exchange, la cola habitacion.topic y su binding
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/90-definitions.conf:ro
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ═══════════════════════════ Service discovery ═══════════════════════════
+  # Eureka Server. Dashboard: http://localhost:8761
+  dan-eureka-server:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+      target: eureka
+    image: dan-reservas/eureka:latest
+    container_name: dan-eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    mem_limit: 384m
+    environment:
+      <<: *jvm-liviana
+
+  # ═══════════════════════════ Microservicios ═══════════════════════════
+  # Sin container_name ni puertos del host: así se pueden escalar (`docker compose up -d --scale
+  # gestion-svc=3`). Se llega a ellos por el API Gateway (http://localhost:8080) y se registran en Eureka.
+  user-svc:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+      target: user-svc
+    image: dan-reservas/user-svc:latest
+    restart: unless-stopped
+    expose:
+      - "8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      dan-eureka-server:
+        condition: service_healthy
+    mem_limit: 512m
+    environment:
+      <<: [*observabilidad, *jvm-servicio]
+      SPRING_PROFILES_ACTIVE: eureka
+      # Login con Google: opcional. Vacío => user-svc arranca igual y POST /users/auth/google responde 503.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Datos de demo (usuario demo / demo1234). Idempotente. DEMO_DATOS_HABILITADO=false lo desactiva.
+      DEMO_DATOS_HABILITADO: ${DEMO_DATOS_HABILITADO:-true}
+
+  gestion-svc:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+      target: gestion-svc
+    image: dan-reservas/gestion-svc:latest
+    restart: unless-stopped
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      dan-eureka-server:
+        condition: service_healthy
+    mem_limit: 512m
+    environment:
+      <<: [*observabilidad, *jvm-servicio]
+      SPRING_PROFILES_ACTIVE: eureka
+      # Hoteles, habitaciones y tarifas de demo (se publican por RabbitMQ a reservas-svc). Idempotente.
+      DEMO_DATOS_HABILITADO: ${DEMO_DATOS_HABILITADO:-true}
+
+  reservas-svc:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+      target: reservas-svc
+    image: dan-reservas/reservas-svc:latest
+    restart: unless-stopped
+    expose:
+      - "8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      dan-eureka-server:
+        condition: service_healthy
+    mem_limit: 512m
+    environment:
+      <<: [*observabilidad, *jvm-servicio]
+      SPRING_PROFILES_ACTIVE: eureka
+      # Solo para pruebas: fija "hoy" (yyyy-MM-dd). Vacío = fecha real. Ver docs/desarrollo.md
+      APP_FECHA_ACTUAL: ${APP_FECHA_ACTUAL:-}
+
+  # API Gateway (Spring Cloud Gateway WebMVC): único punto de entrada en http://localhost:8080
+  #   /users/**    -> user-svc      /gestion/** -> gestion-svc      /reservas/** -> reservas-svc
+  # Con el perfil de Spring `eureka` las rutas son lb://user-svc, lb://gestion-svc y lb://reservas-svc:
+  # el gateway le pregunta a Eureka qué instancias hay y reparte entre ellas (soporta --scale).
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+      target: gateway
+    image: dan-reservas/gateway:latest
+    container_name: dan-spring-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      user-svc:
+        condition: service_healthy
+      reservas-svc:
+        condition: service_healthy
+      gestion-svc:
+        condition: service_healthy
+      dan-eureka-server:
+        condition: service_healthy
+    mem_limit: 384m
+    environment:
+      <<: [*observabilidad, *jvm-liviana]
+      SPRING_PROFILES_ACTIVE: eureka
+
+  # ═══════════════════════════ Frontend ═══════════════════════════
+  # Producción: nginx (sin root) sirve el build de Vite y reenvía /api/** al gateway por la red de Docker
+  # (mismo origen => no hace falta CORS). http://localhost:5173
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      args:
+        # VITE_* se incrustan al COMPILAR: cambiarlas requiere reconstruir (docker compose build frontend)
+        VITE_API_URL: ${PROD_VITE_API_URL:-/api}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    image: dan-reservas/frontend:latest
+    restart: unless-stopped
+    ports:
+      - "5173:8080"
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+  # Perfil `dev`: Vite con recarga en caliente, http://localhost:5174 (el 5173 es el nginx de producción).
+  # El navegador llama directo al gateway (http://localhost:8080); su CORS ya permite el origen :5174.
+  frontend-dev:
+    profiles: ["dev"]
+    image: node:22-alpine
+    working_dir: /app
+    # `npm install` respeta package-lock.json (no lo borra). node_modules vive en un volumen de Linux.
+    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5174:5173"
+    volumes:
+      - ../frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+
+  # ═══════════════════════════ Herramientas — perfil `tools` ═══════════════════════════
+  phpmyadmin:
+    profiles: ["tools"]
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    ports:
+      - "6080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      # Auto-login (solo desarrollo)
+      - ./config/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+
+  pgadmin:
+    profiles: ["tools"]
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "6081:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./config/pgadmin/servers/:/pgadmin4/servers/
+      - pgadmin_data:/var/lib/pgadmin
+
+  mongo-express:
+    profiles: ["tools"]
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: rootpwd
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "6091:8081"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ═══════════════════════════ Observabilidad — perfil `observability` ═══════════════════════════
+  #   servicios --OTLP--> otel-collector --> Tempo (trazas) / Loki (logs)        (push)
+  #   Prometheus --scrape :9091/actuator/prometheus (descubre réplicas en Eureka)   (pull)
+  #   Grafana lee de Prometheus, Loki y Tempo.  UI: Grafana :3000 (admin/admin), Prometheus :9090
+  # El collector, Tempo y Loki no se publican en el host: se consultan desde Grafana.
+  otel-collector:
+    profiles: ["observability"]
+    image: otel/opentelemetry-collector-contrib:0.164.0
+    container_name: otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./config/otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    mem_limit: 256m
+    environment:
+      GOMEMLIMIT: 200MiB
+
+  tempo:
+    profiles: ["observability"]
+    image: grafana/tempo:2.10.10
+    container_name: tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./config/tempo/tempo-config.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    mem_limit: 384m
+    environment:
+      GOMEMLIMIT: 300MiB
+
+  loki:
+    profiles: ["observability"]
+    image: grafana/loki:3.6.19
+    container_name: loki
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    volumes:
+      - ./config/loki/loki-config.yaml:/etc/loki/loki.yaml:ro
+      - loki_data:/loki
+    mem_limit: 384m
+    environment:
+      GOMEMLIMIT: 300MiB
+
+  prometheus:
+    profiles: ["observability"]
+    image: prom/prometheus:v3.13.5
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      dan-eureka-server:
+        condition: service_started
+    mem_limit: 512m
+    environment:
+      GOMEMLIMIT: 400MiB
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  grafana:
+    profiles: ["observability"]
+    image: grafana/grafana:12.4.14
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}   # solo desarrollo
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GOMEMLIMIT: 300MiB
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
+      tempo:
+        condition: service_started
+    mem_limit: 384m
+
+volumes:
+  mysql_data:
+  postgres_data:
+  mongo_data:
+  pgadmin_data:
+  prometheus_data:
+  loki_data:
+  tempo_data:
+  grafana_data:
+  frontend_node_modules:

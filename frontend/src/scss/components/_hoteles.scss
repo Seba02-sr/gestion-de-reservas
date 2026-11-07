@@ -1,0 +1,20 @@
+@use "../base/variables" as *;
+@use "../base/layout" as layout;
+
+.hoteles {
+  background: $rarn-color-bg-primary;
+
+  &__container { @include layout.container(80rem); }
+
+  &__header { @apply text-center mb-12; }
+  &__title { color: $rarn-color-text-primary; }
+  &__subtitle { color: $rarn-color-gray-text-secondary; }
+
+  &__grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12;
+  }
+
+  &__actions {
+    @apply text-center;
+  }
+}

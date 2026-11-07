@@ -1,0 +1,6 @@
+# El compose real vive en docker/docker-compose.yml (carpeta pedida por la consigna del TP Final).
+# Este archivo solo lo incluye, así `docker compose up -d --build` desde la raíz sigue funcionando.
+# Equivalente: docker compose -f docker/docker-compose.yml up -d --build
+name: dan-reservas
+include:
+  - path: docker/docker-compose.yml

@@ -1,41 +1,49 @@
 package edu.utn.frsf.isi.dan.user.mapper;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
-
 import edu.utn.frsf.isi.dan.user.dto.HuespedRequest;
 import edu.utn.frsf.isi.dan.user.dto.HuespedResponse;
+import edu.utn.frsf.isi.dan.user.dto.HuespedUpdateRequest;
+import edu.utn.frsf.isi.dan.user.mapper.config.MapstructConfig;
 import edu.utn.frsf.isi.dan.user.model.Huesped;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING, uses= {TarjetaCreditoMapper.class})
+@Mapper(
+    config = MapstructConfig.class,
+    uses = {TarjetaCreditoMapper.class})
 public interface HuespedMapper {
 
-    /**
-     * Convierte HuespedRequest a Huesped Entity
-     * El ID se setea como null automaticamente para nuevas entidades
-     * 
-     * @param request
-     * @return
-     */
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
-    Huesped toEntity(HuespedRequest request);
+  /**
+   * Convierte HuespedRequest a Huesped Entity El ID se setea como null automaticamente para nuevas
+   * entidades
+   *
+   * @param request
+   * @return
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "tarjetaCredito", source = "tarjetasCredito")
+  Huesped toEntity(HuespedRequest request);
 
-    /**
-     * Convierte Huesped Entity a HuespedResponse
-     * @param huesped
-     * @return
-     */
-    HuespedResponse toResponse(Huesped huesped);
+  /**
+   * Convierte Huesped Entity a HuespedResponse
+   *
+   * @param huesped
+   * @return
+   */
+  HuespedResponse toResponse(Huesped huesped);
 
-    /**
-     * Actualiza untidad existente con datos del request.
-     * Utilizado para operaciones de UPDATE
-     * @param request
-     * @param huesped
-     */
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "tarjetaCredito", source="tarjetasCredito")
-    void updateEntityFromRequest(HuespedRequest request, @org.mapstruct.MappingTarget Huesped huesped);
+  /**
+   * Actualiza datos de usuario y fecha de nacimiento de un huésped existente. No toca password,
+   * username ni tarjetas; los campos null del request se ignoran (MapstructConfig).
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "username", ignore = true)
+  @Mapping(target = "password", ignore = true)
+  @Mapping(target = "tarjetaCredito", ignore = true)
+  @Mapping(target = "activo", ignore = true)
+  @Mapping(target = "fechaRegistro", ignore = true)
+  @Mapping(target = "fechaEliminado", ignore = true)
+  @Mapping(target = "fechaModificado", ignore = true)
+  void updateEntityFromRequest(
+      HuespedUpdateRequest request, @org.mapstruct.MappingTarget Huesped huesped);
 }
