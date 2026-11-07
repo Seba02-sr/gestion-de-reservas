@@ -79,21 +79,10 @@ jobs:
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Construye las 6 imágenes propias (backend multi-etapa x5 + frontend). No levanta el stack.
-      # El cache de GitHub Actions evita recompilar todo en cada ejecución.
-      - name: Build de las imágenes (docker/backend.Dockerfile y docker/frontend.Dockerfile)
-        uses: docker/bake-action@v6
-        env:
-          # El contexto del compose (..) queda fuera de docker/: bake pide permiso explícito para leerlo
-          BUILDX_BAKE_ENTITLEMENTS_FS: 0
-        with:
-          # Bake resuelve los paths del compose relativos a este directorio (compose lo hace respecto del
-          # archivo): desde la raíz, "context: .." apuntaría fuera del repo ("lstat ../docker").
-          workdir: ./docker
-          files: docker-compose.yml
-          set: |
-            *.cache-from=type=gha
-            *.cache-to=type=gha,mode=max
+      # Construye las 6 imágenes propias (backend multi-etapa x5 + frontend) con el mismo
+      # comando que usa quien corrige el TP (README). No levanta el stack.
+      - name: Build de las imágenes (igual que el README)
+        run: docker compose -f docker/docker-compose.yml build
 
   dependency-review:
     name: Dependency Review (PRs)
