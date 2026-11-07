@@ -1,6 +1,4 @@
 // src/components/hoteles/HotelCard.tsx
-"use client"
-
 import { memo } from "react"
 import { MapPinIcon, StarIcon } from "@heroicons/react/24/solid"
 import type { Hotel } from "../../util/hotel"
@@ -41,11 +39,17 @@ function HotelCardBase({ hotel, onVerDetalles }: HotelCardProps) {
         {/* Footer: precio + botón */}
         <div className="rarn-hotel-card__footer">
           <div className="rarn-hotel-card__price">
-            <span className="rarn-typography-span muted">Desde</span>
-            <div className="rarn-hotel-card__price-stack">
-              <span className="rarn-typography-h4 price-value">{formatCurrencyARS(hotel.precio)}</span>
-              <span className="rarn-typography-span muted">por noche</span>
-            </div>
+            {hotel.precio !== undefined ? (
+              <>
+                <span className="rarn-typography-span muted">Desde</span>
+                <div className="rarn-hotel-card__price-stack">
+                  <span className="rarn-typography-h4 price-value">{formatCurrencyARS(hotel.precio)}</span>
+                  <span className="rarn-typography-span muted">por noche</span>
+                </div>
+              </>
+            ) : (
+              <span className="rarn-typography-span muted">Consultá disponibilidad</span>
+            )}
           </div>
 
           <button
